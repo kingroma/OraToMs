@@ -24,11 +24,13 @@ public class Main {
 	private static List<File> list = null; 
 	private static String convertPath = "C:\\Users\\cas\\Desktop\\sol\\MoveOraToMs\\Convert\\";
 	public static StringBuilder sb = new StringBuilder();
-	
+
+	// test
 	public static void print(String str) {
 		System.out.println(str);
 		sb.append(str);
 		sb.append("\n");
+
 	}
 	
 	public static void main(String[] args) {
