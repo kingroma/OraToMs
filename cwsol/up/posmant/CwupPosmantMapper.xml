@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.up.posmant.serviceimpl.CwupPosmantMapper">
+
+	<!-- CwupPosmantList.jsp 미비점 사후관리 메인 리스트 출력 쿼리  -->
+	<select id="list" resultType="EgovMap">
+		SELECT 
+			  E.EVL_ID
+			, UP.OBJECT_ID
+			, UPS.POSMANT_SN
+			, M.OBJECT_NO
+			, M.OBJECT_NM
+			, CONVERT ( VARCHAR , CONVERT ( DATE , UP.UPRPD_IMPRVM_PLAN_GOAL_DE , 112 ) , 23 ) AS UPRPD_IMPRVM_PLAN_GOAL_DE	--미비점 개선계획 목표일자
+			, CONVERT ( VARCHAR , CONVERT ( DATE , UE.EXC_DE , 112 ) , 23 )	AS EXC_DE										--개선수행 목표일자   
+			, E.EVL_SJ  --평가제목
+			, E.EVL_KND_CD_ID  								--평가종류코드ID
+			, UP.UPRPD_CL_CD_ID 							--미비점분류코드
+			, C1.CODE_NM	AS UPRPD_CL_CD_NM 				--미비점분류코드명
+			, UP.UPRPD_TY_CD_ID 							--미비점유형코드
+			, C2.CODE_NM 	AS UPRPD_TY_CD_NM 				--미비점유형코드명
+			, CONVERT ( VARCHAR , UPS.UPD_DT , 23 )	AS RGS_DE  	--사후관리 등록일
+			, UPS.STTUS_CD_ID 								--업무상태코드
+			, C3.CODE_NM	AS STTUS_CD_NM 					--업무상태코드명
+			, UPS.EXC_COMPT_CD_ID 							--수행완료코드
+			, C4.CODE_NM	AS EXC_COMPT_CD_NM 				--수행완료코드명
+			, UE.EXC_USER_ID 
+		FROM 
+		  	TB_CW_UPRPD_POSMANT UPS
+		  	INNER JOIN (
+		    	SELECT EVL_ID, OBJECT_ID, MAX(POSMANT_SN) AS MAX_POSMANT_SN
+		    	FROM TB_CW_UPRPD_POSMANT
+		    	GROUP BY EVL_ID, OBJECT_ID	) UPS_MAX
+		    	ON  UPS.EVL_ID = UPS_MAX.EVL_ID
+		    	AND UPS.OBJECT_ID = UPS_MAX.OBJECT_ID
+		    	AND UPS.POSMANT_SN = UPS_MAX.MAX_POSMANT_SN
+		  	LEFT OUTER JOIN TB_CW_EVL E
+		   	 	ON  UPS.EVL_ID = E.EVL_ID
+		  	LEFT OUTER JOIN TB_CW_UPRPD UP
+		  	  	ON  UPS.EVL_ID = UP.EVL_ID
+		    	AND UPS.OBJECT_ID = UP.OBJECT_ID
+		  	LEFT OUTER JOIN TB_CW_UPRPD_EXC UE
+		    	ON  UPS.EVL_ID = UE.EVL_ID
+		    	AND UPS.OBJECT_ID = UE.OBJECT_ID
+		  	LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+		    	ON  UPS.EVL_ID = M.EVL_ID
+		    	AND UPS.OBJECT_ID = M.OBJECT_ID
+          	LEFT OUTER JOIN TB_CO_CODE C1
+          		ON	UP.UPRPD_CL_CD_ID 	= C1.CODE_ID 
+          	LEFT OUTER JOIN TB_CO_CODE C2
+          		ON	UP.UPRPD_TY_CD_ID 	= C2.CODE_ID 
+          	LEFT OUTER JOIN TB_CO_CODE C3
+          		ON	UPS.STTUS_CD_ID 	= C3.CODE_ID 
+          	LEFT OUTER JOIN TB_CO_CODE C4
+          		ON	UPS.EXC_COMPT_CD_ID 	= C4.CODE_ID 
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+  			<if test='menuMngrAt == "N"'>
+				AND 					
+					( 
+					UE.EXC_USER_ID = #{suserId}              /** 담당자로 지정된 평가 조회 */
+					OR UE.EXC_USER_ID IN 
+						(
+						SELECT A.MNDT_USER_ID 
+						FROM TB_CO_MNDT A
+							LEFT OUTER JOIN TB_CO_MNDT_KND B
+								ON A.MNDT_ID = B.MNDT_ID
+						WHERE 
+							A.AGENT_USER_ID = #{suserId}
+							AND CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),8),':','') BETWEEN A.MNDT_BGNDE+A.MNDT_BGNTM AND A.MNDT_ENDDE+A.MNDT_ENDTM
+							AND A.STTUS_CD_ID = 'COM_021_005' 
+							AND B.MNDT_KND_CD_ID = 'COM_019_001'
+						)
+					)      /** 위임자로 지정된 평가 조회 */
+			</if>
+			<if test=' srchSttusCdId != null and srchSttusCdId != "" '>
+				AND UPS.STTUS_CD_ID = #{srchSttusCdId} 
+			</if>   
+			<if test=' srchExcComptCdId != null and srchExcComptCdId != "" '>
+				AND UPS.EXC_COMPT_CD_ID = #{srchExcComptCdId} 
+			</if>   
+	  		<if test=' srchUprpdTyCdId != null and srchUprpdTyCdId != "" '>
+		        AND UP.UPRPD_TY_CD_ID = #{srchUprpdTyCdId}
+		    </if>	
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+		            <when test="srchTy == 'sj'" > 			
+		            	AND	E.EVL_SJ LIKE '%' + #{srchWrd} + '%' 		
+		            </when>
+	
+		            <when test="srchTy == 'cnrlNm'" > 		
+		            	AND	M.OBJECT_NM LIKE '%' + #{srchWrd} + '%' 		
+		            </when>  
+				</choose>
+			</if>	
+		</trim>
+ 		ORDER BY E.EVL_ENDDE DESC, E.EVL_ID DESC, UPS.STTUS_CD_ID ASC, UP.UPRPD_IMPRVM_PLAN_GOAL_DE, M.OBJECT_LEVEL ASC, M.OBJECT_ID ASC
+	</select>
+	
+	<!-- 사후관리  보고 목록 -->
+	<select id="uprpdPosmantList" resultType ="EgovMap">
+		SELECT 
+			  PO.EVL_ID 							--평가ID
+			, PO.OBJECT_ID 							--오브젝트ID
+			, PO.POSMANT_SN 						--사후관리순번
+			, PO.EXC_SJ 							--수행제목
+			, PO.EXC_COMPT_CD_ID 					--수행완료코드ID
+			, C1.CODE_NM 		AS EXC_COMPT_CD_NM	--수행완료코드명
+			, PO.EXC_CN 							--수행내용
+			, CASE 	WHEN PO.EXC_DE IS NULL THEN PO.EXC_DE 
+					ELSE SUBSTR(PO.EXC_DE,1,4) + '-' +  SUBSTR(PO.EXC_DE,5,2) + '-' + SUBSTR(PO.EXC_DE,7,2) END AS EXC_DE -- 수행일             
+			, PO.STTUS_CD_ID 						--상태코드ID
+			, C2.CODE_NM		AS STTUS_CD_NM 		--상태코드명
+			, PO.EXC_USER_ID 						--수행사용자ID
+			, UH.USER_NM        AS EXC_USER_NM 		--수행사용자 이름
+			, UH.DEPT_NM        AS EXC_DEPT_NM 		--수행사용자 부서명          
+			, (CASE WHEN PO.UPD_DT IS NULL THEN CONVERT ( VARCHAR , PO.RGS_DT , 23 )
+					ELSE CONVERT ( VARCHAR , PO.UPD_DT , 23 ) END) AS RGS_DE 
+		FROM 
+			TB_CW_UPRPD_POSMANT PO
+			LEFT OUTER JOIN TB_CO_USER_HIST UH
+          		ON 	PO.EXC_USER_ID 		= UH.USER_ID
+          		AND PO.EXC_USER_BGNDE 	= UH.HIST_BGNDE
+          	LEFT OUTER JOIN TB_CO_CODE C1
+          		ON	PO.EXC_COMPT_CD_ID 	= C1.CODE_ID 
+          	LEFT OUTER JOIN TB_CO_CODE C2
+          		ON	PO.STTUS_CD_ID 		= C2.CODE_ID 
+        WHERE 
+        	PO.EVL_ID 			= #{evlId}
+        	AND PO.OBJECT_ID 	=  #{objectId}
+        ORDER BY PO.POSMANT_SN ASC
+	</select>
+
+  	<!-- 사후결과 저장 값 출력을 위한 쿼리-->
+	<select id="view" resultType="CwupPosmantVO">
+		SELECT  
+			A.EVL_ID
+			, A.OBJECT_ID
+			, A.POSMANT_SN
+			, A.EXC_USER_ID
+			, A.EXC_USER_BGNDE
+			, A.EXC_CN
+			, A.EXC_SJ
+			, A.EXC_COMPT_CD_ID
+			, CONVERT ( VARCHAR , CONVERT ( DATE , A.EXC_DE , 112 ) , 23 ) EXC_DE 
+			, A.STTUS_CD_ID
+			, UC.STTUS_CD_ID AS POSMANT_STTUS_CD_ID
+			, A.SANCTN_ID
+			, UC.SANCTN_ID  AS POSMANT_SANCTN_ID
+			, UC.CONFM_AT
+			, UC.CONFM_CN
+			, A.UNITY_ID
+			, A.RGS_DT
+			, A.UPD_DT
+			, A.UPD_USER_ID
+		FROM TB_CW_UPRPD_POSMANT A
+  			 LEFT OUTER JOIN TB_CW_UPRPD_POSMANT_CONFM UC
+  			 	ON	A.EVL_ID 		= UC.EVL_ID
+  			 	AND	A.OBJECT_ID 	= UC.OBJECT_ID
+          		AND A.POSMANT_SN 	= UC.POSMANT_SN
+  			 	AND UC.LAST_AT		= 'Y'
+		WHERE  
+			A.EVL_ID = #{evlId}
+			AND A.OBJECT_ID = #{objectId}
+			AND A.POSMANT_SN = #{posmantSn}
+	</select>
+
+	<insert id="save" >
+		<selectKey keyProperty="posmantSn" resultType="String" order="BEFORE">
+			SELECT ISNULL(#{posmantSn}, ISNULL((SELECT MAX(POSMANT_SN) FROM TB_CW_UPRPD_POSMANT WHERE EVL_ID = #{evlId} AND OBJECT_ID = #{objectId}), 0)+1) AS POSMANT_SN
+			 
+		</selectKey>
+		MERGE INTO TB_CW_UPRPD_POSMANT T1
+		USING (VALUES (1)) AS Source (Number) 
+		ON ( T1.EVL_ID = #{evlId} AND T1.OBJECT_ID = #{objectId} AND T1.POSMANT_SN = #{posmantSn} )
+		WHEN MATCHED THEN
+			UPDATE SET
+				  EXC_SJ 			= #{excSj}
+				, EXC_CN 			= #{excCn}
+				, EXC_COMPT_CD_ID 	= #{excComptCdId}
+				, EXC_DE 			= REPLACE(#{excDe}, '-', '')
+				, UNITY_ID 			= #{unityId}
+				, SANCTN_ID 		= #{sanctnId}
+				, STTUS_CD_ID 		= #{sttusCdId}
+				, EXC_USER_ID 		= #{suserId}
+				, EXC_USER_BGNDE 	= #{suserBgnde}
+				, UPD_USER_ID 		= #{suserId}
+				, UPD_DT 			= GETDATE()
+		WHEN NOT MATCHED THEN 
+			INSERT (
+				  EVL_ID 
+				, OBJECT_ID 
+				, POSMANT_SN
+				, EXC_USER_ID
+				, EXC_USER_BGNDE
+				, EXC_CN
+				, EXC_SJ
+				, EXC_DE
+				, EXC_COMPT_CD_ID
+				, SANCTN_ID 
+				, STTUS_CD_ID
+				, UNITY_ID
+				, RGS_DT
+				, RGS_USER_ID
+				, UPD_DT
+				, UPD_USER_ID
+				, LAST_AT
+			) VALUES (
+				  #{evlId}
+				, #{objectId}
+				, #{posmantSn}
+				, #{suserId}
+				, #{suserBgnde}
+				, #{excCn}
+				, #{excSj}
+				, REPLACE(#{excDe},'-','')
+				, #{excComptCdId}
+				, #{sanctnId}
+				, #{sttusCdId}
+				, #{unityId}
+				, GETDATE()
+				, #{suserId} 
+				, GETDATE()
+				, #{suserId}
+				, 'Y'
+			)
+	</insert>
+	
+	<!-- 사후관리  LastAt 업데이트-->
+	<update id="posmantLastAtUpdate">
+		UPDATE  TB_CW_UPRPD_POSMANT
+		SET 
+			LAST_AT = 'N'
+		WHERE 
+			EVL_ID = #{evlId}
+			AND OBJECT_ID = #{objectId}
+			AND POSMANT_SN != #{posmantSn}
+  	</update>
+
+	<update id="updateSttus">
+		UPDATE  TB_CW_UPRPD_POSMANT
+		SET 
+			STTUS_CD_ID = #{sttusCdId}
+		WHERE 
+			EVL_ID = #{evlId}
+			AND OBJECT_ID = #{objectId}
+			AND POSMANT_SN = #{posmantSn}
+  	</update>
+  	
+</mapper>

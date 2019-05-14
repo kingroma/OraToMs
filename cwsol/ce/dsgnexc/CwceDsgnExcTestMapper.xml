@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.ce.dsgnexc.serviceimpl.CwceDsgnExcTestMapper">
+
+    <!-- RCM VIEW MAP  -->  
+    <resultMap id="cnrlUpdtMap" type="CwceDsgnExcVO">
+        <result property="evlId"                column="EVL_ID"         />
+        <result property="objectId"             column="OBJECT_ID"      />
+        <collection property="typeList"         column="{evlId=EVL_ID,objectId=OBJECT_ID}"  select="selectPrList" />
+    </resultMap>
+
+
+    <!-- 통제 정보 -->
+    <select id="view" resultMap="cnrlUpdtMap">
+        SELECT /** 통제 원천 정보 */
+              C.EVL_ID
+            , #{objectId}               AS OBJECT_ID
+            , #{chrgUserId}             AS CHRG_USER_ID
+            , C.CNRL_ID
+            , C.CNRL_NO
+            , C.CNRL_NM
+            , C.CNRL_CN
+			, ISNULL(C.KEY_CNRL_AT, 'N') 		AS KEY_CNRL_AT
+			, C.REFRN_NO
+			, C.CNRL_RELATE_REF
+			, C.CNRL_EXC_UPPER_DEPT
+			, C.CNRL_EXC_DEPT
+			, C.CNRL_EXCBER
+			, C.CNRL_RSPNSBL_UPPER_DEPT
+			, C.CNRL_RSPNSBL_DEPT
+			, C.CNRL_RSPNBER
+			, C.RELATE_REGLTN_NM
+			, C.CNRL_RELATE_DOC
+			, C.CNRL_RELATE_SYS
+			, C.CNRL_RM
+			, C.CNRL_PURPS
+			, C.CNRL_PURPS_CD_ID
+			, CF.CODE_NM AS CNRL_PURPS_CD_NM
+			, C.CNRL_PURPS_FNNR_RLABLTY
+			, C.CNRL_PURPS_ASSET_PRTC
+			, C.CNRL_PURPS_INSTC_PRVN
+			, C.CNRL_TY_CD_ID
+			, CI.CODE_NM AS CNRL_TY_CD_NM
+			, C.CNRL_TY_CECK01
+			, C.CNRL_TY_CECK02
+			, C.CNRL_TY_CECK03
+			, C.CNRL_TY_CECK04
+			, C.CNRL_TY_CECK05
+			, C.CNRL_TY_CECK06
+			, C.CNRL_TY_CECK07
+			, C.CNRL_TY_CECK08
+			, C.CNRL_TY_CECK09
+			, C.CNRL_TY01_CD_ID
+			, CA.CODE_NM 					AS CNRL_TY01_CD_NM
+			, C.CNRL_TY02_CD_ID
+			, CB.CODE_NM 					AS CNRL_TY02_CD_NM
+			, C.CNRL_TY03_CD_ID
+			, CC.CODE_NM 					AS CNRL_TY03_CD_NM
+			, C.DELNG_TY_CD_ID
+			, CH.CODE_NM AS DELNG_TY_CD_NM
+			, C.CNRL_CTGRY
+			, C.CNRL_CYCLE_CD_ID
+			, CG.CODE_NM 					AS CNRL_CYCLE_CD_NM
+			, C.CNRL_CYCLE01
+			, C.CNRL_CYCLE02
+			, C.CNRL_CYCLE03
+			, C.CNRL_CYCLE04
+			, C.CNRL_CYCLE05
+			, C.CNRL_CYCLE06
+			, C.CNRL_CYCLE07
+			, C.CNRL_CYCLE08
+			, C.CNRL_CYCLE09
+			, C.OFFICE_TY_CD_ID
+			, CE.CODE_NM 					AS OFFICE_TY_CD_NM
+			, ISNULL(C.DSGN_EFCT_AT, 'N') 		AS DSGN_EFCT_AT
+			, ISNULL(C.OPER_EFCT_AT, 'N') 		AS OPER_EFCT_AT
+			, C.CNRL_UPRPD_NO
+			, ISNULL(C.MRC_CNRL_AT, 'N') 		AS MRC_CNRL_AT
+			, C.MRC_CTGRY_CD_ID
+			, C.MRC_NO
+			, ISNULL(C.IPE_CNRL_AT, 'N') 		AS IPE_CNRL_AT
+			, C.IPE_CTGRY_CD_ID
+			, C.IPE_NO
+			, C.IPE_NM
+			, C.IPE_TEST_PROCSS
+			, C.COSO_NO
+			, C.TEST_CYCLE_CD_ID
+			, CD.CODE_NM 					AS TEST_CYCLE_CD_NM
+			, C.TEST_CYCLE01
+			, C.TEST_CYCLE02
+			, C.TEST_CYCLE03
+			, C.TEST_CYCLE04
+			, C.TEST_CYCLE05
+			, C.TEST_CYCLE06
+			, C.TEST_CYCLE07
+			, C.TEST_CYCLE08
+			, C.TEST_CYCLE09
+			, C.TEST_RELATE_DOC
+			, C.TEST_TRGET
+			, C.SAMPLE_SIZE
+			, C.TEST_PROCSS
+			, C.EXCP_CNT
+			, C.TEST_MTH
+			, C.TEST_MTH_QESTN
+			, C.TEST_MTH_OBSERV
+			, C.TEST_MTH_VRIFY
+			, C.TEST_MTH_ECGN
+			, C.TEST_MTH_SYS_TRACE
+			, C.ATMC_SAMPLE_AT
+			, ISNULL(C.TEST_SANCTN_AT, 'N') 	AS TEST_SANCTN_AT
+			, C.ACNT_CD
+			, C.CNRL_ACNTCTGR
+			, C.RELATE_ACNTCTGR_PBLNTF
+			, C.CNRL_CM_IEM
+			, C.ASSE_C_AT
+			, C.ASSE_E_AT
+			, C.ASSE_R_AT
+			, C.ASSE_V_AT
+			, C.ASSE_P_AT
+			, C.ASSE_S_AT
+			, C.ASSE_O_AT
+			, C.ASSE_A_AT
+			, C.ASSE_PF_AT
+			, C.TREXAMIN_PROCSS
+			, C.TREXAMIN_PRUF
+			, C.TREXAMIN_CNCLSN
+			, C.RISK_RESIDUAL_LIKEHOOD
+			, C.RISK_RESIDUAL_IMPACT
+			, C.RISK_RESIDUAL_RATIONG
+			, C.AFTER_RISK_RESIDUAL_LIKEHOOD
+			, C.AFTER_RISK_RESIDUAL_IMPACT
+			, C.AFTER_RISK_RESIDUAL_RATIONG
+			, C.CNRL_IMPRVM_NM
+			, C.CNRL_IMPRVM_DC
+			, C.FNREP_RISKEVL_CSFCTR01
+            , C.FNREP_RISKEVL_CSFCTR02
+            , C.FNREP_RISKEVL_CSFCTR03
+            , C.FNREP_RISKEVL_CSFCTR04
+            , C.FNREP_RISKEVL_CSFCTR05
+            , C.FNREP_RISKEVL_CSFCTR06
+            , C.FNREP_RISKEVL_CSFCTR07
+            , C.FNREP_RISKEVL_CSFCTR08
+            , C.FNREP_RISKEVL_CSFCTR09
+            , C.FNREP_RISKEVL_CSFCTR10
+            , C.FNREP_CNRL_RISK_CNCLSN
+            , C.FNREP_ACNT_RISK_CNCLSN
+            , C.FNREP_PROCS_RISK_CNCLSN
+            , C.FNREP_GNRLZ_EVL_CNCLSN
+        FROM TB_CW_EVL_RCM_CNRL C             
+	        LEFT OUTER JOIN TB_CO_CODE CA
+	            ON C.CNRL_TY01_CD_ID = CA.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CB
+	            ON C.CNRL_TY02_CD_ID = CB.CODE_ID 
+	        LEFT OUTER JOIN TB_CO_CODE CC
+	            ON C.CNRL_TY03_CD_ID = CC.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CD
+	            ON C.TEST_CYCLE_CD_ID = CD.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CE
+	            ON C.OFFICE_TY_CD_ID = CE.CODE_ID    
+	        LEFT OUTER JOIN TB_CO_CODE CF
+	            ON C.CNRL_PURPS_CD_ID = CF.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CG
+	            ON C.CNRL_CYCLE_CD_ID = CG.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CH
+	            ON C.DELNG_TY_CD_ID = CH.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CI
+	            ON C.CNRL_TY_CD_ID = CI.CODE_ID
+       WHERE C.EVL_ID = #{evlId} 
+         AND C.CNRL_ID = #{objectId}
+    </select>
+    
+    <!-- 프로세스, 리스크 상세조회 -->
+    <select id="selectPrList" resultType="EgovMap">
+    	WITH V1 ( EVL_ID , OBJECT_ID , MAPNG_ID , UPPER_MAPNG_ID ) AS ( 
+			SELECT 
+				EVL_ID , OBJECT_ID , MAPNG_ID , UPPER_MAPNG_ID 
+			FROM TB_CW_EVL_RCM_MAPNG
+			WHERE EVL_ID = #{evlId} AND OBJECT_ID = #{objectId}
+		
+			UNION ALL 
+		
+			SELECT 
+				M.EVL_ID , M.OBJECT_ID , M.MAPNG_ID , M.UPPER_MAPNG_ID 
+			FROM TB_CW_EVL_RCM_MAPNG M , V1 ROOT 
+			WHERE M.MAPNG_ID = ROOT.UPPER_MAPNG_ID 
+			AND M.EVL_ID = ROOT.EVL_ID 
+		)
+        SELECT T.*
+        FROM (
+            SELECT 
+                  DISTINCT M.*
+                , MA.CODE_NM AS OBJECT_KND_CD_NM
+                , R.RISK_ID, R.RISK_NO, R.RISK_NM, R.RISK_CN
+			    , R.WCGW, R.FNLTT_DSTOR_RISK, R.RISK_EVL_RESULT, R.RISK_EVL_REASON
+            FROM (
+                SELECT 
+					DISTINCT M.EVL_ID, M.MAPNG_ID, M.OBJECT_ID, M.OBJECT_NO, M.OBJECT_NM, M.OBJECT_LEVEL, M.UPPER_OBJECT_ID, M.UPPER_MAPNG_ID, M.OBJECT_KND_CD_ID
+				FROM V1 V 
+				INNER JOIN TB_CW_EVL_RCM_MAPNG M
+					ON V.EVL_ID = M.EVL_ID AND V.OBJECT_ID = M.OBJECT_ID
+            ) M
+            LEFT OUTER JOIN TB_CO_CODE MA
+                ON CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+                		THEN 'CTW_001_003' 
+                		ELSE M.OBJECT_KND_CD_ID END = MA.CODE_ID
+            LEFT OUTER JOIN TB_CW_EVL_RCM_RISK R
+            	ON  M.EVL_ID = R.EVL_ID
+            	AND M.OBJECT_ID = R.RISK_ID
+            WHERE M.EVL_ID  = #{evlId}
+        ) T
+        WHERE T.OBJECT_KND_CD_ID != 'CTW_001_005'
+        ORDER BY T.OBJECT_ID 
+    </select>
+
+</mapper>

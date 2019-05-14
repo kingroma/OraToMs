@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.sc.sttus.serviceimpl.CwscSttusMapper">
+
+  	<!-- 프로세스 기준일 경우  -->	
+	<resultMap id="sttusMap" type="EgovMap" >
+  		<collection property="acntctgrList" 	column="{procsId=OBJECT_ID,srchTiablId=SRCH_TIABL_ID,srchFsyr=SRCH_FSYR}" select="acntctgrList" />
+  		<collection property="sysList" 			column="{procsId=OBJECT_ID,srchSysId=SRCH_SYS_ID,srchFsyr=SRCH_FSYR}" select="sysList" />
+  	</resultMap>
+  	
+  	<!-- 계정과목 기준일 경우 -->
+	<resultMap id="sttusAcntctgrMap" type="EgovMap" >
+  		<collection property="sysList" column="{procsId=OBJECT_ID,srchSysId=SRCH_SYS_ID}" select="sysList" />
+  	</resultMap>
+  	
+  	<!-- 검색 조건 -->
+  	<select id="srchView" resultType="CwscSttusVO">
+  		SELECT	ISNULL(#{srchFsyr}, (SELECT MAX(FSYR) FROM TB_CW_SC_TIABL WHERE STTUS_CD_ID = 'CTW_121_002')) AS SRCH_FSYR	/** 완료된 시산표 중 최신 년도 */
+  			  , ISNULL(#{srchTiablId},	(SELECT MAX(TIABL_ID) 
+								   	   FROM TB_CW_SC_TIABL 
+								  	  WHERE FSYR = ISNULL(#{srchFsyr}, (SELECT MAX(FSYR) FROM TB_CW_SC_TIABL WHERE STTUS_CD_ID = 'CTW_121_002')) 
+										AND STTUS_CD_ID = 'CTW_121_002' /** 시산표 확정 */
+								  	  GROUP BY FSYR )) AS SRCH_TIABL_ID
+			  , ISNULL(#{srchSysId},	(SELECT MAX(SYS_TABLE_ID) 
+        		   					   FROM TB_CW_SC_SYS_TABLE 
+        		  					  WHERE FSYR = ISNULL(#{srchFsyr}, (SELECT MAX(FSYR) FROM TB_CW_SC_TIABL WHERE STTUS_CD_ID = 'CTW_121_002')) 
+        								AND STTUS_CD_ID = 'CTW_121_002' 
+        		  					  GROUP BY FSYR )) AS SRCH_SYS_ID
+        		, #{srchTy} AS SRCH_TY
+		
+  	</select>
+  	
+ 	<!-- 프로세스 기준 목록 -->
+ 	<select id="list" resultMap="sttusMap">
+        /** 검색된 유의계정, 시스템 확정일 기준의 RCM */
+        WITH TOT AS (
+					SELECT T.* FROM TB_CW_RCM_MAPNG_HIST T
+					 WHERE CASE WHEN (SELECT CONVERT(VARCHAR,UPD_DT,112) + REPLACE(CONVERT(VARCHAR,UPD_DT,8),':','')+'999999' FROM TB_CW_SC_TIABL WHERE TIABL_ID = #{srchTiablId}) IS NULL
+					 			THEN (SELECT CONVERT(VARCHAR,UPD_DT,112) + REPLACE(CONVERT(VARCHAR,UPD_DT,8),':','')+'999999' FROM TB_CW_SC_SYS_TABLE WHERE SYS_TABLE_ID = #{srchSysId})
+					 			ELSE (SELECT CONVERT(VARCHAR,UPD_DT,112) + REPLACE(CONVERT(VARCHAR,UPD_DT,8),':','')+'999999' FROM TB_CW_SC_TIABL WHERE TIABL_ID = #{srchTiablId})
+					 		END
+					        BETWEEN T.BGNTMSTMP AND T.ENDTMSTMP
+					)
+        SELECT 
+              A1.MAPNG_ID, A1.OBJECT_ID, A1.OBJECT_NO, A1.OBJECT_NM, A1.OBJECT_LEVEL, A1.UPPER_OBJECT_ID, A1.UPPER_MAPNG_ID, A1.OBJECT_KND_CD_ID, A1.OBJECT_NO+' '+A1.OBJECT_NM AS OBJECT_NM_EXCEL
+            , A2.MAPNG_ID AS MAPNG_ID_1, A2.OBJECT_ID AS OBJECT_ID_1, A2.OBJECT_NO AS OBJECT_NO_1, A2.OBJECT_NM AS OBJECT_NM_1, A2.OBJECT_LEVEL AS OBJECT_LEVEL_1, A2.UPPER_OBJECT_ID AS UPPER_OBJECT_ID_1, A2.UPPER_MAPNG_ID AS UPPER_MAPNG_ID_1, A2.OBJECT_KND_CD_ID AS OBJECT_KND_CD_ID_1, A2.OBJECT_NO+' '+A2.OBJECT_NM AS OBJECT_NM_2_EXCEL
+            , A3.MAPNG_ID AS MAPNG_ID_2, A3.OBJECT_ID AS OBJECT_ID_2, A3.OBJECT_NO AS OBJECT_NO_2, A3.OBJECT_NM AS OBJECT_NM_2, A3.OBJECT_LEVEL AS OBJECT_LEVEL_2, A3.UPPER_OBJECT_ID AS UPPER_OBJECT_ID_2, A3.UPPER_MAPNG_ID AS UPPER_MAPNG_ID_2, A3.OBJECT_KND_CD_ID AS OBJECT_KND_CD_ID_2, A3.OBJECT_NO+' '+A3.OBJECT_NM AS OBJECT_NM_3_EXCEL
+            , #{srchTiablId} 	AS SRCH_TIABL_ID
+			, #{srchSysId} 	AS SRCH_SYS_ID
+			, #{srchFsyr} 	AS SRCH_FSYR
+        FROM TOT A1
+        INNER JOIN TB_CW_RCM_PROCS_HIST P
+        	ON A1.OBJECT_ID = P.PROCS_ID
+        	AND A1.BGNTMSTMP = P.BGNTMSTMP
+	        LEFT OUTER JOIN TOT A2
+            ON A1.UPPER_MAPNG_ID = A2.MAPNG_ID
+        LEFT OUTER JOIN TOT A3
+            ON A2.UPPER_MAPNG_ID = A3.MAPNG_ID
+        WHERE 1=1
+        <choose>
+        	<when test=' scopingProcsMappngTy != null and scopingProcsMappngTy == "M" '>
+        		AND A1.OBJECT_LEVEL = 1
+        	</when>
+        	<otherwise>
+        		AND A1.OBJECT_LEVEL = (SELECT MAX(OBJECT_LEVEL) FROM TB_CW_RCM_MAPNG WHERE OBJECT_KND_CD_ID NOT IN ('CTW_001_004','CTW_001_005'))
+        	</otherwise>
+        </choose>
+        ORDER BY A1.OBJECT_ID
+	</select>
+	
+	<!-- 계정과목 기준 목록 -->
+	<select id="acntctgrStdrList" resultMap="sttusAcntctgrMap">
+		/** 검색된 유의계정 확정일 기준의 RCM */
+        WITH TOT AS (
+					SELECT T.* FROM TB_CW_RCM_MAPNG_HIST T
+					 WHERE (SELECT CONVERT(VARCHAR,UPD_DT,112) + REPLACE(CONVERT(VARCHAR,UPD_DT,8),':','')+'999999' FROM TB_CW_SC_TIABL WHERE TIABL_ID = #{srchTiablId})
+					        BETWEEN T.BGNTMSTMP AND T.ENDTMSTMP
+					)
+		SELECT A.*, CASE WHEN A.MAX_ACNTCTGR_LEVEL != '1' AND A.ACNT_CD IS NOT NULL 
+			      		THEN A.ACNTCTGR_LEVEL+'. ['+A.ACNT_CD+'] '+A.ACNTCTGR
+                        WHEN A.MAX_ACNTCTGR_LEVEL != '1' AND A.ACNT_CD IS NULL 
+                        THEN A.ACNTCTGR_LEVEL+'. '+A.ACNTCTGR 
+                        WHEN A.MAX_ACNTCTGR_LEVEL = '1' AND A.ACNT_CD IS NOT NULL 
+                        THEN '['+A.ACNT_CD+'] '+A.ACNTCTGR
+			      		ELSE A.ACNTCTGR 
+			      	END AS ACNTCTGR_EXCEL
+		FROM (SELECT  B.ACNTCTGR_SN, B.ACNTCTGR, B.ACNT_CD, B.ACNTCTGR_LEVEL, C.PROCS_ID
+					, (SELECT MAX(ACNTCTGR_LEVEL) FROM TB_CW_SC_ACNTCTGR WHERE TIABL_ID = #{srchTiablId}) AS MAX_ACNTCTGR_LEVEL
+					, P.*
+					, #{srchSysId} 	AS SRCH_SYS_ID
+			FROM TB_CW_SC_TIABL A
+			LEFT OUTER JOIN TB_CW_SC_ACNTCTGR B
+				ON 	A.TIABL_ID = B.TIABL_ID
+			LEFT OUTER JOIN TB_CW_SC_ACNTCTGR_PROCS C
+				ON 	A.TIABL_ID = C.TIABL_ID
+				AND B.ACNTCTGR_SN = C.ACNTCTGR_SN
+	        LEFT OUTER JOIN ( SELECT 
+						              A1.MAPNG_ID, A1.OBJECT_ID, A1.OBJECT_NO, A1.OBJECT_NM, A1.OBJECT_LEVEL, A1.UPPER_OBJECT_ID, A1.UPPER_MAPNG_ID, A1.OBJECT_KND_CD_ID, A1.OBJECT_NO+' '+A1.OBJECT_NM AS OBJECT_NM_EXCEL
+						            , A2.MAPNG_ID AS MAPNG_ID_1, A2.OBJECT_ID AS OBJECT_ID_1, A2.OBJECT_NO AS OBJECT_NO_1, A2.OBJECT_NM AS OBJECT_NM_1, A2.OBJECT_LEVEL AS OBJECT_LEVEL_1, A2.UPPER_OBJECT_ID AS UPPER_OBJECT_ID_1, A2.UPPER_MAPNG_ID AS UPPER_MAPNG_ID_1, A2.OBJECT_KND_CD_ID AS OBJECT_KND_CD_ID_1, A2.OBJECT_NO+' '+A2.OBJECT_NM AS OBJECT_NM_2_EXCEL
+						            , A3.MAPNG_ID AS MAPNG_ID_2, A3.OBJECT_ID AS OBJECT_ID_2, A3.OBJECT_NO AS OBJECT_NO_2, A3.OBJECT_NM AS OBJECT_NM_2, A3.OBJECT_LEVEL AS OBJECT_LEVEL_2, A3.UPPER_OBJECT_ID AS UPPER_OBJECT_ID_2, A3.UPPER_MAPNG_ID AS UPPER_MAPNG_ID_2, A3.OBJECT_KND_CD_ID AS OBJECT_KND_CD_ID_2, A3.OBJECT_NO+' '+A3.OBJECT_NM AS OBJECT_NM_3_EXCEL
+						        FROM TOT A1
+						        INNER JOIN TB_CW_RCM_PROCS_HIST P
+						        	ON A1.OBJECT_ID = P.PROCS_ID
+						        	AND A1.BGNTMSTMP = P.BGNTMSTMP
+							        LEFT OUTER JOIN TOT A2
+						            ON A1.UPPER_MAPNG_ID = A2.MAPNG_ID
+						        LEFT OUTER JOIN TOT A3
+						            ON A2.UPPER_MAPNG_ID = A3.MAPNG_ID
+						        WHERE 1=1
+						        <choose>
+						        	<when test=' scopingProcsMappngTy != null and scopingProcsMappngTy == "M" '>
+						        		AND A1.OBJECT_LEVEL = 1
+						        	</when>
+						        	<otherwise>
+						        		AND A1.OBJECT_LEVEL = (SELECT MAX(OBJECT_LEVEL) FROM TB_CW_RCM_MAPNG WHERE OBJECT_KND_CD_ID NOT IN ('CTW_001_004','CTW_001_005'))
+						        	</otherwise>
+						        </choose>
+	        ) P
+	            ON C.PROCS_ID = P.OBJECT_ID
+			WHERE A.TIABL_ID = #{srchTiablId}
+		) A
+	 	ORDER BY A.ACNTCTGR_SN, A.OBJECT_ID
+	</select>
+	
+ 	<!-- 유의계정 목록 -->
+ 	<select id="acntctgrList" resultType="EgovMap">
+		SELECT DISTINCT B.ACNTCTGR_SN, B.ACNTCTGR, C.PROCS_ID, B.ACNT_CD
+		, CASE WHEN B.ACNT_CD IS NOT NULL 
+				THEN '['+B.ACNT_CD+'] '+B.ACNTCTGR 
+				ELSE B.ACNTCTGR 
+			END AS ACNTCTGR_EXCEL
+		FROM TB_CW_SC_TIABL A
+		LEFT OUTER JOIN TB_CW_SC_ACNTCTGR B
+			ON 	A.TIABL_ID = B.TIABL_ID
+		LEFT OUTER JOIN TB_CW_SC_ACNTCTGR_PROCS C
+			ON 	A.TIABL_ID = C.TIABL_ID
+			AND B.ACNTCTGR_SN = C.ACNTCTGR_SN
+		WHERE A.TIABL_ID = #{srchTiablId}
+	 		AND	C.PROCS_ID = #{procsId}
+	 	ORDER BY  ACNTCTGR_SN ASC
+	</select>
+	
+ 	<!-- 시스템 목록 -->
+ 	<select id="sysList" resultType="EgovMap">
+		SELECT DISTINCT B.SYS_ID, B.SYS_NM, C.PROCS_ID, B.SYS_CD
+	  	FROM TB_CW_SC_SYS_TABLE A
+	  	LEFT OUTER JOIN TB_CW_SC_SYS B
+	  		ON 	A.SYS_TABLE_ID = B.SYS_TABLE_ID
+	  	LEFT OUTER JOIN TB_CW_SC_SYS_PROCS_MAPNG C
+	  		ON 	A.SYS_TABLE_ID = C.SYS_TABLE_ID
+	  		AND	B.SYS_ID = C.SYS_ID	
+		WHERE A.SYS_TABLE_ID = #{srchSysId}
+		  	AND C.PROCS_ID = #{procsId}
+	 	ORDER BY B.SYS_ID ASC
+	</select>
+	
+	<!-- 시산표 검색 목록 -->
+	<select id="selectTiablList" resultType="EgovMap">
+		SELECT  A.TIABL_ID	AS CODE_ID
+		      , A.TIABL_NM	AS CODE_NM
+		FROM TB_CW_SC_TIABL A
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			AND A.STTUS_CD_ID = 'CTW_121_002'
+			<if test=' srchFsyr != null and srchFsyr != "" '>
+				AND A.FSYR = #{srchFsyr} 
+			</if>
+		 </trim>
+	</select>
+	
+	<!-- 시스템 검색 목록 -->
+	<select id="selectSysList" resultType="EgovMap">
+		SELECT  A.SYS_TABLE_ID	AS CODE_ID
+			  , A.SYS_EXPRS	AS CODE_NM
+		FROM TB_CW_SC_SYS_TABLE A
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			AND A.STTUS_CD_ID = 'CTW_121_002'
+			<if test=' srchFsyr != null and srchFsyr != "" '>
+				AND A.FSYR = #{srchFsyr} 
+			</if>
+		 </trim>
+	</select>
+</mapper>

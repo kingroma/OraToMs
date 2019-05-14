@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.sc.tiabl.serviceimpl.CwscTiablMapper">
+
+ 	<!-- 목록 -->
+ 	<select id="list" resultType="EgovMap">
+		SELECT  A.TIABL_ID
+		      , A.FSYR
+		      , A.TIABL_CD_ID
+		      , CB.CODE_NM	AS TIABL_CD_NM
+		      , A.TIABL_NM
+		      , A.RM
+			  , A.STDR_IEM
+			  , A.STDR_IEM_AMOUNT
+			  , A.STDR_IEM_RATE
+			  , A.IMPRTC_AMOUNT
+			  , A.IMPRTC_AMOUNT_RATE
+			  , A.ACNTCTGR_STDR_AMOUNT
+		      , A.STTUS_CD_ID
+		      , CA.CODE_NM AS STTUS_CD_NM
+		FROM TB_CW_SC_TIABL A
+			LEFT OUTER JOIN TB_CO_CODE CA
+				ON A.STTUS_CD_ID = CA.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE CB
+				ON A.TIABL_CD_ID = CB.CODE_ID
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test=' srchFsyr != null and srchFsyr != "" '>
+				AND A.FSYR = #{srchFsyr}
+			</if>
+			<if test=' srchTiablCdId != null and srchTiablCdId != "" '>
+				AND A.TIABL_CD_ID = #{srchTiablCdId}
+			</if>
+			<if test=' srchSttusCdId != null and srchSttusCdId != "" '>
+				AND A.STTUS_CD_ID = #{srchSttusCdId}
+			</if>
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+		            <when test="srchTy == 'sj'" > 			AND	UPPER(A.TIABL_NM) LIKE '%' + UPPER(#{srchWrd}) + '%' 			</when>
+				</choose>
+			</if>
+		 </trim>
+		 ORDER BY A.FSYR DESC, A.TIABL_ID DESC
+	</select>
+
+	<!-- 상세조회 -->
+	<select id="view" resultType="CwscTiablVO">
+		SELECT  A.TIABL_ID
+		      , A.FSYR
+		      , A.TIABL_CD_ID
+		      , CB.CODE_NM	AS TIABL_CD_NM
+		      , A.TIABL_NM
+		      , A.RM
+			  , A.STDR_IEM
+			  , A.STDR_IEM_AMOUNT
+			  , CASE WHEN A.AMOUNT_UNIT_CD_ID = 'CTW_131_002'
+			  		THEN ROUND(A.STDR_IEM_AMOUNT/1000, 0)
+			  		WHEN A.AMOUNT_UNIT_CD_ID = 'CTW_131_003'
+			  		THEN ROUND(A.STDR_IEM_AMOUNT/1000000, 0)
+			  		WHEN A.AMOUNT_UNIT_CD_ID = 'CTW_131_004'
+			  		THEN ROUND(A.STDR_IEM_AMOUNT/100000000, 0) 
+			  		ELSE A.STDR_IEM_AMOUNT
+			  	END AS STDR_IEM_AMOUNT_UNIT_CD_ID
+			  , A.STDR_IEM_RATE
+			  , CASE WHEN A.AMOUNT_UNIT_CD_ID = 'CTW_131_002'
+			  		THEN ROUND(A.IMPRTC_AMOUNT/1000, 0)
+			  		WHEN A.AMOUNT_UNIT_CD_ID = 'CTW_131_003'
+			  		THEN ROUND(A.IMPRTC_AMOUNT/1000000, 0)
+			  		WHEN A.AMOUNT_UNIT_CD_ID = 'CTW_131_004'
+			  		THEN ROUND(A.IMPRTC_AMOUNT/100000000, 0) 
+			  		ELSE ROUND(A.IMPRTC_AMOUNT, 0)
+			  	END AS IMPRTC_AMOUNT
+			  , A.IMPRTC_AMOUNT_RATE
+			  , CASE WHEN A.AMOUNT_UNIT_CD_ID = 'CTW_131_002'
+			  		THEN ROUND(A.ACNTCTGR_STDR_AMOUNT/1000, 0)
+			  		WHEN A.AMOUNT_UNIT_CD_ID = 'CTW_131_003'
+			  		THEN ROUND(A.ACNTCTGR_STDR_AMOUNT/1000000, 0)
+			  		WHEN A.AMOUNT_UNIT_CD_ID = 'CTW_131_004'
+			  		THEN ROUND(A.ACNTCTGR_STDR_AMOUNT/100000000, 0) 
+			  		ELSE ROUND(A.ACNTCTGR_STDR_AMOUNT, 0)
+			  	END AS ACNTCTGR_STDR_AMOUNT
+		      , A.STTUS_CD_ID
+		      , CA.CODE_NM AS STTUS_CD_NM
+		      , (CASE WHEN A.STTUS_CD_ID = 'CTW_121_002' THEN A.QLY_BGNTMSTMP ELSE (SELECT QLY_BGNTMSTMP FROM TB_CW_SC_ACNTCTGR_QLY_HIST WHERE QLY_ENDTMSTMP = '99991231235959999999' AND ROWNUM = 1) END ) AS QLY_BGNTMSTMP
+		      , (CASE WHEN A.STTUS_CD_ID = 'CTW_121_002' THEN A.MNGER_ASSR_BGNTMSTMP ELSE (SELECT MNGER_ASSR_BGNTMSTMP FROM TB_CW_SC_MNGER_ASSR_HIST WHERE MNGER_ASSR_ENDTMSTMP = '99991231235959999999' AND ROWNUM = 1) END) AS MNGER_ASSR_BGNTMSTMP
+		      , A.UNITY_ID
+		      , A.AMOUNT_UNIT_CD_ID
+		FROM TB_CW_SC_TIABL A
+			LEFT OUTER JOIN TB_CO_CODE CA
+				ON A.STTUS_CD_ID = CA.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE CB
+				ON A.TIABL_CD_ID = CB.CODE_ID
+		WHERE  A.TIABL_ID = #{tiablId}
+	</select>
+
+	<insert id="insert">
+		INSERT INTO TB_CW_SC_TIABL (
+			  TIABL_ID, FSYR, TIABL_CD_ID, TIABL_NM, RM
+			, STDR_IEM_RATE, IMPRTC_AMOUNT_RATE
+			, STTUS_CD_ID, CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES (
+			  #{tiablId}, #{fsyr}, #{tiablCdId}, #{tiablNm}, #{rm}
+			, #{stdrIemRate}, #{imprtcAmountRate}
+			, 'CTW_121_001', #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		)
+	</insert>
+
+
+	<insert id="insertExcel">
+		INSERT INTO TB_CW_SC_TIABL (
+			  TIABL_ID, FSYR, TIABL_CD_ID, TIABL_NM
+			, STTUS_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES (
+			  #{tiablId}, ISNULL(#{fsyr}, CONVERT(VARCHAR(4),GETDATE(),112)), #{fileKndCdId}, #{fileSj}
+			, 'CTW_121_001', GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		)
+	</insert>
+
+	<!-- 수정 -->
+	<update id="update">
+		UPDATE  TB_CW_SC_TIABL
+		SET 	TIABL_CD_ID       	= #{tiablCdId}
+			  , FSYR				= #{fsyr}
+			  , TIABL_NM          	= #{tiablNm}
+			  , RM                	= #{rm}
+			  , STTUS_CD_ID 		= #{sttusCdId}
+			  , QLY_BGNTMSTMP		= #{qlyBgntmstmp}
+			  , MNGER_ASSR_BGNTMSTMP= #{mngerAssrBgntmstmp}
+			  , UPD_DT				= GETDATE()
+			  , UPD_USER_ID			= #{suserId}
+		WHERE 	TIABL_ID 			= #{tiablId}
+	</update>
+
+	<!-- 상태 수정 -->
+	<update id="updateSttus">
+		UPDATE TB_CW_SC_TIABL
+		SET   STDR_IEM_RATE      	= #{stdrIemRate}
+			, IMPRTC_AMOUNT     	= #{stdrIemAmount} * #{stdrIemRate} / 100
+			, IMPRTC_AMOUNT_RATE    = #{imprtcAmountRate}
+			, ACNTCTGR_STDR_AMOUNT  = #{stdrIemAmount} * #{stdrIemRate} / 100 * #{imprtcAmountRate}	/ 100
+			, STDR_IEM				= #{stdrIem}
+			, STDR_IEM_AMOUNT		= #{stdrIemAmount}
+		WHERE 	TIABL_ID 			= #{tiablId}
+	</update>
+
+
+	<!-- 유의계정 산정:UPDATE -->
+	<update id="updateAcntctgr">
+		DECLARE
+			v_acntctgr_stdr_amount NUMBER(20,3) := 0;       /** 유의한 왜곡 기준 금액 */
+
+		BEGIN
+
+			<!-- 유의한 왜곡 표시 기준 금액 -->
+			SELECT ACNTCTGR_STDR_AMOUNT INTO v_acntctgr_stdr_amount FROM TB_CW_SC_TIABL WHERE TIABL_ID = #{tiablId};
+
+
+   			<!-- 양적 항목 calc -->
+			FOR list IN ( SELECT TIABL_ID, ACNTCTGR, ACNTCTGR_SN, AMOUNT
+						  FROM TB_CW_SC_ACNTCTGR
+						  WHERE TIABL_ID 	= #{tiablId}
+			            ) LOOP
+				UPDATE TB_CW_SC_ACNTCTGR
+				SET   QY = CASE WHEN list.AMOUNT > v_acntctgr_stdr_amount
+						  			THEN 'Y'
+						  			ELSE 'N'
+						   		END
+					, CNCLSN = CASE WHEN (SELECT COUNT(QLY_ID)
+							  		  	  FROM TB_CW_SC_ACNTCTGR_QLY_MAPNG
+									  	  WHERE TIABL_ID = LIST.TIABL_ID
+										 	AND ACNTCTGR_SN = list.ACNTCTGR_SN) > 0
+						  			THEN 'Y'
+						  			WHEN list.AMOUNT > v_acntctgr_stdr_amount
+						  			THEN 'Y'
+						  			ELSE 'N'
+						   		END
+				WHERE TIABL_ID 	= list.TIABL_ID
+					AND  ACNTCTGR_SN = list.ACNTCTGR_SN;
+	    	END LOOP;
+	    END;
+	</update>
+
+	<!--삭제 -->
+	<delete id="delete">
+		BEGIN
+			DELETE FROM TB_CW_SC_TIABL WHERE TIABL_ID = #{tiablId};
+			DELETE FROM TB_CW_SC_ACNTCTGR WHERE TIABL_ID = #{tiablId};
+			DELETE FROM TB_CW_SC_ACNTCTGR_QLY_MAPNG WHERE TIABL_ID = #{tiablId};
+			DELETE FROM TB_CW_SC_ACNTCTGR_PROCS WHERE TIABL_ID = #{tiablId};
+		END;
+	</delete>
+
+	<select id="excelUploadList" resultType="EgovMap">
+		SELECT * FROM TB_CW_SC_EXCEL_TEMP
+		WHERE USER_ID = #{suserId}
+			AND SORT_SN = #{sortSn}
+	</select>
+
+	<select id="exctProcsList" resultType="EgovMap">
+		/** 엑셀의 컬럼 */
+		WITH T_EXCEL AS ( SELECT A.PROCS_NO, A.COL_NM, A.ENDTMSTMP FROM (
+		<foreach item="item" index="index" collection="procsList" separator="UNION ALL" >
+	        ( SELECT #{item.procsNo} AS PROCS_NO, #{item.colNm} AS COL_NM, '99991231235959999999' AS ENDTMSTMP  )
+	  	</foreach>
+	  		) A
+	  	)
+
+	  	/** 엑셀의 컬럼과 실제 프로세스를 JOIN 하여 실제 값 추출 */
+	  	SELECT H.OBJECT_ID, T.COL_NM, H.BGNTMSTMP
+	  	FROM T_EXCEL T
+	  	INNER JOIN TB_CW_RCM_MAPNG_HIST H
+	  		ON H.OBJECT_NO = T.PROCS_NO
+	  		AND H.ENDTMSTMP = T.ENDTMSTMP
+	  		<choose>
+	         	<when test=' scopingProcsMappngTy != null and scopingProcsMappngTy == "M" '>
+	         		AND OBJECT_LEVEL = 1
+	         	</when>
+	         	<otherwise>
+	         		AND OBJECT_LEVEL = (SELECT MAX(OBJECT_LEVEL) FROM TB_CW_RCM_MAPNG WHERE OBJECT_KND_CD_ID NOT IN ('CTW_001_004','CTW_001_005'))
+	         	</otherwise>
+	         </choose>
+	</select>
+
+	<!-- 엑셀업로드 후처리  -->
+	<update id="excelUpload">
+		DECLARE
+
+			v_num NUMBER;
+			v_level NUMBER;
+
+			r_tb_cw_sc_tiabl TB_CW_SC_TIABL%ROWTYPE ;
+			r_tb_cw_sc_acntctgr TB_CW_SC_ACNTCTGR%ROWTYPE ;
+
+			v_acntctgr_stdr_amount NUMBER(20,3) := 0;       /** 유의한 왜곡 기준 금액 */
+
+			v_index NUMBER := 1;
+
+		BEGIN
+
+			/** 1. 기본정보 입력 */
+			INSERT INTO TB_CW_SC_TIABL (
+				  TIABL_ID, FSYR, TIABL_CD_ID, TIABL_NM, STTUS_CD_ID, UNITY_ID
+				, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+			) VALUES (
+				  #{tiablId}, ISNULL(#{fsyr}, CONVERT(VARCHAR(4),GETDATE(),112)), #{fileKndCdId1}, #{fileSj}, 'CTW_121_001', #{unityId}
+				, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+			);
+
+
+			/** 2. LEVEL만큼 FOR문 돌면서 계정과목 세팅 */
+			SELECT CODE_NM INTO v_level FROM TB_CO_CODE WHERE CODE_ID = #{fileKndCdId2};
+
+			FOR v_num IN 1..v_level LOOP
+				EXIT WHEN v_num > v_level;
+
+				IF v_num = 1 THEN
+					IF v_num  = v_level THEN
+						INSERT INTO TB_CW_SC_ACNTCTGR( TIABL_ID, ACNTCTGR_SN, ACNT_CD, ACNTCTGR, AMOUNT, STDR_IEM_AT, ACNTCTGR_LEVEL )
+						SELECT #{tiablId}, ROWNUM, CELL_1, CELL_2, CELL_3, (CASE WHEN CELL_4 = 'Y' OR CELL_4 = 'V' OR CELL_4 = 'X' THEN 'Y' ELSE '' END), 1
+						FROM (
+	                        SELECT * FROM TB_CW_SC_EXCEL_TEMP
+							WHERE USER_ID = #{suserId}
+								AND SORT_SN <![CDATA[>]]> #{sortSn}
+							ORDER BY SORT_SN
+							) A;
+
+					ELSE
+						INSERT INTO TB_CW_SC_ACNTCTGR( TIABL_ID, ACNTCTGR_SN, ACNT_CD, ACNTCTGR, AMOUNT, STDR_IEM_AT, ACNTCTGR_LEVEL )
+						SELECT A.TIABL_ID, A.ACNTCTGR_SN, A.ACNT_CD, A.ACNTCTGR, A.AMOUNT, A.STDR_IEM_AT, A.ACNTCTGR_LEVEL
+							FROM
+							(SELECT #{tiablId} AS TIABL_ID
+								  , ROWNUM AS ACNTCTGR_SN
+								  , CELL_1 AS ACNT_CD
+								  , CELL_2 AS ACNTCTGR
+								  , CELL_3 AS AMOUNT
+								  , (CASE WHEN CELL_4 = 'Y' OR CELL_4 = 'V' OR CELL_4 = 'X' THEN 'Y' ELSE '' END) AS STDR_IEM_AT
+								  , 1 AS ACNTCTGR_LEVEL
+								  , CELL_0
+							FROM (
+			                        SELECT * FROM TB_CW_SC_EXCEL_TEMP
+									WHERE USER_ID = #{suserId}
+										AND SORT_SN <![CDATA[>]]> #{sortSn}
+									ORDER BY SORT_SN
+								) AA
+							) A
+						WHERE A.CELL_0 = '1'
+						ORDER BY A.ACNTCTGR_SN;
+					END IF;
+
+				ELSE
+					INSERT INTO TB_CW_SC_ACNTCTGR( TIABL_ID, ACNTCTGR_SN, ACNT_CD, ACNTCTGR, AMOUNT, STDR_IEM_AT, ACNTCTGR_LEVEL, UPPER_ACNTCTGR_SN )
+					SELECT A.TIABL_ID, A.ACNTCTGR_SN, A.ACNT_CD, A.ACNTCTGR, A.AMOUNT, A.STDR_IEM_AT,A.ACNTCTGR_LEVEL
+							, (SELECT MAX(ACNTCTGR_SN) FROM TB_CW_SC_ACNTCTGR WHERE TIABL_ID = #{tiablId} AND ACNTCTGR_LEVEL = (v_num - 1) AND (A.ACNTCTGR_SN - ACNTCTGR_SN)>0)
+						FROM
+						(SELECT #{tiablId} AS TIABL_ID
+							  , ROWNUM AS ACNTCTGR_SN
+							  , CELL_1 AS ACNT_CD
+							  , CELL_2 AS ACNTCTGR
+							  , CELL_3 AS AMOUNT
+							  , (CASE WHEN CELL_4 = 'Y' OR CELL_4 = 'V' OR CELL_4 = 'X' THEN 'Y' ELSE '' END ) AS STDR_IEM_AT
+							  , v_num AS ACNTCTGR_LEVEL
+							  , CELL_0
+						FROM (
+		                        SELECT * FROM TB_CW_SC_EXCEL_TEMP
+								WHERE USER_ID = #{suserId}
+									AND SORT_SN <![CDATA[>]]> #{sortSn}
+								ORDER BY SORT_SN
+							) AA
+						) A
+					WHERE CELL_0 = v_num
+					ORDER BY ACNTCTGR_SN;
+
+				END IF;
+			END LOOP;
+
+
+			<!-- 기준항목 (주석의 경우 기준항목이 NULL임) -->
+			BEGIN
+				SELECT * INTO r_tb_cw_sc_acntctgr
+	  			FROM TB_CW_SC_ACNTCTGR
+			  	WHERE TIABL_ID 	= #{tiablId}
+			  		AND ACNTCTGR_SN = (SELECT MAX(ACNTCTGR_SN) FROM TB_CW_SC_ACNTCTGR 
+			  							WHERE TIABL_ID = #{tiablId} AND STDR_IEM_AT = 'Y');
+			EXCEPTION
+			    WHEN NO_DATA_FOUND THEN
+        			r_tb_cw_sc_acntctgr := NULL;
+        	END;
+
+		  	<!-- 이전 기준 비율 -->
+			BEGIN
+			  	SELECT * INTO r_tb_cw_sc_tiabl
+			  	FROM TB_CW_SC_TIABL
+				WHERE TIABL_ID = (SELECT MAX(TIABL_ID) FROM TB_CW_SC_TIABL
+									WHERE TIABL_CD_ID = #{fileKndCdId1}
+									AND FSYR = #{fsyr}-1
+									AND STTUS_CD_ID = 'CTW_121_002');
+			EXCEPTION
+			    WHEN NO_DATA_FOUND THEN
+        			r_tb_cw_sc_tiabl := NULL;
+        	END;
+
+			/** 3. 유의한 왜곡 표시 기준 금액 산정 */
+			UPDATE TB_CW_SC_TIABL
+			SET   STDR_IEM         	 	= r_tb_cw_sc_acntctgr.ACNTCTGR
+				, STDR_IEM_AMOUNT     	= r_tb_cw_sc_acntctgr.AMOUNT
+				, STDR_IEM_RATE      	= ISNULL(r_tb_cw_sc_tiabl.STDR_IEM_RATE, 5)
+				, IMPRTC_AMOUNT     	= r_tb_cw_sc_acntctgr.AMOUNT * ISNULL(r_tb_cw_sc_tiabl.STDR_IEM_RATE, 5) / 100
+				, IMPRTC_AMOUNT_RATE    = ISNULL(r_tb_cw_sc_tiabl.IMPRTC_AMOUNT_RATE, 70)
+				, ACNTCTGR_STDR_AMOUNT  = r_tb_cw_sc_acntctgr.AMOUNT * ISNULL(r_tb_cw_sc_tiabl.STDR_IEM_RATE, 5) / 100 * ISNULL(r_tb_cw_sc_tiabl.IMPRTC_AMOUNT_RATE, 70) / 100
+				, CMPNY_CD_ID			= #{cmpnyCdId}
+			WHERE 	TIABL_ID 			= #{tiablId};
+
+			<!-- 유의한 왜곡 표시 기준 금액 -->
+			SELECT ACNTCTGR_STDR_AMOUNT INTO v_acntctgr_stdr_amount FROM TB_CW_SC_TIABL WHERE TIABL_ID = #{tiablId};
+
+
+   			/** 4. 양적 항목 calc */
+			FOR list IN ( SELECT TIABL_ID, ACNTCTGR, ACNTCTGR_SN, AMOUNT
+						  FROM TB_CW_SC_ACNTCTGR
+						  WHERE TIABL_ID 	= #{tiablId}
+			            ) LOOP
+				UPDATE TB_CW_SC_ACNTCTGR
+				SET   QY = CASE WHEN list.AMOUNT > v_acntctgr_stdr_amount
+						  			THEN 'Y'
+						  			ELSE 'N'
+						   		END
+					, CNCLSN = CASE WHEN list.AMOUNT > v_acntctgr_stdr_amount
+						  			THEN 'Y'
+						  			ELSE 'N'
+						   		END
+				WHERE TIABL_ID 	= list.TIABL_ID
+					AND  ACNTCTGR_SN = list.ACNTCTGR_SN;
+	    	END LOOP;
+
+
+			/** 동적 컬럼 로직 START */
+	    	/** 업로드한 내역 */
+			FOR list IN ( SELECT ROWNUM AS RN , A.*
+						FROM (
+				                SELECT * FROM TB_CW_SC_EXCEL_TEMP
+								WHERE USER_ID = #{suserId}
+									AND SORT_SN <![CDATA[>]]> #{sortSn}
+								ORDER BY SORT_SN
+							) A
+						) LOOP
+
+				<foreach item="qlyItem" index="j" collection="qlyColArr">
+					/** 5-1. 질적항목 체크값 저장 */
+					IF list.${qlyItem} = 'Y' OR list.${qlyItem} = 'V' OR list.${qlyItem} = 'X' THEN
+						INSERT INTO TB_CW_SC_ACNTCTGR_QLY_MAPNG (
+							TIABL_ID, ACNTCTGR_SN, QLY_ID
+						) VALUES (
+							#{tiablId}, list.RN, ( SELECT QLY_ID FROM
+													( SELECT QLY_ID, ROWNUM AS QRN FROM
+														( SELECT QLY_ID
+											        		FROM TB_CW_SC_ACNTCTGR_QLY A
+															WHERE A.USE_AT = 'Y'
+													    	ORDER BY A.SORT_SN
+													    ) T
+													) TOT WHERE TOT.QRN = v_index
+												)
+						);
+						v_index := v_index + 1;
+					ELSE v_index := v_index + 1;
+					END IF;
+				</foreach>
+				v_index := 1;	/** 초기화 */
+
+				/** 5-2. 질적항목 체크값에 따른 결론 수정 */
+				UPDATE TB_CW_SC_ACNTCTGR
+				SET   CNCLSN = CASE WHEN (SELECT COUNT(ACNTCTGR_SN)
+								  		  FROM TB_CW_SC_ACNTCTGR_QLY_MAPNG
+										  WHERE TIABL_ID = #{tiablId}
+											AND ACNTCTGR_SN = list.RN) > 0
+							  		THEN 'Y'
+							  		WHEN AMOUNT > (SELECT ACNTCTGR_STDR_AMOUNT FROM TB_CW_SC_TIABL WHERE TIABL_ID = #{tiablId})
+						  			THEN 'Y'
+						  			ELSE 'N'
+							   END
+				WHERE TIABL_ID 	= #{tiablId}
+					AND  ACNTCTGR_SN = list.RN;
+
+			<foreach item="maItem" index="j" collection="maColArr">
+				/** 6. 경영자의주장 체크값 저장 */
+				IF list.${maItem} = 'Y' OR list.${maItem} = 'V' OR list.${maItem} = 'X' THEN
+					INSERT INTO TB_CW_SC_MNGER_ASSR_MAPNG (
+						TIABL_ID, ACNTCTGR_SN, MNGER_ASSR_ID
+					) VALUES (
+						#{tiablId}, list.RN, ( SELECT MNGER_ASSR_ID FROM
+												( SELECT MNGER_ASSR_ID, ROWNUM AS MRN FROM
+													( SELECT A.MNGER_ASSR_ID
+												        FROM TB_CW_SC_MNGER_ASSR_HIST A
+														WHERE A.MNGER_ASSR_ENDTMSTMP = '99991231235959999999'
+																AND A.USE_AT = 'Y'
+												        ORDER BY A.SORT_SN
+										        	) T
+										        ) TOT WHERE TOT.MRN = v_index
+										    )
+					);
+					v_index := v_index + 1;
+				ELSE v_index := v_index + 1;
+				END IF;
+			</foreach>
+
+				v_index := 1;	/** 초기화 */
+			END LOOP;
+
+			<if test=" exstProcsList != null" >
+				<foreach item="item" index="index" collection="exstProcsList" >
+			    	INSERT INTO TB_CW_SC_ACNTCTGR_PROCS (
+						TIABL_ID, ACNTCTGR_SN, PROCS_ID, PROCS_BGNTMSTMP, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+					)
+					SELECT #{tiablId}, T.RN, #{item.objectId}, #{item.bgntmstmp}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+					FROM ( SELECT ROWNUM AS RN , A.*
+						FROM (
+				                SELECT * FROM TB_CW_SC_EXCEL_TEMP
+								WHERE USER_ID = #{suserId}
+									AND SORT_SN <![CDATA[>]]> #{sortSn}
+								ORDER BY SORT_SN
+							) A
+						) T
+					WHERE T.${item.realColNm} = 'Y' OR T.${item.realColNm} = 'V' OR T.${item.realColNm} = 'X';
+			  	</foreach>
+	  		</if>
+			/** 동적 컬럼 로직 END */
+		END;
+	</update>
+
+	<!-- 유의계정 최대 레벨 -->
+	<select id="getMaxLevel" resultType="Integer">
+		SELECT ISNULL(MAX(CONVERT ( NUMERIC , CODE_NM)),0) AS MAX_LEVEL FROM TB_CO_CODE WHERE GROUP_ID = 'CTW_129'
+	</select>
+
+	<!-- 현재 프로세스 목록 -->
+	<select id="procsList" resultType="EgovMap">
+        SELECT
+              A1.OBJECT_NO, A1.OBJECT_NM
+            , A2.OBJECT_NO AS OBJECT_NO_1, A2.OBJECT_NM AS OBJECT_NM_1
+            , A3.OBJECT_NO AS OBJECT_NO_2, A3.OBJECT_NM AS OBJECT_NM_2
+        FROM TB_CW_RCM_MAPNG A1
+        INNER JOIN TB_CW_RCM_PROCS P
+        	ON A1.OBJECT_ID = P.PROCS_ID
+        LEFT OUTER JOIN TB_CW_RCM_MAPNG A2
+            ON A1.UPPER_MAPNG_ID = A2.MAPNG_ID
+        LEFT OUTER JOIN TB_CW_RCM_MAPNG A3
+            ON A2.UPPER_MAPNG_ID = A3.MAPNG_ID
+        WHERE 1=1
+        <choose>
+        	<when test=' scopingProcsMappngTy != null and scopingProcsMappngTy == "M" '>
+        		AND A1.OBJECT_LEVEL = 1
+        	</when>
+        	<otherwise>
+        		AND A1.OBJECT_LEVEL = (SELECT MAX(OBJECT_LEVEL) FROM TB_CW_RCM_MAPNG WHERE OBJECT_KND_CD_ID NOT IN ('CTW_001_004','CTW_001_005'))
+        	</otherwise>
+        </choose>
+        ORDER BY A1.OBJECT_ID
+	</select>
+	
+	<!-- 유의계정 확정일 기준 프로세스 목록 -->
+ 	<select id="procsHistList" resultType="EgovMap">
+        WITH TOT AS (
+					SELECT T.* FROM TB_CW_RCM_MAPNG_HIST T
+					 WHERE (SELECT CONVERT(VARCHAR,UPD_DT,112) + REPLACE(CONVERT(VARCHAR,UPD_DT,8),':','')+'999999' FROM TB_CW_SC_TIABL WHERE TIABL_ID = #{tiablId})
+					        BETWEEN T.BGNTMSTMP AND T.ENDTMSTMP
+					)
+        SELECT 
+              A1.OBJECT_NO, A1.OBJECT_NM
+            , A2.OBJECT_NO AS OBJECT_NO_1, A2.OBJECT_NM AS OBJECT_NM_1
+            , A3.OBJECT_NO AS OBJECT_NO_2, A3.OBJECT_NM AS OBJECT_NM_2, A3.OBJECT_LEVEL AS OBJECT_LEVEL_2
+        FROM TOT A1
+        INNER JOIN TB_CW_RCM_PROCS_HIST P
+        	ON A1.OBJECT_ID = P.PROCS_ID
+        	AND A1.BGNTMSTMP = P.BGNTMSTMP
+		LEFT OUTER JOIN TOT A2
+            ON A1.UPPER_MAPNG_ID = A2.MAPNG_ID
+        LEFT OUTER JOIN TOT A3
+            ON A2.UPPER_MAPNG_ID = A3.MAPNG_ID
+        WHERE 1=1
+        <choose>
+        	<when test=' scopingProcsMappngTy != null and scopingProcsMappngTy == "M" '>
+        		AND A1.OBJECT_LEVEL = 1
+        	</when>
+        	<otherwise>
+        		AND A1.OBJECT_LEVEL = (SELECT MAX(OBJECT_LEVEL) FROM TB_CW_RCM_MAPNG WHERE OBJECT_KND_CD_ID NOT IN ('CTW_001_004','CTW_001_005'))
+        	</otherwise>
+        </choose>
+        ORDER BY A1.OBJECT_ID
+	</select>
+	
+	<!-- TB_CW_SC_EXCEL_TEMP의 CELL 컬럼 개수 -->
+	<select id="getTabCellCnt" resultType="Integer">
+		SELECT COUNT(1) - 2
+		FROM USER_TAB_COLUMNS
+		WHERE TABLE_NAME = 'TB_CW_SC_EXCEL_TEMP'
+	</select>
+	
+	<!-- 유의계정 금액 단위 변경 -->
+	<update id="updateUnit">
+		UPDATE TB_CW_SC_TIABL
+			SET AMOUNT_UNIT_CD_ID = #{amountUnitCdId}
+		WHERE TIABL_ID = #{tiablId}
+	</update>
+</mapper>

@@ -1,0 +1,556 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.ce.audit.serviceimpl.CwceOperAuditTestMapper">
+
+    <!-- RCM VIEW MAP  -->
+    <resultMap id="cnrlMap" type="CwceAuditVO">
+        <result property="evlId"                column="EVL_ID"         />
+        <result property="objectId"             column="OBJECT_ID"      />
+        <collection property="typeList"         column="{evlId=EVL_ID,objectId=OBJECT_ID}"  select="selectPrList" />
+    </resultMap>
+
+    <!-- RCM VIEW(RCM_KR) MAP  -->
+    <resultMap id="cnrlKrMap" type="CwceAuditVO">
+        <result property="evlId"                column="EVL_ID"         />
+        <result property="objectId"             column="OBJECT_ID"      />
+        <collection property="typeList"         column="{evlId=EVL_ID,objectId=OBJECT_ID}"  select="selectPrKrList" />
+    </resultMap>
+
+
+    <!-- 통제 정보 -->
+    <select id="view" resultMap="cnrlMap">
+
+        SELECT /** 통제 원천 정보 */
+              C.EVL_ID
+            , #{objectId}               AS OBJECT_ID
+            , #{chrgUserId}             AS CHRG_USER_ID
+            , C.CNRL_ID
+            , C.CNRL_NO
+            , C.CNRL_NM
+            , C.CNRL_CN
+			, ISNULL(C.KEY_CNRL_AT, 'N') 		AS KEY_CNRL_AT
+			, C.REFRN_NO
+			, C.CNRL_RELATE_REF
+			, C.CNRL_EXC_UPPER_DEPT
+			, C.CNRL_EXC_DEPT
+			, C.CNRL_EXCBER
+			, C.CNRL_RSPNSBL_UPPER_DEPT
+			, C.CNRL_RSPNSBL_DEPT
+			, C.CNRL_RSPNBER
+			, C.RELATE_REGLTN_NM
+			, C.CNRL_RELATE_DOC
+			, C.CNRL_RELATE_SYS
+			, C.CNRL_RM
+			, C.CNRL_PURPS
+			, C.CNRL_PURPS_CD_ID
+			, CF.CODE_NM AS CNRL_PURPS_CD_NM
+			, C.CNRL_PURPS_FNNR_RLABLTY
+			, C.CNRL_PURPS_ASSET_PRTC
+			, C.CNRL_PURPS_INSTC_PRVN
+			, C.CNRL_TY_CD_ID
+			, CI.CODE_NM AS CNRL_TY_CD_NM
+			, C.CNRL_TY_CECK01
+			, C.CNRL_TY_CECK02
+			, C.CNRL_TY_CECK03
+			, C.CNRL_TY_CECK04
+			, C.CNRL_TY_CECK05
+			, C.CNRL_TY_CECK06
+			, C.CNRL_TY_CECK07
+			, C.CNRL_TY_CECK08
+			, C.CNRL_TY_CECK09
+			, C.CNRL_TY01_CD_ID
+			, CA.CODE_NM 					AS CNRL_TY01_CD_NM
+			, C.CNRL_TY02_CD_ID
+			, CB.CODE_NM 					AS CNRL_TY02_CD_NM
+			, C.CNRL_TY03_CD_ID
+			, CC.CODE_NM 					AS CNRL_TY03_CD_NM
+			, C.DELNG_TY_CD_ID
+			, CH.CODE_NM AS DELNG_TY_CD_NM
+			, C.CNRL_CTGRY
+			, C.CNRL_CYCLE_CD_ID
+			, CG.CODE_NM 					AS CNRL_CYCLE_CD_NM
+			, C.CNRL_CYCLE01
+			, C.CNRL_CYCLE02
+			, C.CNRL_CYCLE03
+			, C.CNRL_CYCLE04
+			, C.CNRL_CYCLE05
+			, C.CNRL_CYCLE06
+			, C.CNRL_CYCLE07
+			, C.CNRL_CYCLE08
+			, C.CNRL_CYCLE09
+			, C.OFFICE_TY_CD_ID
+			, CE.CODE_NM 					AS OFFICE_TY_CD_NM
+			, ISNULL(C.DSGN_EFCT_AT, 'N') 		AS DSGN_EFCT_AT
+			, ISNULL(C.OPER_EFCT_AT, 'N') 		AS OPER_EFCT_AT
+			, C.CNRL_UPRPD_NO
+			, ISNULL(C.MRC_CNRL_AT, 'N') 		AS MRC_CNRL_AT
+			, C.MRC_CTGRY_CD_ID
+			, C.MRC_NO
+			, ISNULL(C.IPE_CNRL_AT, 'N') 		AS IPE_CNRL_AT
+			, C.IPE_CTGRY_CD_ID
+			, C.IPE_NO
+			, C.IPE_NM
+			, C.IPE_TEST_PROCSS
+			, C.COSO_NO
+			, C.TEST_CYCLE_CD_ID
+			, C.TEST_CYCLE01
+			, C.TEST_CYCLE02
+			, C.TEST_CYCLE03
+			, C.TEST_CYCLE04
+			, C.TEST_CYCLE05
+			, C.TEST_CYCLE06
+			, C.TEST_CYCLE07
+			, C.TEST_CYCLE08
+			, C.TEST_CYCLE09
+			, CD.CODE_NM 					AS TEST_CYCLE_CD_NM
+			, C.TEST_RELATE_DOC
+			, C.TEST_TRGET
+			, C.SAMPLE_SIZE
+			, C.TEST_PROCSS
+			, C.EXCP_CNT
+			, C.TEST_MTH
+			, C.TEST_MTH_QESTN
+			, C.TEST_MTH_OBSERV
+			, C.TEST_MTH_VRIFY
+			, C.TEST_MTH_ECGN
+			, C.TEST_MTH_SYS_TRACE
+			, C.ATMC_SAMPLE_AT
+			, ISNULL(C.TEST_SANCTN_AT, 'N') 	AS TEST_SANCTN_AT
+			, C.ACNT_CD
+			, C.CNRL_ACNTCTGR
+			, C.RELATE_ACNTCTGR_PBLNTF
+			, C.CNRL_CM_IEM
+			, C.ASSE_C_AT
+			, C.ASSE_E_AT
+			, C.ASSE_R_AT
+			, C.ASSE_V_AT
+			, C.ASSE_P_AT
+			, C.ASSE_S_AT
+			, C.ASSE_O_AT
+			, C.ASSE_A_AT
+			, C.ASSE_PF_AT
+			, C.TREXAMIN_PROCSS
+			, C.TREXAMIN_PRUF
+			, C.TREXAMIN_CNCLSN
+			, C.RISK_RESIDUAL_LIKEHOOD
+			, C.RISK_RESIDUAL_IMPACT
+			, C.RISK_RESIDUAL_RATIONG
+			, C.AFTER_RISK_RESIDUAL_LIKEHOOD
+			, C.AFTER_RISK_RESIDUAL_IMPACT
+			, C.AFTER_RISK_RESIDUAL_RATIONG
+			, C.CNRL_IMPRVM_NM
+			, C.CNRL_IMPRVM_DC
+        FROM TB_CW_EVL_RCM_CNRL C
+            LEFT OUTER JOIN TB_CO_CODE C1
+                ON C.CNRL_TY01_CD_ID = C1.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE C2
+                ON C.CNRL_TY02_CD_ID = C2.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE C3
+                ON C.CNRL_TY03_CD_ID = C3.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE C4
+                ON C.TEST_CYCLE_CD_ID = C4.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE C5
+                ON C.OFFICE_TY_CD_ID = C5.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CA
+	            ON C.CNRL_TY01_CD_ID = CA.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CB
+	            ON C.CNRL_TY02_CD_ID = CB.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CC
+	            ON C.CNRL_TY03_CD_ID = CC.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CD
+	            ON C.TEST_CYCLE_CD_ID = CD.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CE
+	            ON C.OFFICE_TY_CD_ID = CE.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CF
+	            ON C.CNRL_PURPS_CD_ID = CF.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CG
+	            ON C.CNRL_CYCLE_CD_ID = CG.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CH
+	            ON C.DELNG_TY_CD_ID = CH.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE CI
+	            ON C.CNRL_TY_CD_ID = CI.CODE_ID
+       WHERE C.EVL_ID = #{evlId}
+         AND C.CNRL_ID = #{objectId}
+    </select>
+
+
+    <!-- 운영 결과 샘플 리스트 -->
+    <select id="list" resultType="EgovMap">
+        SELECT A.EVL_ID
+             , A.CHRG_USER_ID
+             , A.CHRG_USER_TY_CD_ID
+             , A.SORT_SN
+             , A.SMPLE_UNITY_ID
+             , A.ROW_SN
+             , A.SAMPLE_NO
+             , A.SAMPLE_CN
+             , A.SAMPLE_TEST_OPINION
+             , A.SAMPLE_RESULT
+             , C.CODE_NM AS SAMPLE_RESULT_NM
+             , A.PRUF_UNITY_ID
+          FROM TB_CW_EVL_AUDIT_RESULT A
+             LEFT OUTER JOIN TB_CO_CODE C
+               ON A.SAMPLE_RESULT = C.CODE_ID
+         WHERE A.EVL_ID = #{evlId}
+           AND A.OBJECT_ID  = #{objectId}
+           AND A.CHRG_USER_ID = #{chrgUserId}
+           AND A.CHRG_USER_TY_CD_ID = 'CTW_105_002'
+         ORDER BY A.SORT_SN
+    </select>
+
+    <!-- 통제 테스트 방법 -->
+    <select id="mthView" resultType="CwceAuditVO">
+        SELECT DISTINCT
+               A.EVL_ID
+             , A.CHRG_USER_ID
+             , A.CHRG_USER_TY_CD_ID
+             , A.CHRG_DEPT_ID
+             , A.EVL_OPINION
+             , U.USER_NM               AS CHRG_USER_NM
+             , U.DEPT_NM               AS CHRG_DEPT_NM
+             , T.SAMPLE_TY_CD_ID
+             , C1.CODE_NM              AS SAMPLE_TY_CD_NM
+             , T.TOT_SAMPLE_SIZE
+             , T.NRMLT_SAMPLE_SIZE
+             , T.EXCP_SAMPLE_SIZE
+             , T.NA_SAMPLE_SIZE
+             , T.SAMPLE_SCOPE
+             , T.SMPLE_UNITY_ID
+             , T.RGS_DT
+             , T.RGS_USER_ID
+             , T.UPD_DT
+             , T.UPD_USER_ID
+             , (SELECT COUNT(ROW_SN) FROM TB_CW_EVL_AUDIT_SAMPLE WHERE EVL_ID = A.EVL_ID AND SMPLE_UNITY_ID = T.SMPLE_UNITY_ID) AS AUTO_MG	/** 자동추출 엑셀 데이터 COUNT */
+             , (SELECT COUNT(SN) FROM TB_CW_SAMPLE_DATA SD
+             		INNER JOIN TB_CW_SAMPLE_CNRL SC
+             			ON SD.SAMPLE_ID = SC.SAMPLE_ID
+                    INNER JOIN TB_CW_SAMPLE S
+                    	ON SC.SAMPLE_ID = S.SAMPLE_ID
+             		WHERE SC.CNRL_ID = A.OBJECT_ID
+             			AND S.USE_AT = 'Y' AND SC.RCM_SE = 'P'	) AS POPULATION_MG		/** 사용중인 최신 모집단 데이터 COUNT */
+             , (SELECT DISTINCT SD.SAMPLE_ID FROM TB_CW_SAMPLE_DATA SD
+             		INNER JOIN TB_CW_SAMPLE_CNRL SC
+             			ON SD.SAMPLE_ID = SC.SAMPLE_ID
+                    INNER JOIN TB_CW_SAMPLE S
+                    	ON SC.SAMPLE_ID = S.SAMPLE_ID
+             		WHERE SC.CNRL_ID = A.OBJECT_ID
+             			AND S.USE_AT = 'Y' AND SC.RCM_SE = 'P'	) AS SAMPLE_ID
+             , #{srchPage}         AS SRCH_PAGE
+             , A.STTUS_CD_ID
+             , A.UNITY_ID
+             , A.SANCTN_ID
+             , F.CONFM_ID
+             , F.CONFM_SN
+             , F.CONFM_CN
+             , CONVERT ( VARCHAR , F.CONFM_DT , 23 ) + ' ' + CONVERT ( VARCHAR , F.CONFM_DT , 8) AS CONFM_DT
+             , UF.USER_NM AS CONFM_USER_NM
+             , UF.DEPT_NM AS CONFM_DEPT_NM
+
+             , C.CNRL_NO
+             , C.CNRL_NM
+             , C.OFFICE_TY_CD_ID
+             , C.TEST_CYCLE_CD_ID
+             , C2.CODE_NM 			AS TEST_CYCLE_CD_NM
+			 , C.TEST_RELATE_DOC
+			 , C.TEST_TRGET
+			 , C.SAMPLE_SIZE
+			 , C.TEST_PROCSS
+			 , C.EXCP_CNT
+			 , C.TEST_MTH
+			 , C.TEST_MTH_QESTN
+			 , C.TEST_MTH_OBSERV
+			 , C.TEST_MTH_VRIFY
+			 , C.TEST_MTH_ECGN
+			 , C.TEST_MTH_SYS_TRACE
+			 , C.ATMC_SAMPLE_AT
+			 , C.TEST_SANCTN_AT
+
+          FROM TB_CW_EVL_EXC A
+              LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+                ON A.EVL_ID = M.EVL_ID
+               AND A.OBJECT_ID = M.OBJECT_ID
+              LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL C
+                ON A.EVL_ID = C.EVL_ID
+               AND M.OBJECT_ID = C.CNRL_ID
+              LEFT OUTER JOIN TB_CW_EVL_AUDIT_TEST T
+                ON A.EVL_ID = T.EVL_ID
+               AND M.OBJECT_ID = T.OBJECT_ID
+               AND A.CHRG_USER_ID = T.CHRG_USER_ID
+               AND A.CHRG_USER_TY_CD_ID = T.CHRG_USER_TY_CD_ID
+              LEFT OUTER JOIN TB_CO_USER_HIST U
+                ON A.CHRG_USER_ID = U.USER_ID
+               AND A.CHRG_USER_BGNDE = U.HIST_BGNDE
+              LEFT OUTER JOIN TB_CO_CODE C1
+                ON T.SAMPLE_TY_CD_ID = C1.CODE_ID
+              LEFT OUTER JOIN TB_CO_CODE C2
+              	ON C.TEST_CYCLE_CD_ID = C2.CODE_ID
+              LEFT OUTER JOIN TB_CW_EVL_EXC_CONFM F
+                ON A.CONFM_ID = F.CONFM_ID
+               AND F.LAST_AT = 'Y'
+              LEFT OUTER JOIN TB_CO_USER_HIST UF
+                ON F.CONFM_USER_ID = UF.USER_ID
+               AND F.CONFM_USER_BGNDE = UF.HIST_BGNDE
+         WHERE A.EVL_ID = #{evlId}
+           AND A.CHRG_USER_TY_CD_ID = 'CTW_105_002'
+           AND A.CHRG_USER_ID       = #{chrgUserId}
+           AND M.OBJECT_ID          = #{objectId}
+    </select>
+
+    <!-- 프로세스, 리스크 상세조회 -->
+    <select id="selectPrList" resultType="EgovMap">
+    	WITH V1 ( EVL_ID , OBJECT_ID , MAPNG_ID , UPPER_MAPNG_ID ) AS ( 
+			SELECT 
+				EVL_ID , OBJECT_ID , MAPNG_ID , UPPER_MAPNG_ID 
+			FROM TB_CW_EVL_RCM_MAPNG
+			WHERE EVL_ID = #{evlId} AND OBJECT_ID = #{objectId}
+		
+			UNION ALL 
+		
+			SELECT 
+				M.EVL_ID , M.OBJECT_ID , M.MAPNG_ID , M.UPPER_MAPNG_ID 
+			FROM TB_CW_EVL_RCM_MAPNG M , V1 ROOT 
+			WHERE M.MAPNG_ID = ROOT.UPPER_MAPNG_ID 
+			AND M.EVL_ID = ROOT.EVL_ID 
+		)
+        SELECT T.*
+        FROM (
+            SELECT
+                  DISTINCT M.*
+                , MA.CODE_NM AS OBJECT_KND_CD_NM
+                , R.RISK_ID, R.RISK_NO, R.RISK_NM, R.RISK_CN
+			    , R.WCGW, R.FNLTT_DSTOR_RISK, R.RISK_EVL_RESULT, R.RISK_EVL_REASON
+            FROM (
+                SELECT 
+					DISTINCT M.EVL_ID, M.MAPNG_ID, M.OBJECT_ID, M.OBJECT_NO, M.OBJECT_NM, M.OBJECT_LEVEL, M.UPPER_OBJECT_ID, M.UPPER_MAPNG_ID, M.OBJECT_KND_CD_ID
+				FROM V1 V 
+				INNER JOIN TB_CW_EVL_RCM_MAPNG M
+					ON V.EVL_ID = M.EVL_ID AND V.OBJECT_ID = M.OBJECT_ID 
+            ) M
+            LEFT OUTER JOIN TB_CO_CODE MA
+                ON CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2
+                		THEN 'CTW_001_003'
+                		ELSE M.OBJECT_KND_CD_ID END = MA.CODE_ID
+            LEFT OUTER JOIN TB_CW_EVL_RCM_RISK R
+            	ON  M.EVL_ID = R.EVL_ID
+            	AND M.OBJECT_ID = R.RISK_ID
+            WHERE M.EVL_ID  = #{evlId}
+        ) T
+        WHERE T.OBJECT_KND_CD_ID != 'CTW_001_005'
+        ORDER BY T.OBJECT_ID 
+    </select>
+
+    <!-- 엑셀업로드 -->
+    <insert id="insertExcel">
+        INSERT INTO TB_CW_EVL_AUDIT_SAMPLE (
+              EVL_ID, SMPLE_UNITY_ID, ROW_SN
+            , SMPLE_SE_CD_ID, SMPLE_NO, SMPLE_CN, SMPLE_RM
+        ) VALUES  (
+              #{evlId}, #{unityId}, #{excelRowSn}
+            , 'CTW_109_001', #{cell0}, #{cell1}, #{cell2}
+        )
+    </insert>
+
+    <!-- 테스트 샘플 파일 조회 -->
+    <select id="sampleList" resultType="EgovMap">
+        SELECT SMPLE_NO
+             , SMPLE_CN
+             , SMPLE_RM
+        FROM TB_CW_EVL_AUDIT_SAMPLE
+       WHERE EVL_ID = #{evlId}
+         AND SMPLE_UNITY_ID = #{smpleUnityId}
+       ORDER BY ROW_SN
+    </select>
+
+    <!-- 테스트 샘플 파일 추출 -->
+    <select id="sampleExtrcList" resultType="EgovMap">
+        SELECT *
+          FROM (
+                SELECT SMPLE_NO
+                     , SMPLE_CN
+                     , ROW_SN
+                  FROM TB_CW_EVL_AUDIT_SAMPLE
+                 WHERE EVL_ID = #{evlId}
+                   AND SMPLE_UNITY_ID = #{smpleUnityId}
+                 ORDER BY DBMS_RANDOM.RANDOM()
+               )
+        <![CDATA[
+         WHERE ROWNUM <= #{extrcCnt}
+        ]]>
+    </select>
+
+    <!-- 운영 결과 저장 -->
+    <insert id="save">
+        MERGE INTO TB_CW_EVL_AUDIT_TEST A
+            USING (VALUES (1)) AS Source (Number)  ON ( A.EVL_ID               = #{evlId}
+                          AND A.OBJECT_ID            = #{objectId}
+                          AND A.CHRG_USER_ID         = #{chrgUserId}
+                          AND A.CHRG_USER_TY_CD_ID   = 'CTW_105_002' )
+        WHEN MATCHED THEN
+            UPDATE SET
+                SAMPLE_TY_CD_ID      = #{sampleTyCdId}
+              , TOT_SAMPLE_SIZE      = (  SELECT COUNT(R.SORT_SN) FROM (
+						              		SELECT SORT_SN FROM TB_CW_EVL_AUDIT_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+						              		UNION ALL
+						              		SELECT SORT_SN FROM TB_CW_EVL_AUDIT_AUTO_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+						              		) R
+						              	)
+              , NRMLT_SAMPLE_SIZE    = ( SELECT COUNT(R.SAMPLE_RESULT) FROM (
+								              SELECT R.SAMPLE_RESULT FROM TB_CW_EVL_AUDIT_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.SAMPLE_RESULT = 'CTW_108_001' AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+								              UNION ALL
+								              SELECT R.SAMPLE_RESULT FROM TB_CW_EVL_AUDIT_AUTO_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.SAMPLE_RESULT = 'CTW_108_001' AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+						              		) R
+						              	)
+              , EXCP_SAMPLE_SIZE     = ( SELECT COUNT(R.SAMPLE_RESULT) FROM (
+								              SELECT R.SAMPLE_RESULT FROM TB_CW_EVL_AUDIT_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.SAMPLE_RESULT = 'CTW_108_002' AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+								              UNION ALL
+								              SELECT R.SAMPLE_RESULT FROM TB_CW_EVL_AUDIT_AUTO_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.SAMPLE_RESULT = 'CTW_108_002' AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+						              		) R
+						              	)
+              , NA_SAMPLE_SIZE       = ( SELECT COUNT(R.SAMPLE_RESULT) FROM (
+								              SELECT R.SAMPLE_RESULT FROM TB_CW_EVL_AUDIT_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.SAMPLE_RESULT = 'CTW_108_003' AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+								              UNION ALL
+								              SELECT R.SAMPLE_RESULT FROM TB_CW_EVL_AUDIT_AUTO_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.SAMPLE_RESULT = 'CTW_108_003' AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+						              		) R
+						              	)
+              , SAMPLE_SCOPE         = #{sampleScope}
+              , SMPLE_UNITY_ID       = #{smpleUnityId}
+              , UPD_DT               = GETDATE()
+              , UPD_USER_ID          = #{suserId}
+        WHEN NOT MATCHED THEN
+            INSERT (
+                EVL_ID, OBJECT_ID, CHRG_USER_ID, CHRG_USER_TY_CD_ID, CHRG_DEPT_ID
+              , SAMPLE_TY_CD_ID, SAMPLE_SCOPE
+              , TOT_SAMPLE_SIZE, NRMLT_SAMPLE_SIZE, EXCP_SAMPLE_SIZE, NA_SAMPLE_SIZE
+              , SMPLE_UNITY_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+            ) VALUES  (
+                #{evlId}, #{objectId}, #{chrgUserId}, 'CTW_105_002', #{chrgDeptId}
+              , #{sampleTyCdId}, #{sampleScope}
+              , (  SELECT COUNT(R.SORT_SN) FROM (
+              		SELECT SORT_SN FROM TB_CW_EVL_AUDIT_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+              		UNION ALL
+              		SELECT SORT_SN FROM TB_CW_EVL_AUDIT_AUTO_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+              		) R
+              	)
+              , ( SELECT COUNT(R.SAMPLE_RESULT) FROM (
+		              SELECT R.SAMPLE_RESULT FROM TB_CW_EVL_AUDIT_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.SAMPLE_RESULT = 'CTW_108_001' AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+		              UNION ALL
+		              SELECT R.SAMPLE_RESULT FROM TB_CW_EVL_AUDIT_AUTO_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.SAMPLE_RESULT = 'CTW_108_001' AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+              		) R
+              	)
+              , ( SELECT COUNT(R.SAMPLE_RESULT) FROM (
+		              SELECT R.SAMPLE_RESULT FROM TB_CW_EVL_AUDIT_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.SAMPLE_RESULT = 'CTW_108_002' AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+		              UNION ALL
+		              SELECT R.SAMPLE_RESULT FROM TB_CW_EVL_AUDIT_AUTO_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.SAMPLE_RESULT = 'CTW_108_002' AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+              		) R
+              	)
+              , ( SELECT COUNT(R.SAMPLE_RESULT) FROM (
+		              SELECT R.SAMPLE_RESULT FROM TB_CW_EVL_AUDIT_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.SAMPLE_RESULT = 'CTW_108_003' AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+		              UNION ALL
+		              SELECT R.SAMPLE_RESULT FROM TB_CW_EVL_AUDIT_AUTO_RESULT R WHERE R.EVL_ID = #{evlId} AND R.OBJECT_ID = #{objectId} AND R.SAMPLE_RESULT = 'CTW_108_003' AND R.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND R.CHRG_USER_ID = #{chrgUserId}
+              		) R
+              	)
+              , #{smpleUnityId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+            )
+    </insert>
+
+    <!-- objectId로 mapngId 조회 -->
+    <select id="selectKey" resultType="CwceAuditVO">
+        SELECT MAPNG_ID FROM TB_CW_EVL_RCM_MAPNG WHERE EVL_ID = #{evlId} AND OBJECT_ID = #{objectId}
+    </select>
+
+    <!-- 운영 결과 샘플 저장 -->
+    <insert id="insert">
+        INSERT INTO TB_CW_EVL_AUDIT_RESULT (
+            EVL_ID, OBJECT_ID, CHRG_USER_ID, CHRG_USER_TY_CD_ID
+          , SORT_SN, SMPLE_UNITY_ID, ROW_SN, SAMPLE_NO, SAMPLE_CN
+          , SAMPLE_TEST_OPINION, SAMPLE_RESULT, PRUF_UNITY_ID
+        ) VALUES (
+            #{evlId}, #{objectId}, #{chrgUserId}, #{chrgUserTyCdId}
+          , #{sortSn}, #{smpleUnityId}, #{rowSn}, #{sampleNo}, #{sampleCn}
+          , #{sampleTestOpinion}, #{sampleResult}, #{unityId}
+        )
+    </insert>
+
+    <!-- 운영 결과 샘플 삭제 -->
+    <delete id="delete">
+        DELETE FROM TB_CW_EVL_AUDIT_RESULT
+        WHERE EVL_ID = #{evlId}
+            AND OBJECT_ID = #{objectId}
+            AND CHRG_USER_ID = #{chrgUserId}
+            AND CHRG_USER_TY_CD_ID = #{chrgUserTyCdId}
+    </delete>
+
+    <!-- 감사 수행 샘플링 결과 목록 -->
+    <select id="resultAuditTestList" resultType="EgovMap">
+        SELECT  DISTINCT EXC.EVL_ID
+              , M.OBJECT_ID
+              , M.OBJECT_KND_CD_ID
+              , M.OBJECT_NO
+              , M.OBJECT_NM
+              , EXC.EVL_CNCLSN_CD_ID
+              , EXC.EVL_OPINION
+              , EXC.UNITY_ID
+              , EXC.CHRG_USER_TY_CD_ID
+              , EXC.CHRG_USER_ID
+              , EXC.CHRG_USER_BGNDE
+              , EXC.CHRG_DEPT_ID
+              , EXC.CHRG_DEPT_BGNDE
+              , U.USER_NM AS CHRG_USER_NM
+              , U.DEPT_NM AS CHRG_DEPT_NM
+              , AO.STTUS_CD_ID
+              , C1.CODE_NM AS STTUS_CD_NM
+              , NVL2((SELECT CNRL_ID FROM TB_CW_UPRPD_CNRL_UPDT WHERE EVL_ID = EXC.EVL_ID AND CNRL_ID = C.CNRL_ID), 'Y', 'N') AS CNRL_UPDT_AT
+              , U2.USER_NM  AS UPD_USER_NM
+              , CONVERT ( VARCHAR , AO.UPD_DT , 23 ) + ' ' + CONVERT ( VARCHAR , AO.UPD_DT , 8) AS UPD_DT
+              , ( CASE
+                             WHEN F.CONFM_AT = 'Y' OR EXC.STTUS_CD_ID = 'CTW_106_004'
+                             THEN CONVERT ( VARCHAR , F.CONFM_DT , 23 ) + ' ' + CONVERT ( VARCHAR , F.CONFM_DT , 8)
+                             ELSE ''
+                  END )         AS CONFM_DT
+              , F.CONFM_ID
+              , F.CONFM_CN
+              , AT.SAMPLE_TY_CD_ID
+              , AT.TOT_SAMPLE_SIZE
+              , AT.NRMLT_SAMPLE_SIZE
+              , AT.EXCP_SAMPLE_SIZE
+              , AT.NA_SAMPLE_SIZE
+              , AT.SAMPLE_SCOPE
+              , AT.SMPLE_UNITY_ID
+        FROM TB_CW_EVL_EXC EXC
+            LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+                ON  EXC.EVL_ID = M.EVL_ID
+                AND EXC.OBJECT_ID = M.OBJECT_ID
+            LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL C
+                ON  EXC.EVL_ID = C.EVL_ID
+                AND M.OBJECT_ID = C.CNRL_ID
+            LEFT OUTER JOIN TB_CW_EVL_EXC_CONFM F
+                ON  EXC.CONFM_ID = F.CONFM_ID
+                AND F.LAST_AT = 'Y'
+            LEFT OUTER JOIN TB_CW_EVL_AUDIT_TEST AT
+            	ON EXC.EVL_ID = AT.EVL_ID
+            	AND EXC.OBJECT_ID = AT.OBJECT_ID
+            	AND EXC.CHRG_USER_ID = AT.CHRG_USER_ID
+            	AND EXC.CHRG_USER_TY_CD_ID = AT.CHRG_USER_TY_CD_ID
+            LEFT OUTER JOIN TB_CW_EVL_AUDIT_OPINION AO
+            	ON EXC.EVL_ID = AO.EVL_ID
+            	AND EXC.OBJECT_ID = AO.OBJECT_ID
+            	AND EXC.CHRG_USER_ID = AO.CHRG_USER_ID
+            	AND EXC.CHRG_USER_TY_CD_ID = AO.CHRG_USER_TY_CD_ID
+            LEFT OUTER JOIN TB_CO_USER_HIST U
+                ON  EXC.CHRG_USER_ID = U.USER_ID
+                AND EXC.CHRG_USER_BGNDE = U.HIST_BGNDE
+            LEFT OUTER JOIN TB_CO_USER_HIST U2
+                ON  EXC.UPD_USER_ID = U2.USER_ID
+                AND U2.HIST_ENDDE = '99991231'
+            LEFT OUTER JOIN TB_CO_DEPT_HIST D
+                ON  EXC.CHRG_DEPT_ID = D.DEPT_ID
+                AND EXC.CHRG_DEPT_BGNDE = D.HIST_BGNDE
+            LEFT OUTER JOIN TB_CO_CODE C1
+                ON AO.STTUS_CD_ID = C1.CODE_ID
+        WHERE EXC.EVL_ID = #{evlId}
+            AND M.OBJECT_ID = #{objectId}
+            AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_002'
+        ORDER BY M.OBJECT_NO, EXC.CHRG_DEPT_ID, EXC.CHRG_USER_ID
+    </select>
+
+</mapper>

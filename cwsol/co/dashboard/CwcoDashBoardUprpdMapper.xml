@@ -1,0 +1,678 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.co.dashboard.serviceimpl.CwcoDashBoardUprpdMapper">
+    
+<!--미비점/사후관리 TAB : 미비점/사후관리 현황 --> 
+ 	<select id="list" resultType="EgovMap">
+ 		-- 해당년도 미비점/사후관리 발생 진행 CNT
+ 		SELECT SUM(CASE WHEN  UE.STTUS_CD_ID 	= 'COM_023_007' AND UE.EXC_COMPT_CD_ID 	!= 'CTW_207_003' THEN 1 ELSE 0  END) 	AS UPRPD_DONE_CNT		/** 미비점 완료: 미비점 수행 상태코드가 승인완료이고, 수행완료코드가 완료에정이 아닌경우 */
+			 , SUM(CASE WHEN  E.STTUS_CD_ID 	= 'CTW_101_005' AND UE.STTUS_CD_ID 		!= 'COM_023_007' THEN 1 ELSE 0  END) 	AS UPRPD_ING_CNT		/** 미비점 진행: 평가가 진행중이고, 미비점 수행 상태코드가 승인완료가 아닌 경우 		*/
+			 , SUM(CASE WHEN  UM.STTUS_CD_ID 	= 'COM_021_005' AND UM.EXC_COMPT_CD_ID 	!= 'CTW_207_003' THEN 1 ELSE 0  END) 	AS POSMANT_DONE_CNT		/** 사후관리 완료: 사후관리 상태코드가 완료이고, 수행완료코드가 완료예정이 아닌경우 	*/
+			 , SUM(CASE WHEN  (UM.STTUS_CD_ID 	= 'COM_021_005' AND UM.EXC_COMPT_CD_ID 	 = 'CTW_207_003') OR (UE.STTUS_CD_ID != 'COM_021_005' AND UM.OBJECT_ID IS NOT NULL) THEN 1 ELSE 0  END) 	AS POSMANT_ING_CNT		/** 사후관리 미완료: 사후관리 상태코드가 완료이면서 수행완료코드가 완료에정인 경우와 상태코드가 완료가 아닌경우 */ 
+		FROM TB_CW_EVL E
+		INNER JOIN TB_CW_UPRPD_EXC UE
+			ON 	E.EVL_ID = UE.EVL_ID
+		LEFT OUTER JOIN (SELECT UM.EVL_ID, UM.OBJECT_ID, UM.EXC_COMPT_CD_ID, UM.STTUS_CD_ID, UM.LAST_AT 
+						 FROM TB_CW_UPRPD_EXC UE
+    						LEFT OUTER JOIN TB_CW_UPRPD_POSMANT UM
+								ON 	UE.EVL_ID = UM.EVL_ID
+								AND UE.OBJECT_ID = UM.OBJECT_ID
+    					WHERE UE.EXC_COMPT_CD_ID = 'CTW_207_003'
+							AND UM.LAST_AT = 'Y'	) UM
+			ON 	E.EVL_ID = UM.EVL_ID
+			AND UE.OBJECT_ID = UM.OBJECT_ID
+		<choose>
+			<when test='srchYy != null and srchYy != "" '>
+				WHERE E.ACCNUT_YY = #{srchYy}
+			</when>
+			<otherwise>
+				WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+			</otherwise>
+		</choose>	
+ 	</select>
+ 	    
+<!--미비점/사후관리 TAB : 미비점 분류별 현황 --> 
+ 	<select id="uprpdClList" resultType="EgovMap">
+ 		-- 해당년도 미비점 분류별 CNT
+ 		SELECT  TC.CODE_CD
+ 			  , TC.CODE_NM
+ 			  , ISNULL(TB.UPRPD_CL_CNT ,0) AS UPRPD_CL_CNT 
+ 			  , ISNULL(TB.UPRPD_CL_TOT_CNT, 1) AS UPRPD_CL_TOT_CNT
+		FROM TB_CO_CODE TC
+		LEFT OUTER JOIN (
+			SELECT  UP.UPRPD_CL_CD_ID	
+	          	  , COUNT(UE.OBJECT_ID) AS UPRPD_CL_CNT
+	          	  , SUM(COUNT(UE.OBJECT_ID)) OVER()     AS UPRPD_CL_TOT_CNT
+			FROM TB_CW_EVL E
+			INNER JOIN TB_CW_UPRPD_EXC UE
+				ON 	E.EVL_ID = UE.EVL_ID
+			LEFT OUTER JOIN TB_CW_UPRPD UP
+				ON 	E.EVL_ID = UP.EVL_ID
+				AND UE.OBJECT_ID = UP.OBJECT_ID
+			<choose>
+				<when test='srchYy != null and srchYy != "" '>
+					WHERE E.ACCNUT_YY = #{srchYy}
+				</when>
+				<otherwise>
+					WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+				</otherwise>
+			</choose>	
+	        GROUP BY UP.UPRPD_CL_CD_ID 
+        ) TB
+  		ON TC.CODE_ID = TB.UPRPD_CL_CD_ID
+  		WHERE TC.GROUP_ID = 'CTW_202'
+ 	</select>
+ 	
+<!--미비점/사후관리 TAB : 미비점 유형별 현황 --> 
+ 	<select id="uprpdTyList" resultType="EgovMap">
+ 		-- 해당년도 미비점 유형별 CNT
+ 		SELECT  TC.CODE_CD
+ 			  , TC.CODE_NM
+ 			  , ISNULL(TB.UPRPD_TY_CNT ,0) AS UPRPD_TY_CNT 
+ 			  , ISNULL(TB.UPRPD_TY_TOT_CNT, 1) AS UPRPD_TY_TOT_CNT
+		FROM TB_CO_CODE TC
+		LEFT OUTER JOIN (
+			SELECT  UP.UPRPD_TY_CD_ID	
+	          	  , COUNT(UE.OBJECT_ID) AS UPRPD_TY_CNT
+	          	  , SUM(COUNT(UE.OBJECT_ID)) OVER()     AS UPRPD_TY_TOT_CNT
+			FROM TB_CW_EVL E
+			INNER JOIN TB_CW_UPRPD_EXC UE
+				ON 	E.EVL_ID = UE.EVL_ID
+			LEFT OUTER JOIN TB_CW_UPRPD UP
+				ON 	E.EVL_ID = UP.EVL_ID
+				AND UE.OBJECT_ID = UP.OBJECT_ID
+			<choose>
+				<when test='srchYy != null and srchYy != "" '>
+					WHERE E.ACCNUT_YY = #{srchYy}
+				</when>
+				<otherwise>
+					WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+				</otherwise>
+			</choose>	
+	        GROUP BY UP.UPRPD_TY_CD_ID
+		) TB
+  		ON TC.CODE_ID = TB.UPRPD_TY_CD_ID
+  		WHERE TC.GROUP_ID = 'CTW_204'
+ 	</select>
+ 	
+ 	
+ 
+<!--미비점/사후관리 TAB : 미비점TAB : 해당년도 미비점 발생 통제별 랭킹  SQL ID-->
+	<sql id="uprpdByCnrl">
+	  	SELECT 	OBJECT_ID 
+			  , CNRL_NM
+			  , CNRL_NO 
+	  		  , OBJECT_UPRPD_CNT
+	  		  , UPRPD_OBJECT_RANK
+	  	FROM (	SELECT	UE.OBJECT_ID
+	  				  , C.CNRL_NM
+			  		  , C.CNRL_NO
+					  , COUNT(UE.OBJECT_ID) AS OBJECT_UPRPD_CNT
+					  , DENSE_RANK() OVER(PARTITION BY COUNT(UE.OBJECT_ID) ORDER BY COUNT(UE.OBJECT_ID) DESC) AS UPRPD_OBJECT_RANK
+				FROM TB_CW_EVL E
+				INNER JOIN TB_CW_UPRPD_EXC UE
+					ON E.EVL_ID = UE.EVL_ID
+				<choose>
+					<when test='srchTy != null and srchTy == "ELC"'>
+				INNER JOIN TB_CW_EVL_ELC_RCM_CNRL C
+					ON E.EVL_ID = C.EVL_ID
+					AND UE.OBJECT_ID = C.CNRL_ID
+					</when>
+					<otherwise>
+				INNER JOIN TB_CW_EVL_RCM_CNRL C
+					ON E.EVL_ID = C.EVL_ID
+					AND UE.OBJECT_ID = C.CNRL_ID
+					</otherwise>
+				</choose>	
+				<choose>
+					<when test='srchYy != null and srchYy != "" '>
+						WHERE E.ACCNUT_YY = #{srchYy}
+					</when>
+					<otherwise>
+						WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+					</otherwise>
+				</choose>	
+				GROUP BY UE.OBJECT_ID, C.CNRL_NM, C.CNRL_NO
+			) 
+		<![CDATA[
+		WHERE UPRPD_OBJECT_RANK < 11 AND ROWNUM < 11
+		]]>
+	</sql> 
+
+ 
+<!--미비점/사후관리 TAB : 미비점TAB : 해당년도 미비점 발생 통제별 랭킹 -->
+	<select id="uprpdByCnrlList" resultType="EgovMap">
+		-- 해당년도 미비점 발생 통제별 랭킹
+		<include refid="uprpdByCnrl"/>
+	</select>
+	 	
+ 
+<!--미비점/사후관리 TAB : 미비점TAB : 통제별 미비점 발생률 TOP 10중 미비점 분류현황 --> 
+	<select id="uprpdClByCnrlList" resultType="EgovMap">
+		-- 통제별 미비점 발생률 TOP 10중 미비점 분류현황
+		SELECT	UE.OBJECT_ID
+			  , C.CNRL_NM
+			  , C.CNRL_NO
+			  , COUNT(UE.OBJECT_ID) AS OBJECT_UPRPD_CNT
+			  , SUM((CASE WHEN UP.UPRPD_CL_CD_ID = 'CTW_202_001' THEN 1 ELSE 0 END)) AS UPRPD_CL1_CNT
+			  , SUM((CASE WHEN UP.UPRPD_CL_CD_ID = 'CTW_202_002' THEN 1 ELSE 0 END)) AS UPRPD_CL2_CNT
+			  , SUM((CASE WHEN UP.UPRPD_CL_CD_ID = 'CTW_202_003' THEN 1 ELSE 0 END)) AS UPRPD_CL3_CNT
+		FROM TB_CW_EVL E
+		INNER JOIN TB_CW_UPRPD_EXC UE
+			ON E.EVL_ID = UE.EVL_ID
+		LEFT OUTER JOIN TB_CW_UPRPD UP
+			ON 	E.EVL_ID = UP.EVL_ID
+			AND UE.OBJECT_ID = UP.OBJECT_ID
+		<choose>
+			<when test='srchTy != null and srchTy == "ELC"'>
+		INNER JOIN TB_CW_EVL_ELC_RCM_CNRL C
+			ON E.EVL_ID = C.EVL_ID
+			AND UE.OBJECT_ID = C.CNRL_ID
+			</when>
+			<otherwise>
+		INNER JOIN TB_CW_EVL_RCM_CNRL C
+			ON E.EVL_ID = C.EVL_ID
+			AND UE.OBJECT_ID = C.CNRL_ID
+			</otherwise>
+		</choose>	
+		<choose>
+			<when test='srchYy != null and srchYy != "" '>
+				WHERE E.ACCNUT_YY = #{srchYy}
+			</when>
+			<otherwise>
+				WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+			</otherwise>
+		</choose>	
+			<!--통제별 미비점 발생률 TOP 10
+			AND UE.OBJECT_ID IN (	
+				SELECT TB.OBJECT_ID 
+		  		FROM (	<include refid="uprpdByCnrl"/>	) TB
+		  	) -->
+		  	AND UE.OBJECT_ID = #{objectId}
+		GROUP BY UE.OBJECT_ID, C.CNRL_NM, C.CNRL_NO
+	</select>
+	 	
+ 	
+<!--미비점/사후관리 TAB : 미비점TAB : 통제별 미비점 발생률 TOP 10중 미비점 유형현황 --> 
+	<select id="uprpdTyByCnrlList" resultType="EgovMap">
+		-- 통제별 미비점 발생률 TOP 10중 미비점 유형현황
+		SELECT	UE.OBJECT_ID 
+			  , C.CNRL_NM
+			  , C.CNRL_NO
+			  , COUNT(UE.OBJECT_ID) AS OBJECT_UPRPD_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_001' THEN 1 ELSE 0 END )) AS UPRPD_TY1_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_002' THEN 1 ELSE 0 END )) AS UPRPD_TY2_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_003' THEN 1 ELSE 0 END )) AS UPRPD_TY3_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_004' THEN 1 ELSE 0 END )) AS UPRPD_TY4_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_005' THEN 1 ELSE 0 END )) AS UPRPD_TY5_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_006' THEN 1 ELSE 0 END )) AS UPRPD_TY6_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_007' THEN 1 ELSE 0 END )) AS UPRPD_TY7_CNT
+		FROM TB_CW_EVL E
+		INNER JOIN TB_CW_UPRPD_EXC UE
+			ON 	E.EVL_ID = UE.EVL_ID
+		LEFT OUTER JOIN TB_CW_UPRPD UP
+			ON 	E.EVL_ID = UP.EVL_ID
+			AND UE.OBJECT_ID = UP.OBJECT_ID
+		<choose>
+			<when test='srchTy != null and srchTy == "ELC"'>
+		INNER JOIN TB_CW_EVL_ELC_RCM_CNRL C
+			ON E.EVL_ID = C.EVL_ID
+			AND UE.OBJECT_ID = C.CNRL_ID
+			</when>
+			<otherwise>
+		INNER JOIN TB_CW_EVL_RCM_CNRL C
+			ON E.EVL_ID = C.EVL_ID
+			AND UE.OBJECT_ID = C.CNRL_ID
+			</otherwise>
+		</choose>	
+		<choose>
+			<when test='srchYy != null and srchYy != "" '>
+				WHERE E.ACCNUT_YY = #{srchYy}
+			</when>
+			<otherwise>
+				WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+			</otherwise>
+		</choose>	
+			<!--통제별 미비점 발생률 TOP 10
+			AND UE.OBJECT_ID IN (	
+				SELECT TB.OBJECT_ID 
+		  		FROM (	<include refid="uprpdByCnrl"/>	) TB
+		  	) -->
+		  	AND UE.OBJECT_ID = #{objectId}
+		GROUP BY UE.OBJECT_ID, C.CNRL_NM, C.CNRL_NO
+	</select>
+ 	
+ 	
+ 	
+ 
+<!--미비점/사후관리 TAB : 미비점TAB : 해당년도 미비점 발생 부서 랭킹 SQL ID -->
+	<sql id="uprpdByDept">
+	  	SELECT 	DEPT_ID 
+			  , DEPT_NM
+	  		  , DEPT_UPRPD_CNT
+	  		  , UPRPD_DEPT_RANK
+	  	FROM (	SELECT	UH.DEPT_ID 
+	  				  , UH.DEPT_NM
+					  , COUNT(UH.DEPT_ID) AS DEPT_UPRPD_CNT
+					  , DENSE_RANK() OVER(PARTITION BY COUNT(UH.DEPT_ID) ORDER BY COUNT(UH.DEPT_ID) DESC) AS UPRPD_DEPT_RANK
+				FROM TB_CW_EVL E
+				INNER JOIN TB_CW_UPRPD_EXC UE
+					ON 	E.EVL_ID = UE.EVL_ID
+				LEFT OUTER JOIN TB_CO_USER_HIST UH
+					ON 	UE.EXC_USER_ID = UH.USER_ID
+					AND UE.EXC_USER_BGNDE = UH.HIST_BGNDE
+					<choose>
+						<when test='srchYy != null and srchYy != "" '>
+							WHERE E.ACCNUT_YY = #{srchYy}
+						</when>
+						<otherwise>
+							WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+						</otherwise>
+					</choose>	
+				GROUP BY UH.DEPT_ID, UH.DEPT_NM
+			) 
+		<![CDATA[
+		WHERE UPRPD_DEPT_RANK < 11 AND ROWNUM < 11
+		]]>
+	</sql> 
+
+<!--미비점/사후관리 TAB : 미비점TAB : 해당년도 미비점 발생 부서 랭킹 -->	
+	<select id="uprpdByDeptList" resultType="EgovMap">
+		-- 해당년도 미비점 발생 부서 랭킹
+		<include refid="uprpdByDept"/>
+	</select>
+	 	
+ 
+<!--미비점/사후관리 TAB : 미비점TAB : 부서별 미비점 발생률 TOP 10중 미비점 분류현황 --> 
+	<select id="uprpdClByDeptList" resultType="EgovMap">
+		-- 부서별 미비점 발생률 TOP 10중 미비점 분류현황
+		SELECT 	UH.DEPT_ID
+			  , UH.DEPT_NM
+			  , COUNT(UH.DEPT_ID) AS DEPT_UPRPD_CNT
+			  , SUM((CASE WHEN UP.UPRPD_CL_CD_ID = 'CTW_202_001' THEN 1 ELSE 0 END )) AS UPRPD_CL1_CNT
+			  , SUM((CASE WHEN UP.UPRPD_CL_CD_ID = 'CTW_202_002' THEN 1 ELSE 0 END )) AS UPRPD_CL2_CNT
+			  , SUM((CASE WHEN UP.UPRPD_CL_CD_ID = 'CTW_202_003' THEN 1 ELSE 0 END )) AS UPRPD_CL3_CNT
+		FROM TB_CW_EVL E
+		INNER JOIN TB_CW_UPRPD_EXC UE
+			ON E.EVL_ID = UE.EVL_ID
+		LEFT OUTER JOIN TB_CW_UPRPD UP
+			ON 	E.EVL_ID = UP.EVL_ID
+			AND UE.OBJECT_ID = UP.OBJECT_ID
+		LEFT OUTER JOIN TB_CO_USER_HIST UH
+			ON 	UE.EXC_USER_ID = UH.USER_ID
+			AND UE.EXC_USER_BGNDE = UH.HIST_BGNDE
+		<choose>
+			<when test='srchYy != null and srchYy != "" '>
+				WHERE E.ACCNUT_YY = #{srchYy}
+			</when>
+			<otherwise>
+				WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+			</otherwise>
+		</choose>	
+			<!-- 부서별 미비점 발생률 TOP 10
+			AND UH.DEPT_ID IN (	
+				SELECT TB.DEPT_ID
+		  		FROM (	<include refid="uprpdByDept"/>	) TB
+		  	)
+		  	-->
+		  	AND UH.DEPT_ID = #{deptId}
+		GROUP BY UH.DEPT_ID, UH.DEPT_NM
+	</select>
+	 	
+ 	
+<!--미비점/사후관리 TAB : 미비점TAB : 부서별 미비점 발생률 TOP 10중 미비점 유형현황 --> 
+	<select id="uprpdTyByDeptList" resultType="EgovMap">
+		-- 부서별 미비점 발생률 TOP 10중 미비점 유형현황
+		SELECT	UH.DEPT_ID
+			  , UH.DEPT_NM
+			  , COUNT(UH.DEPT_ID) AS DEPT_UPRPD_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_001' THEN 1 ELSE 0 END )) AS UPRPD_TY1_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_002' THEN 1 ELSE 0 END )) AS UPRPD_TY2_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_003' THEN 1 ELSE 0 END )) AS UPRPD_TY3_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_004' THEN 1 ELSE 0 END )) AS UPRPD_TY4_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_005' THEN 1 ELSE 0 END )) AS UPRPD_TY5_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_006' THEN 1 ELSE 0 END )) AS UPRPD_TY6_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_007' THEN 1 ELSE 0 END )) AS UPRPD_TY7_CNT 
+		FROM TB_CW_EVL E
+		INNER JOIN TB_CW_UPRPD_EXC UE
+			ON E.EVL_ID = UE.EVL_ID
+		LEFT OUTER JOIN TB_CW_UPRPD UP
+			ON 	E.EVL_ID = UP.EVL_ID
+			AND UE.OBJECT_ID = UP.OBJECT_ID
+		LEFT OUTER JOIN TB_CO_USER_HIST UH
+			ON 	UE.EXC_USER_ID = UH.USER_ID
+			AND UE.EXC_USER_BGNDE = UH.HIST_BGNDE
+		<choose>
+			<when test='srchYy != null and srchYy != "" '>
+				WHERE E.ACCNUT_YY = #{srchYy}
+			</when>
+			<otherwise>
+				WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+			</otherwise>
+		</choose>	
+			<!-- 부서별 미비점 발생률 TOP 10
+			AND UH.DEPT_ID IN (	
+				SELECT TB.DEPT_ID
+		  		FROM (	<include refid="uprpdByDept"/>	) TB
+		  	)
+		  	-->
+		  	AND UH.DEPT_ID = #{deptId}
+		GROUP BY UH.DEPT_ID, UH.DEPT_NM
+	</select>
+ 	
+ 	
+ 
+ 
+<!--미비점/사후관리 TAB : 사후관리 TAB : 해당년도 사후관리 발생 통제별 랭킹  SQL ID-->
+	<sql id="posmantByCnrl">
+	  	SELECT 	OBJECT_ID 
+	  		  , CNRL_NM
+	  		  , CNRL_NO
+	  		  , OBJECT_UPRPD_CNT
+	  		  , UPRPD_OBJECT_RANK
+	  	FROM (	SELECT	UM.OBJECT_ID 
+	  				  , C.CNRL_NM
+	  				  , C.CNRL_NO
+					  , COUNT(UM.OBJECT_ID) AS OBJECT_UPRPD_CNT
+					  , DENSE_RANK() OVER(PARTITION BY COUNT(UM.OBJECT_ID) ORDER BY COUNT(UM.OBJECT_ID) DESC) AS UPRPD_OBJECT_RANK
+				FROM TB_CW_EVL E
+				INNER JOIN TB_CW_UPRPD_POSMANT UM
+					ON 	E.EVL_ID = UM.EVL_ID
+					AND UM.LAST_AT = 'Y'
+				LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL C
+					ON 	E.EVL_ID = C.EVL_ID
+					AND UM.OBJECT_ID = C.CNRL_ID 
+				<choose>
+					<when test='srchYy != null and srchYy != "" '>
+						WHERE E.ACCNUT_YY = #{srchYy}
+					</when>
+					<otherwise>
+						WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+					</otherwise>
+				</choose>	
+				GROUP BY UM.OBJECT_ID, C.CNRL_NM, C.CNRL_NO
+			) 
+		<![CDATA[
+		WHERE UPRPD_OBJECT_RANK < 11 AND ROWNUM < 11
+		]]>
+	</sql> 
+
+ 
+<!--사후관리/사후관리 TAB : 사후관리TAB : 해당년도 사후관리 발생 통제별 랭킹 -->
+	<select id="posmantByCnrlList" resultType="EgovMap">
+		-- 해당년도 사후관리 발생 통제별 랭킹
+		<include refid="posmantByCnrl"/>
+	</select>
+	 	
+ 
+<!--사후관리/사후관리 TAB : 사후관리TAB : 통제별 사후관리 발생률 TOP 10중 사후관리 분류현황 --> 
+	<select id="posmantClByCnrlList" resultType="EgovMap">
+		-- 통제별 사후관리 발생률 TOP 10중 사후관리 분류현황
+		SELECT	UM.OBJECT_ID
+			  , C.CNRL_NM
+			  , C.CNRL_NO
+			  , COUNT(UM.OBJECT_ID) AS OBJECT_UPRPD_CNT
+			  , SUM((CASE WHEN UP.UPRPD_CL_CD_ID = 'CTW_202_001' THEN 1 ELSE 0 END )) AS UPRPD_CL1_CNT
+			  , SUM((CASE WHEN UP.UPRPD_CL_CD_ID = 'CTW_202_002' THEN 1 ELSE 0 END )) AS UPRPD_CL2_CNT
+			  , SUM((CASE WHEN UP.UPRPD_CL_CD_ID = 'CTW_202_003' THEN 1 ELSE 0 END )) AS UPRPD_CL3_CNT
+		FROM TB_CW_EVL E
+		INNER JOIN TB_CW_UPRPD_POSMANT UM
+			ON 	E.EVL_ID = UM.EVL_ID
+			AND UM.LAST_AT = 'Y'
+		LEFT OUTER JOIN TB_CW_UPRPD UP
+			ON 	E.EVL_ID = UP.EVL_ID
+			AND UM.OBJECT_ID = UP.OBJECT_ID
+		LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL C
+			ON 	E.EVL_ID = C.EVL_ID
+			AND UM.OBJECT_ID = C.CNRL_ID 
+		<choose>
+			<when test='srchYy != null and srchYy != "" '>
+				WHERE E.ACCNUT_YY = #{srchYy}
+			</when>
+			<otherwise>
+				WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+			</otherwise>
+		</choose>	
+			<!--통제별 사후관리 발생률 TOP 10
+			AND UM.OBJECT_ID IN (	
+				SELECT TB.OBJECT_ID 
+		  		FROM (	<include refid="posmantByCnrl"/>	) TB
+		  	)
+		  	-->
+		  	AND UM.OBJECT_ID = #{objectId}
+		GROUP BY UM.OBJECT_ID, C.CNRL_NM, C.CNRL_NO
+	</select>
+	 	
+ 	
+<!--사후관리/사후관리 TAB : 사후관리TAB : 통제별 사후관리 발생률 TOP 10중 사후관리 유형현황 --> 
+	<select id="posmantTyByCnrlList" resultType="EgovMap">
+		-- 통제별 사후관리 발생률 TOP 10중 사후관리 유형현황
+		SELECT	UM.OBJECT_ID 
+			  , C.CNRL_NM
+			  , C.CNRL_NO
+			  , COUNT(UM.OBJECT_ID) AS OBJECT_UPRPD_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_001' THEN 1 ELSE 0 END )) AS UPRPD_TY1_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_002' THEN 1 ELSE 0 END )) AS UPRPD_TY2_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_003' THEN 1 ELSE 0 END )) AS UPRPD_TY3_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_004' THEN 1 ELSE 0 END )) AS UPRPD_TY4_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_005' THEN 1 ELSE 0 END )) AS UPRPD_TY5_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_006' THEN 1 ELSE 0 END )) AS UPRPD_TY6_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_007' THEN 1 ELSE 0 END )) AS UPRPD_TY7_CNT
+			FROM TB_CW_EVL E
+			INNER JOIN TB_CW_UPRPD_POSMANT UM
+				ON 	E.EVL_ID = UM.EVL_ID
+				AND UM.LAST_AT = 'Y'
+			LEFT OUTER JOIN TB_CW_UPRPD UP
+				ON 	E.EVL_ID = UP.EVL_ID
+				AND UM.OBJECT_ID = UP.OBJECT_ID
+			LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL C
+				ON 	E.EVL_ID = C.EVL_ID
+				AND UM.OBJECT_ID = C.CNRL_ID 
+		<choose>
+			<when test='srchYy != null and srchYy != "" '>
+				WHERE E.ACCNUT_YY = #{srchYy}
+			</when>
+			<otherwise>
+				WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+			</otherwise>
+		</choose>	
+			<!--통제별 사후관리 발생률 TOP 10
+			AND UM.OBJECT_ID IN (	
+				SELECT TB.OBJECT_ID 
+		  		FROM (	<include refid="posmantByCnrl"/>	) TB
+		  	)
+		  	-->
+		  	AND UM.OBJECT_ID = #{objectId}
+		GROUP BY UM.OBJECT_ID, C.CNRL_NM, C.CNRL_NO
+	</select>
+ 	
+ 	
+ 	
+ 
+<!--사후관리/사후관리 TAB : 사후관리TAB : 해당년도 사후관리 발생 부서 랭킹 SQL ID -->
+	<sql id="posmantByDept">
+	  	SELECT 	DEPT_ID 
+	  		  , DEPT_NM
+	  		  , DEPT_UPRPD_CNT
+	  		  , UPRPD_DEPT_RANK
+	  	FROM (	SELECT	UH.DEPT_ID 
+	  				  , UH.DEPT_NM
+					  , COUNT(UH.DEPT_ID) AS DEPT_UPRPD_CNT
+					  , DENSE_RANK() OVER(PARTITION BY COUNT(UH.DEPT_ID) ORDER BY COUNT(UH.DEPT_ID) DESC) AS UPRPD_DEPT_RANK
+				FROM TB_CW_EVL E
+				INNER JOIN TB_CW_UPRPD_POSMANT UM
+					ON 	E.EVL_ID = UM.EVL_ID
+					AND UM.LAST_AT = 'Y'
+				LEFT OUTER JOIN TB_CO_USER_HIST UH
+					ON 	UM.EXC_USER_ID = UH.USER_ID
+					AND UM.EXC_USER_BGNDE = UH.HIST_BGNDE
+					<choose>
+						<when test='srchYy != null and srchYy != "" '>
+							WHERE E.ACCNUT_YY = #{srchYy}
+						</when>
+						<otherwise>
+							WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+						</otherwise>
+					</choose>	
+				GROUP BY UH.DEPT_ID, UH.DEPT_NM
+			) 
+		<![CDATA[
+		WHERE UPRPD_DEPT_RANK < 11 AND ROWNUM < 11
+		]]>
+	</sql> 
+
+<!--사후관리/사후관리 TAB : 사후관리TAB : 해당년도 사후관리 발생 부서 랭킹 -->	
+	<select id="posmantByDeptList" resultType="EgovMap">
+		-- 해당년도 사후관리 발생 부서 랭킹
+		<include refid="posmantByDept"/>
+	</select>
+	 	
+ 
+<!--사후관리/사후관리 TAB : 사후관리TAB : 부서별 사후관리 발생률 TOP 10중 사후관리 분류현황 --> 
+	<select id="posmantClByDeptList" resultType="EgovMap">
+		-- 부서별 사후관리 발생률 TOP 10중 사후관리 분류현황
+		SELECT 	UH.DEPT_ID
+			  , UH.DEPT_NM
+			  , COUNT(UH.DEPT_ID) AS DEPT_UPRPD_CNT
+			  , SUM((CASE WHEN UP.UPRPD_CL_CD_ID = 'CTW_202_001' THEN 1 ELSE 0 END )) AS UPRPD_CL1_CNT
+			  , SUM((CASE WHEN UP.UPRPD_CL_CD_ID = 'CTW_202_002' THEN 1 ELSE 0 END )) AS UPRPD_CL2_CNT
+			  , SUM((CASE WHEN UP.UPRPD_CL_CD_ID = 'CTW_202_003' THEN 1 ELSE 0 END )) AS UPRPD_CL3_CNT
+		FROM TB_CW_EVL E
+		INNER JOIN TB_CW_UPRPD_POSMANT UM
+			ON 	E.EVL_ID = UM.EVL_ID
+			AND UM.LAST_AT = 'Y'
+		LEFT OUTER JOIN TB_CW_UPRPD UP
+			ON 	E.EVL_ID = UP.EVL_ID
+			AND UM.OBJECT_ID = UP.OBJECT_ID
+		LEFT OUTER JOIN TB_CO_USER_HIST UH
+			ON 	UM.EXC_USER_ID = UH.USER_ID
+			AND UM.EXC_USER_BGNDE = UH.HIST_BGNDE
+		<choose>
+			<when test='srchYy != null and srchYy != "" '>
+				WHERE E.ACCNUT_YY = #{srchYy}
+			</when>
+			<otherwise>
+				WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+			</otherwise>
+		</choose>	
+			<!-- 부서별 사후관리 발생률 TOP 10
+			AND UH.DEPT_ID IN (	
+				SELECT TB.DEPT_ID
+		  		FROM (	<include refid="posmantByDept"/>	) TB
+		  	)
+		  	-->
+		  	AND UH.DEPT_ID = #{deptId}
+		GROUP BY UH.DEPT_ID, UH.DEPT_NM
+	</select>
+	 	
+ 	
+<!--사후관리/사후관리 TAB : 사후관리TAB : 부서별 사후관리 발생률 TOP 10중 사후관리 유형현황 --> 
+	<select id="posmantTyByDeptList" resultType="EgovMap">
+		-- 부서별 사후관리 발생률 TOP 10중 사후관리 유형현황
+		SELECT	UH.DEPT_ID
+			  , UH.DEPT_NM
+			  , COUNT(UH.DEPT_ID) AS DEPT_UPRPD_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_001' THEN 1 ELSE 0 END )) AS UPRPD_TY1_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_002' THEN 1 ELSE 0 END )) AS UPRPD_TY2_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_003' THEN 1 ELSE 0 END )) AS UPRPD_TY3_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_004' THEN 1 ELSE 0 END )) AS UPRPD_TY4_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_005' THEN 1 ELSE 0 END )) AS UPRPD_TY5_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_006' THEN 1 ELSE 0 END )) AS UPRPD_TY6_CNT
+			  , SUM((CASE WHEN UP.UPRPD_TY_CD_ID = 'CTW_204_007' THEN 1 ELSE 0 END )) AS UPRPD_TY7_CNT 
+		FROM TB_CW_EVL E
+		INNER JOIN TB_CW_UPRPD_POSMANT UM
+			ON 	E.EVL_ID = UM.EVL_ID
+			AND UM.LAST_AT = 'Y'
+		LEFT OUTER JOIN TB_CW_UPRPD UP
+			ON 	E.EVL_ID = UP.EVL_ID
+			AND UM.OBJECT_ID = UP.OBJECT_ID
+		LEFT OUTER JOIN TB_CO_USER_HIST UH
+			ON 	UM.EXC_USER_ID = UH.USER_ID
+			AND UM.EXC_USER_BGNDE = UH.HIST_BGNDE
+		<choose>
+			<when test='srchYy != null and srchYy != "" '>
+				WHERE E.ACCNUT_YY = #{srchYy}
+			</when>
+			<otherwise>
+				WHERE E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+			</otherwise>
+		</choose>	
+				<!-- 부서별 사후관리 발생률 TOP 10
+			AND UH.DEPT_ID IN (	
+				SELECT TB.DEPT_ID
+		  		FROM (	<include refid="posmantByDept"/>	) TB
+		  	)
+		  	-->		  	
+		  	AND UH.DEPT_ID = #{deptId}
+		GROUP BY UH.DEPT_ID, UH.DEPT_NM
+	</select>
+ 	
+ 	
+<!-- 사후관리 진행: 사후관리 상태코드가 완료이면서 수행완료코드가 완료에정인 경우와 상태코드가 완료가 아닌경우  -->
+<!--미비점/사후관리 TAB : 전체 사후관리 미진행 목록 --> 
+ 	<select id="donotPosmantList" resultType="EgovMap">
+		SELECT 	E.EVL_ID
+			  , E.ACCNUT_YY
+			  , E.ACCNUT_SE_CD_ID
+			  , C1.CODE_NM AS ACCNUT_SE_CD_NM
+			  , CONVERT ( VARCHAR , CONVERT ( DATE , E.EVL_BGNDE , 112 ) , 23 ) EVL_BGNDE
+			  , CONVERT ( VARCHAR , CONVERT ( DATE , E.EVL_ENDDE , 112 ) , 23 ) EVL_ENDDE
+			  , E.EVL_KND_CD_ID
+			  , C2.CODE_NM AS EVL_KND_CD_NM
+			  , E.EVL_SJ			  
+			  , E.STTUS_CD_ID
+			  , C3.CODE_NM AS STTUS_CD_NM
+			  , UM.OBJECT_ID
+			  , UM.POSMANT_SN
+			  , C.CNRL_NM
+			  , C.CNRL_NO
+			  , UP.UPRPD_CL_CD_ID
+			  , C4.CODE_NM AS UPRPD_CL_CD_NM
+			  , UP.UPRPD_TY_CD_ID
+			  , C5.CODE_NM AS UPRPD_TY_CD_NM
+			  , UP.UPRPD_CN
+			  , UP.UPRPD_IMPRVM_PLAN
+			  , UM.STTUS_CD_ID
+			  , UM.EXC_COMPT_CD_ID
+			  , CONVERT ( VARCHAR , CONVERT ( DATE , UM.EXC_DE , 112 ) , 23 ) EXC_DE
+			  , UH.DEPT_ID
+			  , UH.DEPT_NM
+		FROM TB_CW_EVL E
+		INNER JOIN TB_CW_UPRPD_EXC UE
+			ON 	E.EVL_ID = UE.EVL_ID
+		INNER JOIN TB_CW_UPRPD_POSMANT UM
+			ON 	E.EVL_ID = UM.EVL_ID
+			AND UE.OBJECT_ID = UM.OBJECT_ID
+			AND UM.LAST_AT = 'Y'
+		LEFT OUTER JOIN TB_CO_USER_HIST UH
+			ON  UM.EXC_USER_ID = UH.USER_ID
+			AND UM.EXC_USER_ID = UH.HIST_BGNDE
+		LEFT OUTER JOIN TB_CW_UPRPD UP
+			ON 	E.EVL_ID = UP.EVL_ID
+			AND UM.OBJECT_ID = UP.OBJECT_ID
+	    LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL C
+	      	ON  E.EVL_ID = C.EVL_ID
+	      	AND UM.OBJECT_ID = C.CNRL_ID
+		LEFT OUTER JOIN TB_CO_CODE C1
+			ON 	E.ACCNUT_SE_CD_ID = C1.CODE_ID
+		LEFT OUTER JOIN TB_CO_CODE C2
+			ON 	E.EVL_KND_CD_ID = C2.CODE_ID
+		LEFT OUTER JOIN TB_CO_CODE C3
+			ON 	E.STTUS_CD_ID = C3.CODE_ID
+		LEFT OUTER JOIN TB_CO_CODE C4
+			ON 	UP.UPRPD_CL_CD_ID = C4.CODE_ID
+		LEFT OUTER JOIN TB_CO_CODE C5
+			ON  UP.UPRPD_TY_CD_ID = C5.CODE_ID
+		WHERE (UM.STTUS_CD_ID = 'COM_021_005' AND UM.EXC_COMPT_CD_ID = 'CTW_207_003')
+			OR (UM.STTUS_CD_ID != 'COM_021_005')
+			<choose>
+				<when test='srchYy != null and srchYy != "" '>
+					AND E.ACCNUT_YY = #{srchYy}
+				</when>
+				<otherwise>
+					AND E.ACCNUT_YY = (SELECT MAX(ACCNUT_YY) FROM TB_CW_EVL)
+				</otherwise>
+			</choose>	
+ 	</select>	
+ 	
+</mapper>

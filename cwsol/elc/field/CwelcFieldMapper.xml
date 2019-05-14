@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.elc.field.serviceimpl.CwelcFieldMapper">
+
+	<select id="list" resultType="EgovMap">
+		SELECT 
+			  A.RCM_FIELD_ID
+			, A.RCM_FIELD_AB
+			, A.RCM_FIELD_NO
+			, A.RCM_FIELD_NM_EN
+			, A.RCM_FIELD_NM_KR
+			, A.RCM_FIELD_KND_CD_ID
+            , B.CODE_NM AS RCM_FIELD_KND_CD_NM
+            , A.RCM_FIELD_GROUP_NM
+			, A.USE_AT
+  		FROM TB_CW_ELC_RCM_FIELD A
+        LEFT OUTER JOIN TB_CO_CODE B
+            ON A.RCM_FIELD_KND_CD_ID = B.CODE_ID
+        <trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test=' srchUseAt != null and srchUseAt != "" '>
+				AND A.USE_AT = #{srchUseAt} 
+			</if>
+			<if test=' srchRcmFieldKndCdId != null and srchRcmFieldKndCdId != "" '>
+				AND A.RCM_FIELD_KND_CD_ID = #{srchRcmFieldKndCdId} 
+			</if>
+		</trim>
+		<choose>
+			<when test=' srchTy != null and srchTy == "RCM_FIELD_NO" '>	
+				ORDER BY CONVERT ( NUMERIC , A.RCM_FIELD_NO) ASC, CONVERT ( NUMERIC , A.RCM_FIELD_ID) ASC
+			</when>
+			<otherwise>		ORDER BY CONVERT ( NUMERIC , A.RCM_FIELD_ID) ASC	</otherwise>
+		</choose>
+	</select>
+
+	<select id="rcmMaxFieldNo" resultType="int">
+		SELECT 
+		    ISNULL(MAX(CONVERT ( NUMERIC , A.RCM_FIELD_NO)),0) AS MAX_FIELD_NO
+		FROM TB_CW_ELC_RCM_FIELD A
+	</select>
+
+	<insert id="insert">
+		INSERT INTO TB_CW_ELC_RCM_FIELD (
+            RCM_FIELD_ID, RCM_FIELD_AB, RCM_FIELD_NO, RCM_FIELD_NM_EN, RCM_FIELD_NM_KR, RCM_FIELD_KND_CD_ID, RCM_FIELD_GROUP_NM, USE_AT
+		) VALUES (
+            #{rcmFieldId}, UPPER(#{rcmFieldAb}), #{rcmFieldNo}, #{rcmFieldNmEn}, #{rcmFieldNmKr}, #{rcmFieldKndCdId}, #{rcmFieldGroupNm}, #{useAt}
+		)
+	</insert>
+
+	<delete id="delete">
+		DELETE FROM TB_CW_ELC_RCM_FIELD
+	</delete>
+
+</mapper>

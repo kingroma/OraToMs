@@ -1,0 +1,45 @@
+start
+ || LOG || [ CwceDsgnExcDeptConfmMapper.xml ]     	 // FOR list IN  
+ || LOG || [ CwceDsgnExcMapper.xml ]              	 // FOR list IN  
+ || LOG || [ CwceDsgnExcRcmMapper.xml ]           	 // ROW_NUMBER  
+ || LOG || [ CwcePlanRcmMapper.xml ]              	 // REGEXP_INSTR  
+ || LOG || [ CwcePlanUserMapper.xml ]             	 // ROW_NUMBER  
+ || LOG || [ CwceReprtMapper.xml ]                	 // FOR list IN   // ROW_NUMBER  
+ || LOG || [ CwceStdrMapper.xml ]                 	 // FOR list IN  
+ || LOG || [ CwceWalkMapper.xml ]                 	 // FOR list IN  
+ || LOG || [ CwcoDashBoardDeptMapper.xml ]        	 // TO_CHAR  
+ || LOG || [ CweeDsgnExcDeptConfmMapper.xml ]     	 // FOR list IN  
+ || LOG || [ CweeDsgnExcMapper.xml ]              	 // FOR list IN  
+ || LOG || [ CweeDsgnExcRcmMapper.xml ]           	 // ROW_NUMBER  
+ || LOG || [ CweePlanRcmMapper.xml ]              	 // REGEXP_INSTR  
+ || LOG || [ CweePlanUserMapper.xml ]             	 // ROW_NUMBER  
+ || LOG || [ CwelcChrgMapper.xml ]                	 // DECLARE   // FOR list IN   // TO_CHAR   // ROW_NUMBER  
+ || LOG || [ CwelcCnrlMapper.xml ]                	 // FOR list IN  
+ || LOG || [ CwelcProcsMapper.xml ]               	 // FOR list IN   // ROW_NUMBER  
+ || LOG || [ CwelcRiskMapper.xml ]                	 // FOR list IN  
+ || LOG || [ CwelcUploadMapper.xml ]              	 // FOR list IN  
+ || LOG || [ CwrcmChrgMapper.xml ]                	 // DECLARE   // FOR list IN   // TO_CHAR   // ROW_NUMBER  
+ || LOG || [ CwrcmCosoMapper.xml ]                	 // TO_CHAR  
+ || LOG || [ CwrcmJobTrsnferMapper.xml ]          	 // FOR list IN   // TO_CHAR  
+ || LOG || [ CwrcmReaderMapper.xml ]              	 // FOR list IN  
+ || LOG || [ CwrcmReadersoMapper.xml ]            	 // FOR list IN  
+ || LOG || [ CwrcmRegistMapper.xml ]              	 // FOR list IN  
+ || LOG || [ CwrcmRegistsoMapper.xml ]            	 // FOR list IN  
+ || LOG || [ CwrcmVerMapper.xml ]                 	 // FOR list IN  
+ || LOG || [ CwrcmVersoMapper.xml ]               	 // FOR list IN  
+ || LOG || [ CwrcmCnrlMapper.xml ]                	 // FOR list IN  
+ || LOG || [ CwrcmProcsMapper.xml ]               	 // FOR list IN   // ROW_NUMBER  
+ || LOG || [ CwrcmRiskMapper.xml ]                	 // FOR list IN  
+ || LOG || [ CwrcmUploadMapper.xml ]              	 // FOR list IN  
+ || LOG || [ CwscProcsRiskEvlIemMapper.xml ]      	 // FOR list IN  
+ || LOG || [ CwscSysMapper.xml ]                  	 // DECLARE   // LISTAGG   // FOR list IN  
+ || LOG || [ CwscAcntctgrMapper.xml ]             	 // CONNECT BY   // LISTAGG   // PIVOT   // FOR list IN   // 999,   // TO_CHAR  
+ || LOG || [ CwscTiablMapper.xml ]                	 // DECLARE   // FOR list IN  
+ || LOG || [ CwstDeptMapper.xml ]                 	 // 999,   // FM9   // TO_CHAR  
+ || LOG || [ CwstEvlMapper.xml ]                  	 // TO_CHAR  
+ || LOG || [ CwstProcsMapper.xml ]                	 // 999,   // FM9   // TO_CHAR  
+ || LOG || [ CwstStatsMapper.xml ]                	 // 999,   // FM9   // TO_CHAR  
+ || LOG || [ CwupMngExmntMapper.xml ]             	 // FOR list IN  
+ || LOG || [ CwupMngPosmantMapper.xml ]           	 // FOR list IN  
+ || LOG || [ CwupMngSttusMapper.xml ]             	 // TO_CHAR  
+ || LOG || [ CwupPosmantMapper.xml ]              	 // FOR list IN  

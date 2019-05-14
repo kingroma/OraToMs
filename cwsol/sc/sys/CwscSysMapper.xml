@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.sc.sys.serviceimpl.CwscSysMapper">
+
+ 	<!-- 목록 -->
+ 	<select id="list" resultType="EgovMap">
+		SELECT  A.SYS_TABLE_ID
+			  , A.FSYR
+			  , A.SYS_EXPRS
+		      , A.RM
+		      , A.STTUS_CD_ID
+		      , CA.CODE_NM AS STTUS_CD_NM
+		FROM TB_CW_SC_SYS_TABLE A
+			LEFT OUTER JOIN TB_CO_CODE CA
+				ON A.STTUS_CD_ID = CA.CODE_ID
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test=' srchFsyr != null and srchFsyr != "" '>
+				AND A.FSYR = #{srchFsyr}
+			</if>
+			<if test=' srchSttusCdId != null and srchSttusCdId != "" '>
+				AND A.STTUS_CD_ID = #{srchSttusCdId}
+			</if>
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+		            <when test="srchTy == 'sj'" > 			AND	UPPER(A.SYS_EXPRS) 	LIKE '%' + UPPER(#{srchWrd}) + '%' 			</when>
+		            <when test="srchTy == 'rm'" > 			AND	UPPER(A.RM) 	LIKE '%' + UPPER(#{srchWrd}) + '%' 			</when>
+				</choose>
+			</if>
+		 </trim>
+		 ORDER BY A.FSYR DESC, A.SYS_TABLE_ID DESC
+	</select>
+
+	<!-- 상세조회 -->
+	<select id="view" resultType="CwscSysVO">
+		SELECT  A.SYS_TABLE_ID
+			  , A.FSYR
+		      , A.SYS_EXPRS
+		      , A.RM
+		      , A.STTUS_CD_ID
+		      , CA.CODE_NM AS STTUS_CD_NM
+		      , A.UNITY_ID
+		FROM TB_CW_SC_SYS_TABLE A
+			LEFT OUTER JOIN TB_CO_CODE CA
+				ON A.STTUS_CD_ID = CA.CODE_ID
+		WHERE  A.SYS_TABLE_ID = #{sysTableId}
+	</select>
+
+
+ 	<!-- 시스템_프로세스 매핑 목록 -->
+ 	<select id="sysList" resultType="EgovMap">
+ 		WITH V0 AS ( 
+	 		SELECT TOT.*, CASE WHEN TOT.MAX_SYS_LEVEL != '1' AND TOT.SYS_CD IS NOT NULL 
+				      		THEN TOT.SYS_LEVEL+'. ['+TOT.SYS_CD+'] '+TOT.SYS_NM
+	                        WHEN TOT.MAX_SYS_LEVEL != '1' AND TOT.SYS_CD IS NULL 
+	                        THEN TOT.SYS_LEVEL+'. '+TOT.SYS_NM 
+	                        WHEN TOT.MAX_SYS_LEVEL = '1' AND TOT.SYS_CD IS NOT NULL 
+	                        THEN '['+TOT.SYS_CD+'] '+TOT.SYS_NM
+				      		ELSE TOT.SYS_NM 
+						END AS SYS_NM_EXCEL
+			FROM (
+				SELECT A.SYS_TABLE_ID
+						, A.SYS_ID
+						, A.SYS_CD
+						, A.SYS_NM
+						, A.SYS_LEVEL
+						, A.UPPER_SYS_ID
+						, (SELECT MAX(SYS_LEVEL) FROM TB_CW_SC_SYS WHERE SYS_TABLE_ID = #{sysTableId}) AS MAX_SYS_LEVEL
+			            , LISTAGG(P.PROCS_ID, ',') WITHIN GROUP(ORDER BY P.PROCS_ID) AS PROCS_ID
+						, LISTAGG(RP.PROCS_NM, ', ') WITHIN GROUP(ORDER BY RP.PROCS_ID) AS PROCS_NM
+						, LISTAGG(RP.PROCS_NO, '|') WITHIN GROUP(ORDER BY RP.PROCS_ID) AS PROCS_NO
+				FROM TB_CW_SC_SYS A
+					LEFT OUTER JOIN TB_CW_SC_SYS_PROCS_MAPNG P
+						ON 	A.SYS_TABLE_ID = P.SYS_TABLE_ID
+						AND A.SYS_ID = P.SYS_ID
+					LEFT OUTER JOIN TB_CW_RCM_PROCS_HIST RP
+						ON 	P.PROCS_ID = RP.PROCS_ID
+						AND P.PROCS_BGNTMSTMP = RP.BGNTMSTMP
+				WHERE A.SYS_TABLE_ID = #{sysTableId}
+		        GROUP BY A.SYS_TABLE_ID, A.SYS_ID, A.SYS_NM, A.SYS_CD, A.SYS_LEVEL, A.UPPER_SYS_ID
+		    ) TOT
+	    ) , 
+	    V1 (SYS_TABLE_ID , SYS_ID , SYS_CD , SYS_NM , SYS_LEVEL , UPPER_SYS_ID , MAX_SYS_LEVEL , PROCS_ID , PROCS_NM , PROCS_NO , SYS_NM_EXCEL) AS (
+			SELECT
+				SYS_TABLE_ID , SYS_ID , SYS_CD , SYS_NM , SYS_LEVEL , UPPER_SYS_ID , MAX_SYS_LEVEL , PROCS_ID , PROCS_NM , PROCS_NO , SYS_NM_EXCEL
+			FROM V0
+			WHERE SYS_LEVEL = 1 
+			
+			UNION ALL 
+			
+			SELECT
+				V.SYS_TABLE_ID , V.SYS_ID , V.SYS_CD , V.SYS_NM , V.SYS_LEVEL , V.UPPER_SYS_ID , V.MAX_SYS_LEVEL , V.PROCS_ID , V.PROCS_NM , V.PROCS_NO , V.SYS_NM_EXCEL 
+			FROM V0 V , V1 ROOT 
+			WHERE V.UPPER_SYS_ID = ROOT.SYS_ID
+			
+		)SELECT * FROM V1 ORDER BY SYS_ID ASC 
+     </select>
+
+	<!-- 관련 업무프로세스: mapping 입력 -->
+	<insert id="insertProcs">
+		INSERT INTO TB_CW_SC_SYS_PROCS_MAPNG (
+			SYS_TABLE_ID, SYS_ID, PROCS_ID, PROCS_BGNTMSTMP
+		) VALUES (
+			#{sysTableId}, #{sysId}, #{procsId}, #{procsBgntmstmp}
+		)
+	</insert>
+
+	<!-- 관련 업무프로세스 : mapping 삭제  -->
+	<delete id="deleteProcs">
+		DELETE FROM TB_CW_SC_SYS_PROCS_MAPNG
+		WHERE  	SYS_TABLE_ID    = #{sysTableId}
+			AND SYS_ID 			= #{sysId}
+	</delete>
+
+
+	<!-- 수정 -->
+	<update id="update">
+		UPDATE TB_CW_SC_SYS_TABLE
+		SET   	SYS_EXPRS          	= #{sysExprs}
+			  , FSYR				= #{fsyr}
+			  , RM                	= #{rm}
+			  , STTUS_CD_ID 		= #{sttusCdId}
+			  , UPD_DT				= GETDATE()
+			  , UPD_USER_ID			= #{suserId}
+		WHERE 	SYS_TABLE_ID 		= #{sysTableId}
+	</update>
+
+
+	<!--삭제 -->
+	<delete id="delete">
+		BEGIN
+			DELETE FROM TB_CW_SC_SYS_TABLE 			WHERE SYS_TABLE_ID = #{sysTableId};
+			DELETE FROM TB_CW_SC_SYS 				WHERE SYS_TABLE_ID = #{sysTableId};
+			DELETE FROM TB_CW_SC_SYS_PROCS_MAPNG 	WHERE SYS_TABLE_ID = #{sysTableId};
+		END;
+	</delete>
+
+
+	<!-- 엑셀업로드 후처리 -->
+	<insert id="excelUpload">
+		DECLARE
+			v_num NUMBER;
+			v_level NUMBER;
+
+		BEGIN
+		
+			/** 1. 기본정보 입력 */
+			INSERT INTO TB_CW_SC_SYS_TABLE (
+				  SYS_TABLE_ID, FSYR, SYS_EXPRS, STTUS_CD_ID, UNITY_ID
+				, RGS_USER_ID, CMPNY_CD_ID, RGS_DT, UPD_USER_ID, UPD_DT
+			) VALUES (
+				  #{sysTableId}, ISNULL(#{fsyr}, CONVERT(VARCHAR(4),GETDATE(),112)), #{fileSj}, 'CTW_121_001', #{unityId}
+				, #{suserId}, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE()
+			);
+
+			/** 2. LEVEL만큼 FOR문 돌면서 시스템 세팅 */
+			SELECT CODE_NM INTO v_level FROM TB_CO_CODE WHERE CODE_ID = #{fileKndCdId};
+
+			FOR v_num IN 1..v_level LOOP
+				EXIT WHEN v_num > v_level;
+
+				IF v_num = 1 THEN
+					IF v_num  = v_level THEN
+						INSERT INTO TB_CW_SC_SYS( SYS_TABLE_ID, SYS_ID, SYS_CD, SYS_NM, SYS_LEVEL )
+						SELECT #{sysTableId}, 'SYS_'+ REPLICATE('0',3 - LEN(ROWNUM)) + CONVERT(VARCHAR, ROWNUM ),  CELL_1, CELL_2, 1
+						FROM TB_CW_SC_EXCEL_TEMP
+						WHERE USER_ID = #{suserId}
+							AND SORT_SN <![CDATA[>]]> #{sortSn}
+						ORDER BY SORT_SN;
+
+					ELSE
+						INSERT INTO TB_CW_SC_SYS( SYS_TABLE_ID, SYS_ID, SYS_CD, SYS_NM, SYS_LEVEL )
+						SELECT A.SYS_TABLE_ID, A.SYS_ID, A.SYS_CD, A.SYS_NM, A.SYS_LEVEL
+							FROM
+							(SELECT #{sysTableId} AS SYS_TABLE_ID
+								  , 'SYS_'+ REPLICATE('0',3 - LEN(ROWNUM)) + CONVERT(VARCHAR, ROWNUM ) AS SYS_ID
+								  , CELL_1 AS SYS_CD
+								  , CELL_2 AS SYS_NM
+								  , 1 AS SYS_LEVEL
+								  , CELL_0
+								  , SORT_SN
+							FROM (
+			                        SELECT * FROM TB_CW_SC_EXCEL_TEMP
+									WHERE USER_ID = #{suserId}
+										AND SORT_SN <![CDATA[>]]> #{sortSn}
+									ORDER BY SORT_SN
+								) AA
+							) A
+						WHERE A.CELL_0 = '1'
+						ORDER BY A.SORT_SN;
+					END IF;
+					
+				ELSE
+					INSERT INTO TB_CW_SC_SYS( SYS_TABLE_ID, SYS_ID, SYS_CD, SYS_NM, SYS_LEVEL, UPPER_SYS_ID )
+					SELECT A.SYS_TABLE_ID, A.SYS_ID, A.SYS_CD, A.SYS_NM, A.SYS_LEVEL
+							, (SELECT MAX(SYS_ID) FROM TB_CW_SC_SYS WHERE SYS_TABLE_ID = #{sysTableId} 
+									AND SYS_LEVEL = (v_num - 1) AND (A.ROW_SN - CONVERT ( NUMERIC , SUBSTR(SYS_ID, 5)) > 0))
+						FROM
+						(SELECT #{sysTableId} AS SYS_TABLE_ID
+							  , 'SYS_'+ REPLICATE('0',3 - LEN(ROWNUM)) + CONVERT(VARCHAR, ROWNUM ) AS SYS_ID
+							  , CELL_1 AS SYS_CD
+							  , CELL_2 AS SYS_NM
+							  , v_num AS SYS_LEVEL
+							  , ROWNUM AS ROW_SN
+							  , CELL_0
+							  , SORT_SN
+						FROM (
+		                        SELECT * FROM TB_CW_SC_EXCEL_TEMP
+								WHERE USER_ID = #{suserId}
+									AND SORT_SN <![CDATA[>]]> #{sortSn}
+								ORDER BY SORT_SN
+							) AA
+						) A
+					WHERE CELL_0 = v_num
+					ORDER BY A.SORT_SN;
+
+				END IF;
+			END LOOP;
+
+			/** 동적 컬럼 로직 START */
+	    	/** 프로세스 매핑 */
+	    	<if test=" exstProcsList != null" >
+				<foreach item="item" index="index" collection="exstProcsList" >
+			    	INSERT INTO TB_CW_SC_SYS_PROCS_MAPNG (
+						SYS_TABLE_ID, SYS_ID, PROCS_ID, PROCS_BGNTMSTMP
+					)
+					SELECT #{sysTableId}, T.SYS_ID, #{item.objectId}, #{item.bgntmstmp}
+					FROM ( SELECT 'SYS_'+ REPLICATE('0',3 - LEN(ROWNUM)) + CONVERT(VARCHAR, ROWNUM ) AS SYS_ID, A.*
+							FROM TB_CW_SC_EXCEL_TEMP A
+							WHERE USER_ID = #{suserId}
+								AND SORT_SN <![CDATA[>]]> #{sortSn}
+							ORDER BY SORT_SN
+						) T
+					WHERE T.${item.realColNm} = 'Y' OR T.${item.realColNm} = 'V' OR T.${item.realColNm} = 'X';
+			  	</foreach>
+	  		</if>
+			/** 동적 컬럼 로직 END */
+		END;
+	</insert>
+
+	<!-- 시스템 별 프로세스 목록 -->
+	<select id="sysProcsList" resultType="EgovMap">
+		SELECT  A.SYS_TABLE_ID
+		      , A.SYS_ID
+		      , LISTAGG(P.PROCS_ID, ',') WITHIN GROUP(ORDER BY P.PROCS_ID)
+		      , LISTAGG(P.PROCS_NM, ', ') WITHIN GROUP(ORDER BY P.PROCS_ID) AS PROCS_NM
+		FROM TB_CW_SC_SYS_PROCS_MAPNG A
+			LEFT OUTER JOIN TB_CW_RCM_PROCS_HIST P
+				ON A.PROCS_ID = P.PROCS_ID
+				AND A.PROCS_BGNTMSTMP = P.BGNTMSTMP
+		WHERE  A.SYS_TABLE_ID = #{sysTableId}
+			AND  A.SYS_ID = #{sysId}
+        GROUP BY A.SYS_TABLE_ID, A.SYS_ID
+	</select>
+
+	<!-- 현재 프로세스 목록 -->
+	<select id="rcmProcsList" resultType="EgovMap">
+		<choose>
+			<when test='srchWrd == null or srchWrd == ""'>
+				SELECT
+				        T.OBJECT_ID
+		          	  , T.OBJECT_NO
+		          	  , T.OBJECT_NM
+		          	  , T.OBJECT_LEVEL
+		          	  , T.OBJECT_KND_CD_ID
+		              , T.UPPER_OBJECT_ID
+		              , T.UPPER_MAPNG_ID
+		              , T.OBJECT_ID + '_' + ISNULL(T.UPPER_OBJECT_ID, 'TOP') AS MAPNG_ID
+		              , CASE WHEN A.PROCS_ID IS NOT NULL THEN 'Y' ELSE 'N' END CHECK_AT
+		              , T.BGNTMSTMP
+				FROM TB_CW_RCM_MAPNG_HIST T
+				INNER JOIN TB_CW_RCM_PROCS_HIST P
+					ON T.OBJECT_ID = P.PROCS_ID
+					AND T.BGNTMSTMP = P.BGNTMSTMP
+					AND T.ENDTMSTMP = '99991231235959999999'
+				LEFT OUTER JOIN TB_CW_SC_SYS_PROCS_MAPNG A
+					ON T.OBJECT_ID = A.PROCS_ID
+					AND T.BGNTMSTMP = A.PROCS_BGNTMSTMP
+					AND A.SYS_TABLE_ID = #{sysTableId}
+					AND A.SYS_ID = #{sysId}
+		        ORDER BY T.OBJECT_ID
+			</when>
+			<otherwise>
+				WITH V0 AS (
+					SELECT DISTINCT
+				    	  T.OBJECT_ID
+				        , T.OBJECT_NO
+				        , T.OBJECT_NM
+				        , T.OBJECT_LEVEL
+						, T.OBJECT_KND_CD_ID
+				        , T.UPPER_OBJECT_ID
+				        , T.MAPNG_ID
+				        , T.UPPER_MAPNG_ID
+				        , CASE WHEN A.PROCS_ID IS NOT NULL THEN 'Y' ELSE 'N' END CHECK_AT
+				        , T.BGNTMSTMP
+					FROM TB_CW_RCM_MAPNG_HIST T
+				    INNER JOIN TB_CW_RCM_PROCS_HIST P
+				    	ON T.OBJECT_ID = P.PROCS_ID
+				       	AND T.BGNTMSTMP = P.BGNTMSTMP
+				       	AND T.ENDTMSTMP = '99991231235959999999'
+                    LEFT OUTER JOIN TB_CW_SC_SYS_PROCS_MAPNG A
+						ON T.OBJECT_ID = A.PROCS_ID
+						AND T.BGNTMSTMP = A.PROCS_BGNTMSTMP
+						AND A.SYS_TABLE_ID = #{sysTableId}
+						AND A.SYS_ID = #{sysId}
+				) , V1 (OBJECT_ID, MAPNG_ID, UPPER_MAPNG_ID) AS (
+					SELECT 
+						OBJECT_ID, MAPNG_ID, UPPER_MAPNG_ID
+					FROM V0 
+					<if test="srchTy == 'no'" >  WHERE OBJECT_NO LIKE '%'+#{srchWrd}+'%' 	</if>
+					<if test="srchTy == 'nm'" >	 WHERE OBJECT_NM LIKE '%'+#{srchWrd}+'%' 	</if>
+					
+					UNION ALL 
+					
+					SELECT 
+						V.OBJECT_ID, V.MAPNG_ID, V.UPPER_MAPNG_ID
+					FROM V0 V , V1 ROOT 
+					WHERE ROOT.UPPER_MAPNG_ID = V.MAPNG_ID
+				)
+				SELECT
+					TT.*
+				FROM (
+				        SELECT DISTINCT
+				        	V0.*
+				        FROM V1 V1
+				        INNER JOIN V0 V0 
+				        	ON V0.OBJECT_ID = V1.OBJECT_ID
+                ) TT
+                
+                ORDER BY OBJECT_ID
+			</otherwise>
+		</choose>
+	</select>
+	
+	<!-- 시스템 확정일 기준 프로세스 목록 -->
+ 	<select id="procsHistList" resultType="EgovMap">
+        WITH TOT AS (
+					SELECT T.* FROM TB_CW_RCM_MAPNG_HIST T
+					 WHERE (SELECT CONVERT(VARCHAR,UPD_DT,112) + REPLACE(CONVERT(VARCHAR,UPD_DT,8),':','')+'999999' FROM TB_CW_SC_SYS_TABLE WHERE SYS_TABLE_ID = #{sysTableId})
+					        BETWEEN T.BGNTMSTMP AND T.ENDTMSTMP
+					)
+        SELECT 
+              A1.OBJECT_NO, A1.OBJECT_NM
+            , A2.OBJECT_NO AS OBJECT_NO_1, A2.OBJECT_NM AS OBJECT_NM_1
+            , A3.OBJECT_NO AS OBJECT_NO_2, A3.OBJECT_NM AS OBJECT_NM_2, A3.OBJECT_LEVEL AS OBJECT_LEVEL_2
+        FROM TOT A1
+        INNER JOIN TB_CW_RCM_PROCS_HIST P
+        	ON A1.OBJECT_ID = P.PROCS_ID
+        	AND A1.BGNTMSTMP = P.BGNTMSTMP
+		LEFT OUTER JOIN TOT A2
+            ON A1.UPPER_MAPNG_ID = A2.MAPNG_ID
+        LEFT OUTER JOIN TOT A3
+            ON A2.UPPER_MAPNG_ID = A3.MAPNG_ID
+        WHERE 1=1
+        <choose>
+        	<when test=' scopingProcsMappngTy != null and scopingProcsMappngTy == "M" '>
+        		AND A1.OBJECT_LEVEL = 1
+        	</when>
+        	<otherwise>
+        		AND A1.OBJECT_LEVEL = (SELECT MAX(OBJECT_LEVEL) FROM TB_CW_RCM_MAPNG WHERE OBJECT_KND_CD_ID NOT IN ('CTW_001_004','CTW_001_005'))
+        	</otherwise>
+        </choose>
+        ORDER BY A1.OBJECT_ID
+	</select>
+	
+	<!-- 시스템 최대 레벨 -->
+	<select id="getMaxLevel" resultType="Integer">
+		SELECT ISNULL(MAX(CONVERT ( NUMERIC , CODE_NM)),0) AS MAX_LEVEL FROM TB_CO_CODE WHERE GROUP_ID = 'CTW_123'
+	</select>
+</mapper>

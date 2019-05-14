@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.sc.tiabl.serviceimpl.CwscTiablExcelMapper">
+	<!-- 엑셀업로드 -->
+	<insert id="insert">
+		INSERT INTO TB_CW_SC_EXCEL_TEMP (
+			  USER_ID, SORT_SN
+			, CELL_0,  CELL_1,  CELL_2,  CELL_3,  CELL_4,  CELL_5,  CELL_6,  CELL_7,  CELL_8,  CELL_9
+			, CELL_10, CELL_11, CELL_12, CELL_13, CELL_14, CELL_15, CELL_16, CELL_17, CELL_18, CELL_19
+			, CELL_20, CELL_21, CELL_22, CELL_23, CELL_24, CELL_25, CELL_26, CELL_27, CELL_28, CELL_29
+			, CELL_30, CELL_31, CELL_32, CELL_33, CELL_34, CELL_35, CELL_36, CELL_37, CELL_38, CELL_39
+			, CELL_40, CELL_41, CELL_42, CELL_43, CELL_44, CELL_45, CELL_46, CELL_47, CELL_48, CELL_49
+			, CELL_50, CELL_51, CELL_52, CELL_53, CELL_54, CELL_55, CELL_56, CELL_57, CELL_58, CELL_59
+			, CELL_60, CELL_61, CELL_62, CELL_63, CELL_64, CELL_65, CELL_66, CELL_67, CELL_68, CELL_69
+			, CELL_70, CELL_71, CELL_72, CELL_73, CELL_74, CELL_75, CELL_76, CELL_77, CELL_78, CELL_79
+			, CELL_80, CELL_81, CELL_82, CELL_83, CELL_84, CELL_85, CELL_86, CELL_87, CELL_88, CELL_89
+			, CELL_90, CELL_91, CELL_92, CELL_93, CELL_94, CELL_95, CELL_96, CELL_97, CELL_98, CELL_99
+			, CELL_100, CELL_101, CELL_102, CELL_103, CELL_104, CELL_105, CELL_106, CELL_107, CELL_108, CELL_109
+			, CELL_110, CELL_111, CELL_112, CELL_113, CELL_114, CELL_115, CELL_116, CELL_117, CELL_118, CELL_119
+			, CELL_120, CELL_121, CELL_122, CELL_123, CELL_124, CELL_125, CELL_126, CELL_127, CELL_128, CELL_129
+			, CELL_130, CELL_131, CELL_132, CELL_133, CELL_134, CELL_135, CELL_136, CELL_137, CELL_138, CELL_139
+			, CELL_140, CELL_141, CELL_142, CELL_143, CELL_144, CELL_145, CELL_146, CELL_147, CELL_148, CELL_149
+			, CELL_150, CELL_151, CELL_152, CELL_153, CELL_154, CELL_155, CELL_156, CELL_157, CELL_158, CELL_159
+			, CELL_160, CELL_161, CELL_162, CELL_163, CELL_164, CELL_165, CELL_166, CELL_167, CELL_168, CELL_169
+			, CELL_170, CELL_171, CELL_172, CELL_173, CELL_174, CELL_175, CELL_176, CELL_177, CELL_178, CELL_179
+			, CELL_180, CELL_181, CELL_182, CELL_183, CELL_184, CELL_185, CELL_186, CELL_187, CELL_188, CELL_189
+			, CELL_190, CELL_191, CELL_192, CELL_193, CELL_194, CELL_195, CELL_196, CELL_197, CELL_198, CELL_199
+		) VALUES (
+			  #{userId}, #{excelRowSn}
+			, #{cell0},  #{cell1},  #{cell2},  #{cell3},  #{cell4},  #{cell5}, #{cell6},  #{cell7},  #{cell8},  #{cell9}
+			, #{cell10}, #{cell11}, #{cell12}, #{cell13}, #{cell14}, #{cell15}, #{cell16}, #{cell17}, #{cell18}, #{cell19}
+			, #{cell20}, #{cell21}, #{cell22}, #{cell23}, #{cell24}, #{cell25}, #{cell26}, #{cell27}, #{cell28}, #{cell29}
+			, #{cell30}, #{cell31}, #{cell32}, #{cell33}, #{cell34}, #{cell35}, #{cell36}, #{cell37}, #{cell38}, #{cell39}
+			, #{cell40}, #{cell41}, #{cell42}, #{cell43}, #{cell44}, #{cell45}, #{cell46}, #{cell47}, #{cell48}, #{cell49}
+			, #{cell50}, #{cell51}, #{cell52}, #{cell53}, #{cell54}, #{cell55}, #{cell56}, #{cell57}, #{cell58}, #{cell59}
+			, #{cell60}, #{cell61}, #{cell62}, #{cell63}, #{cell64}, #{cell65}, #{cell66}, #{cell67}, #{cell68}, #{cell69}
+			, #{cell70}, #{cell71}, #{cell72}, #{cell73}, #{cell74}, #{cell75}, #{cell76}, #{cell77}, #{cell78}, #{cell79}
+			, #{cell80}, #{cell81}, #{cell82}, #{cell83}, #{cell84}, #{cell85}, #{cell86}, #{cell87}, #{cell88}, #{cell89}
+			, #{cell90}, #{cell91}, #{cell92}, #{cell93}, #{cell94}, #{cell95}, #{cell96}, #{cell97}, #{cell98}, #{cell99}
+			, #{cell100}, #{cell101}, #{cell102}, #{cell103}, #{cell104}, #{cell105}, #{cell106}, #{cell107}, #{cell108}, #{cell109}
+			, #{cell110}, #{cell111}, #{cell112}, #{cell113}, #{cell114}, #{cell115}, #{cell116}, #{cell117}, #{cell118}, #{cell119}
+			, #{cell120}, #{cell121}, #{cell122}, #{cell123}, #{cell124}, #{cell125}, #{cell126}, #{cell127}, #{cell128}, #{cell129}
+			, #{cell130}, #{cell131}, #{cell132}, #{cell133}, #{cell134}, #{cell135}, #{cell136}, #{cell137}, #{cell138}, #{cell139}
+			, #{cell140}, #{cell141}, #{cell142}, #{cell143}, #{cell144}, #{cell145}, #{cell146}, #{cell147}, #{cell148}, #{cell149}
+			, #{cell150}, #{cell151}, #{cell152}, #{cell153}, #{cell154}, #{cell155}, #{cell156}, #{cell157}, #{cell158}, #{cell159}
+			, #{cell160}, #{cell161}, #{cell162}, #{cell163}, #{cell164}, #{cell165}, #{cell166}, #{cell167}, #{cell168}, #{cell169}
+			, #{cell170}, #{cell171}, #{cell172}, #{cell173}, #{cell174}, #{cell175}, #{cell176}, #{cell177}, #{cell178}, #{cell179}
+			, #{cell180}, #{cell181}, #{cell182}, #{cell183}, #{cell184}, #{cell185}, #{cell186}, #{cell187}, #{cell188}, #{cell189}
+			, #{cell190}, #{cell191}, #{cell192}, #{cell193}, #{cell194}, #{cell195}, #{cell196}, #{cell197}, #{cell198}, #{cell199}
+		)
+	</insert>
+		
+	<!-- 엑셀 템플릿 삭제 -->
+	<delete id="delete">
+		DELETE FROM TB_CW_SC_EXCEL_TEMP WHERE USER_ID = #{userId}
+	</delete>
+</mapper>

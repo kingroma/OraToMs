@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.rcm.mng.serviceimpl.CwrcmRiskMapper">
+
+	<select id="list" resultType="EgovMap">
+		<if test=' srchUpperObjectId != null and srchUpperObjectId != "" '>
+			WITH V1 ( OBJECT_ID ,MAPNG_ID , UPPER_MAPNG_ID ) AS (
+				SELECT OBJECT_ID ,MAPNG_ID , UPPER_MAPNG_ID 
+				FROM TB_CW_RCM_MAPNG 
+				WHERE UPPER_OBJECT_ID =  #{srchUpperObjectId}
+				
+				UNION ALL 
+				
+				SELECT M.OBJECT_ID , M.MAPNG_ID , M.UPPER_MAPNG_ID 
+				FROM TB_CW_RCM_MAPNG M , V1 ROOT 
+				WHERE ROOT.MAPNG_ID = M.UPPER_MAPNG_ID 
+				
+			)
+		</if>
+		SELECT 
+              A.RISK_ID
+            , A.RISK_NO
+            , A.RISK_NM
+            , A.RISK_CN
+			, A.WCGW
+			, A.FNLTT_DSTOR_RISK
+			, A.RISK_EVL_RESULT
+			, A.RISK_EVL_REASON
+            , B.MAPNG_ID, B.OBJECT_ID, B.OBJECT_NO, B.OBJECT_NM, B.OBJECT_LEVEL, B.UPPER_OBJECT_ID, B.UPPER_MAPNG_ID
+            , B.OBJECT_KND_CD_ID, C.CODE_NM AS OBJECT_KND_CD_NM                        
+            , BA.OBJECT_KND_CD_ID AS UPPER_OBJECT_KND_CD_ID, BA.OBJECT_NO AS UPPER_OBJECT_NO, BA.OBJECT_NM AS UPPER_OBJECT_NM
+            , (SELECT BGNTMSTMP FROM TB_CW_RCM_RISK_HIST WHERE RISK_ID = A.RISK_ID AND ENDTMSTMP = '99991231235959999999') AS SRCH_STDR_BGNTMSTMP
+            , (SELECT COUNT(RISK_ID) FROM TB_CW_RCM_RISK_HIST WHERE RISK_ID = A.RISK_ID) AS HIST_CNT
+        FROM TB_CW_RCM_RISK A
+        INNER JOIN TB_CW_RCM_MAPNG B
+            ON A.RISK_ID = B.OBJECT_ID
+        LEFT OUTER JOIN TB_CW_RCM_MAPNG BA
+            ON B.UPPER_MAPNG_ID = BA.MAPNG_ID
+        LEFT OUTER JOIN TB_CO_CODE C
+            ON CASE WHEN B.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+               		THEN 'CTW_001_003' 
+               		ELSE B.OBJECT_KND_CD_ID END = C.CODE_ID
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+					<when test="srchTy == 'no'" >	AND	UPPER(A.RISK_NO) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+		            <when test="srchTy == 'nm'" > 	AND	UPPER(A.RISK_NM) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>					
+					<when test="srchTy == 'cn'" >	AND	UPPER(A.RISK_CN) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+					<when test="srchTy == 'wcgw'" >	AND	UPPER(A.WCGW) 	 LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+					<when test="srchTy == 'fnlttDstorRisk'" >	AND	UPPER(A.FNLTT_DSTOR_RISK) 	LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+					<when test="srchTy == 'riskEvlResult'" >	AND	UPPER(A.RISK_EVL_RESULT) 	LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+					<when test="srchTy == 'riskEvlReason'" >	AND	UPPER(A.RISK_EVL_REASON) 	LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+				</choose>
+			</if>			
+			<if test=' srchUpperObjectId != null and srchUpperObjectId != "" '>
+				AND B.OBJECT_ID IN (
+		            SELECT 
+		                DISTINCT OBJECT_ID
+		            FROM V1		         
+		        )
+			</if>
+		</trim>
+		ORDER BY A.RISK_NO ASC  
+	</select>
+
+	<select id="view" resultType="CwrcmRiskVO">
+		SELECT 
+              A.RISK_ID
+            , A.RISK_NO
+            , A.RISK_NM
+            , A.RISK_CN
+			, A.WCGW
+			, A.FNLTT_DSTOR_RISK
+			, A.RISK_EVL_RESULT
+			, A.RISK_EVL_REASON      
+            , B.MAPNG_ID, B.OBJECT_ID, B.OBJECT_NO, B.OBJECT_NM, B.OBJECT_LEVEL, B.UPPER_OBJECT_ID, B.UPPER_MAPNG_ID
+            , B.OBJECT_KND_CD_ID, C.CODE_NM AS OBJECT_KND_CD_NM                        
+            , BA.OBJECT_KND_CD_ID AS UPPER_OBJECT_KND_CD_ID, BA.OBJECT_NO AS UPPER_OBJECT_NO, BA.OBJECT_NM AS UPPER_OBJECT_NM            
+            , (SELECT COUNT(MAPNG_ID) FROM TB_CW_RCM_MAPNG WHERE UPPER_MAPNG_ID = B.MAPNG_ID) AS LWPRT_CNT
+            , (SELECT BGNTMSTMP FROM TB_CW_RCM_RISK_HIST WHERE RISK_ID = A.RISK_ID AND ENDTMSTMP = '99991231235959999999') AS SRCH_STDR_BGNTMSTMP
+            , (SELECT COUNT(RISK_ID) FROM TB_CW_RCM_RISK_HIST WHERE RISK_ID = A.RISK_ID) AS HIST_CNT
+        FROM TB_CW_RCM_RISK A
+        INNER JOIN TB_CW_RCM_MAPNG B
+            ON A.RISK_ID = B.OBJECT_ID
+        LEFT OUTER JOIN TB_CW_RCM_MAPNG BA
+            ON B.UPPER_MAPNG_ID = BA.MAPNG_ID
+        LEFT OUTER JOIN TB_CO_CODE C
+            ON CASE WHEN B.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+               		THEN 'CTW_001_003' 
+               		ELSE B.OBJECT_KND_CD_ID END = C.CODE_ID
+        WHERE A.RISK_ID = #{riskId}
+	</select>
+
+	<insert id="insert">
+	<![CDATA[
+	BEGIN
+		INSERT INTO TB_CW_RCM_RISK (
+			  RISK_ID, RISK_NO, RISK_NM, RISK_CN, WCGW, FNLTT_DSTOR_RISK, RISK_EVL_RESULT, RISK_EVL_REASON      
+			, CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES (
+			  #{riskId}, #{riskNo}, #{riskNm}, #{riskCn}, #{wcgw}, #{fnlttDstorRisk}, #{riskEvlResult}, #{riskEvlReason}
+			, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		);
+		
+		UPDATE TB_CW_RCM_RISK_HIST
+		   SET ENDTMSTMP = #{endtmstmp}
+		     , UPD_DT = GETDATE()
+		     , UPD_USER_ID = #{suserId} 
+		 WHERE RISK_ID = #{riskId}
+		   AND ENDTMSTMP = '99991231235959999999';
+		
+		INSERT INTO TB_CW_RCM_RISK_HIST (
+			  RISK_ID, BGNTMSTMP, ENDTMSTMP, RISK_NO, RISK_NM, RISK_CN, WCGW, FNLTT_DSTOR_RISK, RISK_EVL_RESULT, RISK_EVL_REASON      
+			, CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+		) VALUES (
+			  #{riskId}, #{bgntmstmp}, '99991231235959999999', #{riskNo}, #{riskNm}, #{riskCn}, #{wcgw}, #{fnlttDstorRisk}, #{riskEvlResult}, #{riskEvlReason}
+			, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 리스크 등록'
+		);
+	END;
+	]]>
+	</insert>
+
+	<update id="update">
+	<![CDATA[
+	BEGIN
+		UPDATE TB_CW_RCM_RISK SET 
+			  RISK_NO       	= #{riskNo}
+			, RISK_NM       	= #{riskNm}
+			, RISK_CN       	= #{riskCn}
+			, WCGW     			= #{wcgw}
+			, FNLTT_DSTOR_RISK  = #{fnlttDstorRisk}
+			, RISK_EVL_RESULT   = #{riskEvlResult}
+			, RISK_EVL_REASON   = #{riskEvlReason}
+			, UPD_DT 	 		= GETDATE()
+			, UPD_USER_ID		= #{suserId}  
+		WHERE RISK_ID = #{riskId};
+		
+		UPDATE TB_CW_RCM_RISK_HIST
+		   SET ENDTMSTMP = #{endtmstmp}
+		     , UPD_DT = GETDATE()
+		     , UPD_USER_ID = #{suserId} 
+		 WHERE RISK_ID = #{riskId}
+		   AND ENDTMSTMP = '99991231235959999999';
+	    
+		INSERT INTO TB_CW_RCM_RISK_HIST (
+			  RISK_ID, BGNTMSTMP, ENDTMSTMP, RISK_NO, RISK_NM, RISK_CN, WCGW, FNLTT_DSTOR_RISK, RISK_EVL_RESULT, RISK_EVL_REASON      
+			, CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+		) VALUES (
+			  #{riskId}, #{bgntmstmp}, '99991231235959999999', #{riskNo}, #{riskNm}, #{riskCn}, #{wcgw}, #{fnlttDstorRisk}, #{riskEvlResult}, #{riskEvlReason}
+			, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 리스크 수정'
+		);
+	END;
+	]]>
+	</update>
+
+	<delete id="delete">
+		<![CDATA[
+		BEGIN
+			DELETE FROM TB_CW_RCM_RISK
+			WHERE RISK_ID = #{riskId};
+			
+			UPDATE TB_CW_RCM_RISK_HIST
+		   	   SET ENDTMSTMP = #{endtmstmp}
+		      	 , UPD_DT = GETDATE()
+		         , UPD_USER_ID = #{suserId} 
+	    	 WHERE ENDTMSTMP = '99991231235959999999'
+	    	   AND RISK_ID = #{riskId};
+			
+			INSERT INTO TB_CW_RCM_RISK_HIST (
+				   RISK_ID, BGNTMSTMP, ENDTMSTMP 
+				 , RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+			) VALUES (
+				   #{riskId}, #{bgntmstmp}, '99991231235959999999'
+				 , GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 리스크 삭제'
+			);
+		END;
+		]]>
+	</delete>
+
+	<select id="duplchk" resultType="int">
+		SELECT COUNT(*) FROM TB_CW_RCM_MAPNG WHERE OBJECT_NO = #{riskNo}
+	</select>
+	
+	<delete id="deleteAll">
+		<![CDATA[
+		BEGIN
+			/** 리스크 테이블 전체 삭제 */
+			DELETE FROM TB_CW_RCM_RISK;
+
+			/** 리스크 전체 이력 종료/시작 */
+			FOR list IN (
+				SELECT RISK_ID, ROWNUM
+				  FROM TB_CW_RCM_RISK_HIST
+				 WHERE ENDTMSTMP = '99991231235959999999'	
+			) LOOP
+			
+			IF list.ROWNUM = '1' THEN
+				UPDATE TB_CW_RCM_RISK_HIST
+			   	   SET ENDTMSTMP = #{endtmstmp}
+			      	 , UPD_DT = GETDATE()
+			         , UPD_USER_ID = #{suserId} 
+			     WHERE ENDTMSTMP = '99991231235959999999';
+			END IF;
+			
+			INSERT INTO TB_CW_RCM_RISK_HIST (
+					   RISK_ID, BGNTMSTMP, ENDTMSTMP 
+					 , RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					   list.RISK_ID, #{bgntmstmp}, '99991231235959999999'
+					 , GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 전체 삭제'
+				);
+			END LOOP;
+		END;
+		]]>
+	</delete>
+	
+	<select id="selectRiskHistList" resultType="EgovMap">
+       SELECT 
+              A.RISK_ID
+            , A.BGNTMSTMP
+            , A.ENDTMSTMP
+            , SUBSTRING(A.BGNTMSTMP,1,4) + '-' + SUBSTRING(A.BGNTMSTMP,5,2) + '-' + SUBSTRING(A.BGNTMSTMP,7,2) + ' ' + SUBSTRING(A.BGNTMSTMP,9,2) + ':' + SUBSTRING(A.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(A.BGNTMSTMP,13,2) BGNTMSTMP_DE
+            , SUBSTRING(A.BGNTMSTMP,1,4) + '-' + SUBSTRING(A.BGNTMSTMP,5,2) + '-' + SUBSTRING(A.BGNTMSTMP,7,2) + ' ' + SUBSTRING(A.BGNTMSTMP,9,2) + ':' + SUBSTRING(A.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(A.BGNTMSTMP,13,2) + ' - ' + A.RM AS BGNTMSTMP_RM
+            , (CASE WHEN A.ENDTMSTMP = '99991231235959999999' THEN '-' 
+                   ELSE SUBSTRING(A.ENDTMSTMP,1,4) + '-' + SUBSTRING(A.ENDTMSTMP,5,2) + '-' + SUBSTRING(A.ENDTMSTMP,7,2) + ' ' + SUBSTRING(A.ENDTMSTMP,9,2) + ':' + SUBSTRING(A.ENDTMSTMP,11,2 ) + ':' + SUBSTRING(A.ENDTMSTMP,13,2) END) ENDTMSTMP_DE
+            , A.RISK_NO
+            , A.RISK_NM
+            , A.RISK_CN
+            , A.WCGW
+            , A.FNLTT_DSTOR_RISK
+            , A.RISK_EVL_RESULT
+            , A.RISK_EVL_REASON    
+            , A.RM
+            , B.MAPNG_ID, B.OBJECT_ID, B.OBJECT_NO, B.OBJECT_NM, B.OBJECT_LEVEL, B.UPPER_OBJECT_ID, B.UPPER_MAPNG_ID
+            , B.OBJECT_KND_CD_ID, C.CODE_NM AS OBJECT_KND_CD_NM                        
+            , BA.OBJECT_KND_CD_ID AS UPPER_OBJECT_KND_CD_ID, BA.OBJECT_NO AS UPPER_OBJECT_NO, BA.OBJECT_NM AS UPPER_OBJECT_NM            
+            , (SELECT COUNT(MAPNG_ID) FROM TB_CW_RCM_MAPNG WHERE UPPER_MAPNG_ID = B.MAPNG_ID) AS LWPRT_CNT
+        FROM TB_CW_RCM_RISK_HIST A
+        INNER JOIN TB_CW_RCM_MAPNG_HIST B
+            ON A.RISK_ID = B.OBJECT_ID
+           AND A.BGNTMSTMP = B.BGNTMSTMP
+        LEFT OUTER JOIN TB_CW_RCM_MAPNG_HIST BA
+            ON B.UPPER_MAPNG_ID = BA.MAPNG_ID
+           AND B.BGNTMSTMP = BA.BGNTMSTMP
+        LEFT OUTER JOIN TB_CO_CODE C
+            ON CASE WHEN B.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+               		THEN 'CTW_001_003' 
+               		ELSE B.OBJECT_KND_CD_ID END = C.CODE_ID
+        WHERE A.RISK_ID = #{riskId}
+        <if test=' srchStdrBgntmstmp != null and srchStdrBgntmstmp != "" '>
+        	AND A.BGNTMSTMP = #{srchStdrBgntmstmp}
+		</if>
+        <if test=' srchCmprBgntmstmp != null and srchCmprBgntmstmp != "" '>
+        	AND A.BGNTMSTMP = #{srchCmprBgntmstmp}
+		</if>
+        ORDER BY A.ENDTMSTMP DESC
+	</select>
+	
+	<select id="selectRiskHistView" resultType="EgovMap">
+       SELECT 
+              A.RISK_ID
+            , A.BGNTMSTMP
+            , A.ENDTMSTMP
+            , SUBSTRING(A.BGNTMSTMP,1,4) + '-' + SUBSTRING(A.BGNTMSTMP,5,2) + '-' + SUBSTRING(A.BGNTMSTMP,7,2) + ' ' + SUBSTRING(A.BGNTMSTMP,9,2) + ':' + SUBSTRING(A.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(A.BGNTMSTMP,13,2) BGNTMSTMP_DE
+            , SUBSTRING(A.BGNTMSTMP,1,4) + '-' + SUBSTRING(A.BGNTMSTMP,5,2) + '-' + SUBSTRING(A.BGNTMSTMP,7,2) + ' ' + SUBSTRING(A.BGNTMSTMP,9,2) + ':' + SUBSTRING(A.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(A.BGNTMSTMP,13,2) + ' - ' + A.RM AS BGNTMSTMP_RM
+            , (CASE WHEN A.ENDTMSTMP = '99991231235959999999' THEN '-' 
+                   ELSE SUBSTRING(A.ENDTMSTMP,1,4) + '-' + SUBSTRING(A.ENDTMSTMP,5,2) + '-' + SUBSTRING(A.ENDTMSTMP,7,2) + ' ' + SUBSTRING(A.ENDTMSTMP,9,2) + ':' + SUBSTRING(A.ENDTMSTMP,11,2 ) + ':' + SUBSTRING(A.ENDTMSTMP,13,2) END) ENDTMSTMP_DE
+            , A.RISK_NO
+            , A.RISK_NM
+            , A.RISK_CN
+            , A.WCGW
+            , A.FNLTT_DSTOR_RISK
+            , A.RISK_EVL_RESULT
+            , A.RISK_EVL_REASON    
+            , A.RM
+            , B.MAPNG_ID, B.OBJECT_ID, B.OBJECT_NO, B.OBJECT_NM, B.OBJECT_LEVEL, B.UPPER_OBJECT_ID, B.UPPER_MAPNG_ID
+            , B.OBJECT_KND_CD_ID, C.CODE_NM AS OBJECT_KND_CD_NM                        
+            , BA.OBJECT_KND_CD_ID AS UPPER_OBJECT_KND_CD_ID, BA.OBJECT_NO AS UPPER_OBJECT_NO, BA.OBJECT_NM AS UPPER_OBJECT_NM            
+            , (SELECT COUNT(MAPNG_ID) FROM TB_CW_RCM_MAPNG WHERE UPPER_MAPNG_ID = B.MAPNG_ID) AS LWPRT_CNT
+        FROM TB_CW_RCM_RISK_HIST A
+        INNER JOIN TB_CW_RCM_MAPNG_HIST B
+            ON A.RISK_ID = B.OBJECT_ID
+           AND A.BGNTMSTMP = B.BGNTMSTMP
+        LEFT OUTER JOIN TB_CW_RCM_MAPNG_HIST BA
+            ON B.UPPER_MAPNG_ID = BA.MAPNG_ID
+           AND B.BGNTMSTMP = BA.BGNTMSTMP
+        LEFT OUTER JOIN TB_CO_CODE C
+            ON CASE WHEN B.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+               		THEN 'CTW_001_003' 
+               		ELSE B.OBJECT_KND_CD_ID END = C.CODE_ID
+        WHERE A.RISK_ID = #{riskId}
+        <if test=' srchStdrBgntmstmp != null and srchStdrBgntmstmp != "" '>
+        	AND A.BGNTMSTMP = #{srchStdrBgntmstmp}
+		</if>
+        <if test=' srchCmprBgntmstmp != null and srchCmprBgntmstmp != "" '>
+        	AND A.BGNTMSTMP = #{srchCmprBgntmstmp}
+		</if>
+	</select>
+</mapper>

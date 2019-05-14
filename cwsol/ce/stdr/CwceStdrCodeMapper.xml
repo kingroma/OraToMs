@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.ce.stdr.serviceimpl.CwceStdrCodeMapper">
+
+	<select id="list" resultType="EgovMap">
+		SELECT  A.EVL_STDR_ID
+		      , A.BGNTMSTMP      
+		      , A.STDR_CD_ID
+      		  , A.STDR_CD_NM
+      		  , A.STDR_SCORE
+		      , A.USE_AT
+		FROM TB_CW_EVL_STDR_CODE A
+		WHERE 	A.EVL_STDR_ID = #{evlStdrId} 
+			AND A.BGNTMSTMP = #{bgntmstmp}
+		ORDER BY A.STDR_CD_ID ASC
+	</select>
+
+	<insert id="insert">
+		INSERT INTO TB_CW_EVL_STDR_CODE (
+			EVL_STDR_ID, BGNTMSTMP, STDR_CD_ID, STDR_CD_NM, STDR_SCORE, USE_AT
+		) VALUES  (
+			#{evlStdrId}, #{bgntmstmp}, #{stdrCdId}, #{stdrCdNm}, #{stdrScore}, #{useAt}
+		) 
+	</insert>
+</mapper>

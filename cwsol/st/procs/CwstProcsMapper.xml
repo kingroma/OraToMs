@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.st.procs.serviceimpl.CwstProcsMapper">
+
+<!-- 프로세스별 수행 현황 목록 -->
+	<select id="list" resultType="EgovMap">
+		SELECT
+			TT.*
+		FROM (
+			SELECT
+				  DISTINCT
+				  A.EVL_ID
+				, B.EVL_KND_CD_ID
+				, A.OBJECT_ID
+				, B.OBJECT_NO
+				, B.OBJECT_NM
+				, B.UPPER_OBJECT_ID
+				, B.OBJECT_LEVEL
+				, A.CHRG_USER_ID
+				, A.CHRG_USER_BGNDE
+				, D.USER_CD
+				, D.USER_ID
+				, D.USER_NM
+				, A.CHRG_USER_TY_CD_ID
+				, AA.CODE_NM AS CHRG_USER_TY_CD_NM
+				, B.OBJECT_KND_CD_ID
+				, BA.CODE_NM AS OBJECT_KND_CD_NM
+				, A.CHRG_DEPT_ID
+				, A.CHRG_DEPT_BGNDE
+				, C.DEPT_ID
+				, C.DEPT_NM
+				, A.EVL_CNCLSN_CD_ID
+				, A.STTUS_CD_ID
+				, AC.CODE_NM AS STTUS_CD_NM
+				, (CASE WHEN ISNULL(A.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN 'Y' ELSE 'N' END) AS EXC_AT
+			FROM TB_CW_EVL_EXC A
+			INNER JOIN (
+	        	SELECT
+                      DISTINCT
+                      SA.EVL_ID, E.EVL_KND_CD_ID, SA.OBJECT_ID, SA.OBJECT_NO, SA.OBJECT_NM, SA.OBJECT_LEVEL, SA.OBJECT_KND_CD_ID
+                    , (CASE WHEN SA.OBJECT_KND_CD_ID = 'CTW_001_005' 
+                  			AND ((E.EVL_KND_CD_ID = 'CTW_103_001' OR E.EVL_KND_CD_ID = 'CTW_103_002') 
+                  				OR ((E.EVL_KND_CD_ID = 'CTW_103_003' OR E.EVL_KND_CD_ID = 'CTW_103_004') AND LOWER(#{elcRiskUseAt}) = 'true' )) THEN SB.UPPER_OBJECT_ID ELSE SA.UPPER_OBJECT_ID END) AS UPPER_OBJECT_ID
+              	FROM TB_CW_EVL_RCM_MAPNG SA
+              	LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG SB
+                	ON SA.EVL_ID = SB.EVL_ID
+                    AND SA.UPPER_MAPNG_ID = SB.MAPNG_ID
+	            LEFT OUTER JOIN TB_CW_EVL E
+	            	ON  SA.EVL_ID = E.EVL_ID
+              	WHERE SA.OBJECT_KND_CD_ID = 'CTW_001_005'   /** 통제만 추출 */
+                	AND SA.EVL_ID = #{srchEvlId}
+	        ) B
+				ON A.EVL_ID = B.EVL_ID
+				AND A.OBJECT_ID = B.OBJECT_ID
+			LEFT OUTER JOIN TB_CO_CODE AA
+	            ON A.CHRG_USER_TY_CD_ID = AA.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE AC
+	            ON ISNULL(A.STTUS_CD_ID, 'CTW_106_001') = AC.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE BA
+	            ON CASE WHEN B.OBJECT_KND_CD_ID = 'CTW_001_002'
+	            			AND (CASE WHEN B.EVL_KND_CD_ID IN ('CTW_103_001', 'CTW_103_002') THEN #{procsStep} ELSE #{elcProcsStep} END) = 2
+                		THEN 'CTW_001_003'
+                		ELSE B.OBJECT_KND_CD_ID END = BA.CODE_ID
+			INNER JOIN TB_CO_DEPT_HIST C
+				ON A.CHRG_DEPT_ID = C.DEPT_ID
+				AND A.CHRG_DEPT_BGNDE = C.HIST_BGNDE
+			LEFT OUTER JOIN TB_CO_USER_HIST D
+				ON A.CHRG_USER_ID = D.USER_ID
+				AND A.CHRG_USER_BGNDE = D.HIST_BGNDE
+			WHERE A.EVL_ID = #{srchEvlId}
+		) TT
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+				AND TT.OBJECT_ID LIKE #{srchObjectId} + '%'
+			<if test=' srchUpperObjectId != null and srchUpperObjectId != "" '>
+				AND TT.OBJECT_ID LIKE #{srchUpperObjectId} + '%'
+			</if>
+			<if test=' srchChrgUserTyCdId != null and srchChrgUserTyCdId != "" '>
+				AND TT.CHRG_USER_TY_CD_ID = #{srchChrgUserTyCdId}
+			</if>
+			<if test=' srchExcAt != null and srchExcAt != "" '>
+				AND (CASE WHEN ISNULL(TT.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN 'Y' ELSE 'N' END) = #{srchExcAt}
+			</if>
+			<if test=' srchSttusCdId != null and srchSttusCdId != "" '>
+				AND ISNULL(TT.STTUS_CD_ID, 'CTW_106_001') = #{srchSttusCdId}
+			</if>
+			<if test=' srchEvlCnclsnCdId != null and srchEvlCnclsnCdId != "" '>
+				AND TT.EVL_CNCLSN_CD_ID = #{srchEvlCnclsnCdId}
+			</if>
+		</trim>
+	</select>
+
+<!-- 프로세스별 통제 현황 -->
+	<select id="cnrlList" resultType="EgovMap">
+	  SELECT
+			  T.*
+			, CA.CODE_NM AS OBJECT_KND_CD_NM
+	        , (CASE WHEN T.UPDT_CNT_SUM = 0 	THEN '0.0' ELSE (TO_CHAR(ROUND( (T.UPDT_CNT_SUM 	/ (T.EXC_CNT_SUM 	+ T.EXC_NO_CNT_SUM))	*100.0, 1), 'FM999,990.0')) END + '%' ) AS UPDT_PT
+	        , (CASE WHEN T.CNCLSN_CNT_SUM1 = 0 	THEN '0.0' ELSE (TO_CHAR(ROUND( (T.CNCLSN_CNT_SUM1 	/ (T.EXC_CNT_SUM 	+ T.EXC_NO_CNT_SUM))	*100.0, 1), 'FM999,990.0')) END + '%' ) AS CNCLSN_PT1
+	        , (CASE WHEN T.CNCLSN_CNT_SUM2 = 0 	THEN '0.0' ELSE (TO_CHAR(ROUND( (T.CNCLSN_CNT_SUM2 	/ (T.EXC_CNT_SUM 	+ T.EXC_NO_CNT_SUM))	*100.0, 1), 'FM999,990.0')) END + '%' ) AS CNCLSN_PT2
+	        , (CASE WHEN T.EXC_CNT_SUM = 0 		THEN '0.0' ELSE (TO_CHAR(ROUND( (T.EXC_CNT_SUM 		/ (T.EXC_CNT_SUM 	+ T.EXC_NO_CNT_SUM))	*100.0, 1), 'FM999,990.0')) END + '%' ) AS EXC_PT
+	        , (CASE WHEN T.TESTER_CNT_SUM = 0 	THEN '0.0' ELSE (TO_CHAR(ROUND( (T.TESTER_CNT_SUM 	/ (T.TESTER_CNT_SUM + T.TESTER_NO_CNT_SUM))	*100.0, 1), 'FM999,990.0')) END + '%' ) AS TESTER_PT
+		FROM (
+			SELECT
+	           	  A.OBJECT_ID
+		        , A.OBJECT_NO
+		        , A.OBJECT_NM
+		        , A.OBJECT_KND_CD_ID
+		        , A.UPPER_OBJECT_ID
+		        , E.EVL_KND_CD_ID
+		        /** 평가자 수행여부 */
+		        , SUM(CASE WHEN B.CHRG_USER_TY_CD_ID = 'CTW_105_001' THEN 1 ELSE 0 END) AS EXC_ALL_CNT_SUM
+		        , SUM(CASE WHEN B.CHRG_USER_TY_CD_ID = 'CTW_105_001' AND ISNULL(B.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN 1 ELSE 0 END) AS EXC_CNT_SUM
+		        , SUM(CASE WHEN B.CHRG_USER_TY_CD_ID = 'CTW_105_001' AND ISNULL(B.STTUS_CD_ID, 'CTW_106_001') NOT IN ('CTW_106_003', 'CTW_106_005') THEN 1 ELSE 0 END) AS EXC_NO_CNT_SUM
+		        /** 평가자 기준 수정여부 */
+		        , SUM(CASE WHEN B.CHRG_USER_TY_CD_ID = 'CTW_105_001' AND ISNULL(B.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') AND C.CNRL_ID IS NOT NULL THEN 1 ELSE 0 END) AS UPDT_CNT_SUM
+		        /** 평가자 기준 통제 효과성 여부 */
+		        , SUM(CASE WHEN B.CHRG_USER_TY_CD_ID = 'CTW_105_001' AND ISNULL(B.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') AND B.EVL_CNCLSN_CD_ID = 'CTW_110_001' THEN 1 ELSE 0 END) AS CNCLSN_CNT_SUM1
+		        , SUM(CASE WHEN B.CHRG_USER_TY_CD_ID = 'CTW_105_001' AND ISNULL(B.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') AND B.EVL_CNCLSN_CD_ID = 'CTW_110_002' THEN 1 ELSE 0 END) AS CNCLSN_CNT_SUM2
+		        /**  테스터 수행여부 */
+		        , SUM(CASE WHEN B.CHRG_USER_TY_CD_ID = 'CTW_105_002' THEN 1 ELSE 0 END) AS TESTER_ALL_CNT_SUM
+		        , SUM(CASE WHEN B.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND ISNULL(B.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN 1 ELSE 0 END) AS TESTER_CNT_SUM
+		        , SUM(CASE WHEN B.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND ISNULL(B.STTUS_CD_ID, 'CTW_106_001') NOT IN ('CTW_106_003', 'CTW_106_005') THEN 1 ELSE 0 END) AS TESTER_NO_CNT_SUM
+
+			FROM TB_CW_EVL_RCM_MAPNG A
+	        LEFT OUTER JOIN (
+	       		SELECT EXC.*
+	      		FROM TB_CW_EVL_RCM_MAPNG M
+	          	LEFT OUTER JOIN TB_CW_EVL_EXC EXC
+	     	    	ON 	M.EVL_ID 	= EXC.EVL_ID
+	        	    AND M.OBJECT_ID = EXC.OBJECT_ID
+	          	WHERE M.OBJECT_KND_CD_ID = 'CTW_001_005'
+	        	) B
+	       		ON 	A.EVL_ID 	= B.EVL_ID
+	          	AND B.OBJECT_ID LIKE A.OBJECT_ID +'%'
+	        LEFT OUTER JOIN TB_CW_UPRPD_CNRL_UPDT C
+	            ON 	A.EVL_ID 	= C.EVL_ID
+	            AND B.OBJECT_ID = C.CNRL_ID
+			LEFT OUTER JOIN TB_CW_EVL E
+				ON  A.EVL_ID	= E.EVL_ID
+			WHERE A.EVL_ID = #{srchEvlId}
+			<![CDATA[
+	      		AND A.OBJECT_LEVEL <= (CASE WHEN E.EVL_KND_CD_ID = 'CTW_103_001' OR E.EVL_KND_CD_ID = 'CTW_103_002' THEN #{procsStep}
+	      									WHEN E.EVL_KND_CD_ID = 'CTW_103_003' OR E.EVL_KND_CD_ID = 'CTW_103_004' THEN #{elcProcsStep}
+						               END)
+			]]>
+	      	GROUP BY  A.OBJECT_ID
+			        , A.OBJECT_NO
+			        , A.OBJECT_NM
+			        , A.OBJECT_KND_CD_ID
+			        , A.UPPER_OBJECT_ID
+			        , E.EVL_KND_CD_ID
+			) T
+		LEFT OUTER JOIN TB_CO_CODE CA
+			ON CASE WHEN T.OBJECT_KND_CD_ID = 'CTW_001_002' AND (CASE WHEN T.EVL_KND_CD_ID = 'CTW_103_001' OR T.EVL_KND_CD_ID = 'CTW_103_002' THEN #{procsStep}
+							      									  WHEN T.EVL_KND_CD_ID = 'CTW_103_003' OR T.EVL_KND_CD_ID = 'CTW_103_004' THEN #{elcProcsStep}
+												                 END) = 2
+               		THEN 'CTW_001_003'
+               		ELSE T.OBJECT_KND_CD_ID END = CA.CODE_ID
+      	ORDER BY T.OBJECT_ID
+	</select>
+
+<!--  프로세스별 표본추출 현황 -->
+	<select id="testExtrcList" resultType="EgovMap">
+		SELECT
+           	  A.OBJECT_ID
+	        , A.OBJECT_NO
+	        , A.OBJECT_NM
+	        , A.OBJECT_KND_CD_ID
+	        , A.UPPER_OBJECT_ID
+			, CA.CODE_NM AS OBJECT_KND_CD_NM
+			, SUM(CASE WHEN B.CHRG_USER_TY_CD_ID ='CTW_105_002' THEN 1 ELSE 0 END) AS TESTER_ALL_CNT_SUM
+            , SUM(CASE WHEN ISNULL(B.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN 1 ELSE 0 END) AS TESTER_CNT_SUM
+            , SUM(CASE WHEN ISNULL(B.STTUS_CD_ID, 'CTW_106_001') NOT IN ('CTW_106_003', 'CTW_106_005') THEN 1 ELSE 0 END) AS TESTER_NO_CNT_SUM
+            /** 표본추출 유형 */
+            <if test=" cdIdList != null and cdIdList.size > 0 ">
+				<foreach collection="cdIdList" item="item" open="" close="" separator=""  index="index" >
+					, SUM(CASE WHEN ISNULL(B.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') AND BA.SAMPLE_TY_CD_ID = #{item.codeId} THEN 1 ELSE 0 END) AS EXTRC_CNT_SUM${index}
+				</foreach>
+			</if>
+               /** 테스터 결과 */
+            , SUM(CASE WHEN ISNULL(B.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN ISNULL(BA.TOT_SAMPLE_SIZE, 0) ELSE 0 END)   AS TOT_SAMPLE_CNT_SUM
+            , SUM(CASE WHEN ISNULL(B.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN ISNULL(BA.NRMLT_SAMPLE_SIZE, 0) ELSE 0 END) AS NRMLT_SAMPLE_CNT_SUM
+            , SUM(CASE WHEN ISNULL(B.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN ISNULL(BA.EXCP_SAMPLE_SIZE, 0) ELSE 0 END)  AS EXCP_SAMPLE_CNT_SUM
+            , SUM(CASE WHEN ISNULL(B.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN ISNULL(BA.NA_SAMPLE_SIZE, 0) ELSE 0 END)    AS NA_SAMPLE_CNT_SUM
+		FROM TB_CW_EVL_RCM_MAPNG A
+        LEFT OUTER JOIN (
+       		SELECT EXC.*
+      		FROM TB_CW_EVL_RCM_MAPNG M
+          	LEFT OUTER JOIN TB_CW_EVL_EXC EXC
+     	    	ON 	M.EVL_ID 			= EXC.EVL_ID
+        	    AND M.OBJECT_ID 		= EXC.OBJECT_ID
+          	WHERE M.OBJECT_KND_CD_ID 	= 'CTW_001_005'
+	        	AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_002'    /** 테스터 */
+        	) B
+       		ON 	A.EVL_ID 				= B.EVL_ID
+          	AND B.OBJECT_ID LIKE A.OBJECT_ID +'%'
+        LEFT OUTER JOIN TB_CW_EVL_EXC_TEST BA
+	        ON 	B.EVL_ID 				= BA.EVL_ID
+	        AND B.OBJECT_ID 			= BA.OBJECT_ID
+	        AND B.CHRG_USER_ID 			= BA.CHRG_USER_ID
+	        AND B.CHRG_USER_TY_CD_ID 	= BA.CHRG_USER_TY_CD_ID
+		LEFT OUTER JOIN TB_CW_EVL E
+			ON  A.EVL_ID	= E.EVL_ID
+		LEFT OUTER JOIN TB_CO_CODE CA
+			ON CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_002' AND (CASE WHEN E.EVL_KND_CD_ID = 'CTW_103_001' OR E.EVL_KND_CD_ID = 'CTW_103_002' THEN #{procsStep}
+							      									  WHEN E.EVL_KND_CD_ID = 'CTW_103_003' OR E.EVL_KND_CD_ID = 'CTW_103_004' THEN #{elcProcsStep}
+												                 END) = 2
+               		THEN 'CTW_001_003'
+               		ELSE A.OBJECT_KND_CD_ID END = CA.CODE_ID
+		WHERE A.EVL_ID = #{srchEvlId}
+		<![CDATA[
+      		AND A.OBJECT_LEVEL <= (CASE WHEN E.EVL_KND_CD_ID = 'CTW_103_001' OR E.EVL_KND_CD_ID = 'CTW_103_002' THEN #{procsStep}
+      									WHEN E.EVL_KND_CD_ID = 'CTW_103_003' OR E.EVL_KND_CD_ID = 'CTW_103_004' THEN #{elcProcsStep}
+					               END)
+		]]>
+      	GROUP BY  A.OBJECT_ID
+		        , A.OBJECT_NO
+		        , A.OBJECT_NM
+		        , A.OBJECT_KND_CD_ID
+		        , A.UPPER_OBJECT_ID
+		        , CA.CODE_NM
+      	ORDER BY A.OBJECT_ID
+	</select>
+
+	<!-- 하위 RCM 리스트 -->
+	<select id="lwprtRcmList" resultType="EgovMap">
+	   SELECT
+	   		DISTINCT
+            A.EVL_ID
+          , A.OBJECT_ID
+          , A.OBJECT_NO
+          , A.OBJECT_NM
+          , (A.OBJECT_NO+' '+ A.OBJECT_NM) AS OBJECT_STR
+          , A.OBJECT_LEVEL
+          , A.OBJECT_KND_CD_ID
+          , A.UPPER_OBJECT_ID
+          , A.UPPER_MAPNG_ID
+       FROM TB_CW_EVL_RCM_MAPNG A
+       <trim prefix="WHERE" prefixOverrides="AND|OR ">
+			AND A.EVL_ID = #{srchEvlId}
+			<choose>
+				<when test=' srchUpperObjectId != null and srchUpperObjectId != "" '>	AND	A.UPPER_OBJECT_ID = #{srchUpperObjectId}</when>
+	            <otherwise>	AND A.UPPER_OBJECT_ID IS NULL	</otherwise>
+			</choose>
+		</trim>
+		ORDER BY A.OBJECT_NO ASC
+	</select>
+
+	<!-- 통제 프로세스 리스트 -->
+	<select id="cnrlProcsList" resultType="EgovMap">
+    	SELECT
+			DISTINCT
+			A.MAPNG_ID
+		  , A.OBJECT_ID
+		  , A.OBJECT_NO
+		  , A.OBJECT_NM
+		  , A.OBJECT_LEVEL
+		  , A.UPPER_OBJECT_ID
+		  , A.UPPER_MAPNG_ID
+		  , A.OBJECT_KND_CD_ID
+		FROM TB_CW_EVL_RCM_MAPNG A
+        WHERE A.EVL_ID = #{srchEvlId}
+	        AND #{srchObjectId} LIKE A.OBJECT_ID + '%'
+	        AND A.OBJECT_KND_CD_ID IN ('CTW_001_001', 'CTW_001_002', 'CTW_001_003')
+        ORDER BY A.OBJECT_ID ASC
+	</select>
+
+</mapper>

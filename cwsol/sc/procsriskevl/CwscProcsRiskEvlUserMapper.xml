@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.sc.procsriskevl.serviceimpl.CwscProcsRiskEvlUserMapper">
+	
+	<insert id="insert">
+		INSERT INTO TB_CW_SC_PROCS_RISK_EVLUSER (
+			  PROCS_RISK_EVL_ID, PROCS_ID, EVL_CHRG_USER_ID, EVL_CHRG_USER_BGNDE
+			, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES  (
+			  #{procsRiskEvlId}, #{procsId}, #{evlChrgUserId}, #{evlChrgUserBgnde}
+			, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		) 
+	</insert>
+	
+	<insert id="update">
+		UPDATE TB_CW_SC_PROCS_RISK_EVLUSER SET
+			  EVL_CHRG_USER_ID = #{evlChrgUserId}
+			, EVL_CHRG_USER_BGNDE = #{evlChrgUserBgnde}
+			, UPD_DT = GETDATE()
+			, UPD_USER_ID = #{suserId}
+		WHERE 	PROCS_RISK_EVL_ID = #{procsRiskEvlId}
+			AND PROCS_ID = #{procsId}
+	</insert>
+	
+	<!--삭제 -->
+	<delete id="delete">
+		DELETE FROM  TB_CW_SC_PROCS_RISK_EVLUSER 
+		WHERE 	PROCS_RISK_EVL_ID = #{procsRiskEvlId}
+			AND PROCS_ID = #{procsId}
+	</delete>
+	
+
+</mapper>

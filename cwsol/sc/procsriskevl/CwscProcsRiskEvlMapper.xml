@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.sc.procsriskevl.serviceimpl.CwscProcsRiskEvlMapper">
+
+ 	<!-- 목록 -->
+ 	<select id="list" resultType="EgovMap">
+		SELECT  A.PROCS_RISK_EVL_ID
+		      , A.FSYR
+		      , A.PROCS_RISK_EVL_SJ
+		      , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_BGNDE , 112 ) , 23 ) AS EVL_BGNDE
+		      , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_ENDDE , 112 ) , 23 ) AS EVL_ENDDE
+		      , A.RM
+		      , A.UNITY_ID
+		      , A.STTUS_CD_ID
+		      , C.CODE_NM 	AS STTUS_CD_NM
+		      , A.RGS_DT
+		      , A.RGS_USER_ID
+		      , A.UPD_DT
+		      , A.UPD_USER_ID
+		FROM TB_CW_SC_PROCS_RISK_EVL A
+			LEFT OUTER JOIN TB_CO_CODE C
+				ON A.STTUS_CD_ID = C.CODE_ID
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test=' srchFsyr != null and srchFsyr != "" '>
+				AND A.FSYR = #{srchFsyr} 
+			</if>		
+			<if test=' srchSttusCdId != null and srchSttusCdId != "" '>
+				AND A.STTUS_CD_ID = #{srchSttusCdId} 
+			</if>		
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+		            <when test="srchTy == 'sj'" > 			AND	UPPER(A.PROCS_RISK_EVL_SJ) LIKE '%' + UPPER(#{srchWrd}) + '%' 			</when>
+				</choose>
+			</if>
+		 </trim>
+		 ORDER BY A.RGS_DT DESC
+	</select>
+
+	<!-- 상세조회 -->
+	<select id="view" resultType="CwscProcsRiskEvlVO">
+		SELECT  A.PROCS_RISK_EVL_ID
+		      , A.FSYR
+		      , A.PROCS_RISK_EVL_SJ
+		      , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_BGNDE , 112 ) , 23 ) AS EVL_BGNDE
+		      , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_ENDDE , 112 ) , 23 ) AS EVL_ENDDE
+		      , A.RM
+		      , A.UNITY_ID
+		      , A.SANCTN_ID
+		      , A.STTUS_CD_ID
+		      , A.RGS_DT
+		      , A.RGS_USER_ID
+		      , A.UPD_DT
+		      , A.UPD_USER_ID
+		FROM TB_CW_SC_PROCS_RISK_EVL A
+		WHERE  A.PROCS_RISK_EVL_ID = #{procsRiskEvlId} 
+	</select>
+
+	<insert id="insert">
+		INSERT INTO TB_CW_SC_PROCS_RISK_EVL (
+			  PROCS_RISK_EVL_ID, FSYR, PROCS_RISK_EVL_SJ, EVL_BGNDE, EVL_ENDDE, RM
+			, UNITY_ID, SANCTN_ID, STTUS_CD_ID, CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES  (
+			  #{procsRiskEvlId}, #{fsyr}, #{procsRiskEvlSj}, REPLACE(#{evlBgnde}, '-', ''), REPLACE(#{evlEndde}, '-', ''), #{rm}
+			, #{unityId}, #{sanctnId}, #{sttusCdId}, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		) 
+	</insert>
+	
+
+	<!-- 수정 -->
+	<update id="update">
+		UPDATE TB_CW_SC_PROCS_RISK_EVL 
+		SET   FSYR                 = #{fsyr}
+			, PROCS_RISK_EVL_SJ    = #{procsRiskEvlSj}
+			, EVL_BGNDE            = REPLACE(#{evlBgnde}, '-', '')
+			, EVL_ENDDE            = REPLACE(#{evlEndde}, '-', '')
+			, RM                   = #{rm}
+			, UNITY_ID             = #{unityId}
+			, SANCTN_ID            = #{sanctnId}
+			, STTUS_CD_ID          = #{sttusCdId}
+			, UPD_DT               = GETDATE()
+			, UPD_USER_ID          = #{suserId}
+		WHERE PROCS_RISK_EVL_ID    = #{procsRiskEvlId}
+	</update>
+	
+	<!-- 결재 상태변경 -->
+	<update id="updateSttus">
+		UPDATE TB_CW_SC_PROCS_RISK_EVL 
+		SET   STTUS_CD_ID          = #{sttusCdId}
+		WHERE PROCS_RISK_EVL_ID    = #{procsRiskEvlId}
+	</update>
+	
+	<!--삭제 -->
+	<delete id="delete">
+		BEGIN
+			DELETE FROM TB_CW_SC_PROCS_RISK_EVL WHERE PROCS_RISK_EVL_ID = #{procsRiskEvlId};
+			DELETE FROM TB_CW_SC_PROCS_RISK_EVL_IEM WHERE PROCS_RISK_EVL_ID = #{procsRiskEvlId};
+		END;
+	</delete>
+
+	<!-- 프로세스 위험평가 목록 -->
+	<select id="selectProcsRiskEvlList" resultType="EgovMap">
+		SELECT  A.PROCS_RISK_EVL_ID	AS CODE_ID
+		      , A.PROCS_RISK_EVL_SJ	AS CODE_NM
+		FROM TB_CW_SC_PROCS_RISK_EVL A
+			LEFT OUTER JOIN TB_CO_CODE C
+				ON 	A.STTUS_CD_ID = C.CODE_ID
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test=' srchFsyr != null and srchFsyr != "" '>
+				AND A.FSYR = #{srchFsyr} 
+			</if>		
+			<if test=' srchSttusCdId != null and srchSttusCdId != "" '>
+				AND A.STTUS_CD_ID = #{srchSttusCdId} 
+			</if>		
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+		            <when test="srchTy == 'sj'" > 			AND	UPPER(A.PROCS_RISK_EVL_SJ) LIKE '%' + UPPER(#{srchWrd}) + '%' 			</when>
+				</choose>
+			</if>
+		 </trim>
+	</select>
+</mapper>

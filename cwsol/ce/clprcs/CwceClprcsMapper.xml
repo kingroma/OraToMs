@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.ce.clprcs.serviceimpl.CwceClprcsMapper">
+
+    <!-- 목록조회 -->
+    <select id="list" resultType="EgovMap">
+        SELECT PRC.PROCSS_ID
+             , PRC.PROCSS_CN 
+             , PRC.YES_TY_CD_ID
+             , CD1.CODE_NM AS YES_TY_CD_NM 
+             , PRC.YES_LINK_PROCSS_ID
+             , PRY.SORT_SN                  AS YES_LINK_SORT_SN
+             , PRY.PROCSS_CN                AS YES_LINK_PROCSS_CN
+             , PRC.YES_UPRPD_RESULT_CD_ID
+             , CD2.CODE_NM AS YES_UPRPD_RESULT_CD_NM 
+             , PRC.NO_TY_CD_ID
+             , CD3.CODE_NM AS NO_TY_CD_NM 
+             , PRC.NO_LINK_PROCSS_ID
+             , PRN.SORT_SN                  AS NO_LINK_SORT_SN
+             , PRN.PROCSS_CN                AS NO_LINK_PROCSS_CN
+             , PRC.NO_UPRPD_RESULT_CD_ID
+             , CD4.CODE_NM AS NO_UPRPD_RESULT_CD_NM 
+             , PRC.SORT_SN
+             , PRC.USE_AT
+             , ( CASE
+                      WHEN PRC.USE_AT = 'Y' THEN '예'
+                      ELSE '아니오'
+                 END )                      AS USE_AT_NM
+          FROM TB_CW_CL_PROCSS PRC
+            LEFT OUTER JOIN TB_CW_CL_PROCSS PRY
+              ON PRC.YES_LINK_PROCSS_ID = PRY.PROCSS_ID
+            LEFT OUTER JOIN TB_CW_CL_PROCSS PRN
+              ON PRC.NO_LINK_PROCSS_ID = PRN.PROCSS_ID
+            LEFT OUTER JOIN TB_CO_CODE CD1
+              ON PRC.YES_TY_CD_ID = CD1.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE CD2
+              ON PRC.YES_UPRPD_RESULT_CD_ID = CD2.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE CD3
+              ON PRC.NO_TY_CD_ID = CD3.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE CD4
+              ON PRC.NO_UPRPD_RESULT_CD_ID = CD4.CODE_ID
+         WHERE 1=1
+         <if test=' srchYesTyCdId != null and srchYesTyCdId != "" '>
+               AND PRC.YES_TY_CD_ID = #{srchYesTyCdId}
+         </if>
+         <if test=' srchYesUprpdResultCdId != null and srchYesUprpdResultCdId != "" '>
+               AND PRC.YES_UPRPD_RESULT_CD_ID = #{srchYesUprpdResultCdId} 
+         </if>
+         <if test=' srchNoTyCdId != null and srchNoTyCdId != "" '>
+               AND PRC.NO_TY_CD_ID = #{srchNoTyCdId} 
+         </if>
+         <if test=' srchNoUprpdResultCdId != null and srchNoUprpdResultCdId != "" '>
+               AND PRC.NO_UPRPD_RESULT_CD_ID = #{srchNoUprpdResultCdId}  
+         </if>
+         <if test=' srchUseAt != null and srchUseAt != "" '>
+               AND PRC.USE_AT = #{srchUseAt} 
+         </if>
+         <if test=' srchWrd != null and srchWrd != "" '>
+               AND UPPER(PRC.PROCSS_CN) LIKE '%' + UPPER(#{srchWrd}) + '%'  
+         </if>
+         <if test=' srchSortSn != null and srchSortSn != "" '>
+               AND PRC.SORT_SN <![CDATA[  >  ]]> #{srchSortSn}
+         </if>
+         ORDER BY PRC.SORT_SN
+            
+    </select>
+    
+    <!-- 상세조회 -->
+    <select id="view" resultType="CwceClprcsVO">
+        SELECT PRC.PROCSS_ID
+             , PRC.PROCSS_CN 
+             , PRC.YES_TY_CD_ID
+             , CD1.CODE_NM AS YES_TY_CD_NM 
+             , PRC.YES_LINK_PROCSS_ID
+             , ( CASE
+                      WHEN (SELECT COUNT(1) FROM TB_CW_CL_PROCSS WHERE YES_LINK_PROCSS_ID = PRC.PROCSS_ID ) <![CDATA[  >  ]]> 0 THEN 'Y'
+                      ELSE 'N'
+                 END )  AS YES_LINK_USE_AT
+             , PRY.SORT_SN                  AS YES_LINK_SORT_SN
+             , PRY.PROCSS_CN                AS YES_LINK_PROCSS_CN
+             , PRC.YES_UPRPD_RESULT_CD_ID
+             , CD2.CODE_NM AS YES_UPRPD_RESULT_CD_NM 
+             , PRC.NO_TY_CD_ID
+             , CD3.CODE_NM AS NO_TY_CD_NM 
+             , PRC.NO_LINK_PROCSS_ID
+             , ( CASE
+                      WHEN (SELECT COUNT(1) FROM TB_CW_CL_PROCSS WHERE NO_LINK_PROCSS_ID = PRC.PROCSS_ID ) <![CDATA[  >  ]]> 0 THEN 'Y'
+                      ELSE 'N'
+                 END )  AS NO_LINK_USE_AT
+             , PRN.SORT_SN                  AS NO_LINK_SORT_SN
+             , PRN.PROCSS_CN                AS NO_LINK_PROCSS_CN
+             , PRC.NO_UPRPD_RESULT_CD_ID
+             , CD4.CODE_NM AS NO_UPRPD_RESULT_CD_NM 
+             , PRC.SORT_SN
+             , PRC.USE_AT
+             , ( CASE
+                      WHEN PRC.USE_AT = 'Y' THEN '예'
+                      ELSE '아니오'
+                 END )                      AS USE_AT_NM
+          FROM TB_CW_CL_PROCSS PRC
+            LEFT OUTER JOIN TB_CW_CL_PROCSS PRY
+              ON PRC.YES_LINK_PROCSS_ID = PRY.PROCSS_ID
+            LEFT OUTER JOIN TB_CW_CL_PROCSS PRN
+              ON PRC.NO_LINK_PROCSS_ID = PRN.PROCSS_ID
+            LEFT OUTER JOIN TB_CO_CODE CD1
+              ON PRC.YES_TY_CD_ID = CD1.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE CD2
+              ON PRC.YES_UPRPD_RESULT_CD_ID = CD2.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE CD3
+              ON PRC.NO_TY_CD_ID = CD3.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE CD4
+              ON PRC.NO_UPRPD_RESULT_CD_ID = CD4.CODE_ID
+         WHERE PRC.PROCSS_ID = #{procssId}
+    </select>
+    
+    <!-- 등록 -->
+    <insert id="insert">
+        INSERT INTO TB_CW_CL_PROCSS(
+              PROCSS_ID
+            , PROCSS_CN
+            , YES_TY_CD_ID
+            , YES_LINK_PROCSS_ID
+            , YES_UPRPD_RESULT_CD_ID
+            , NO_TY_CD_ID
+            , NO_LINK_PROCSS_ID
+            , NO_UPRPD_RESULT_CD_ID
+            , SORT_SN
+            , USE_AT
+        ) VALUES (
+              #{procssId}
+            , #{procssCn}
+            , #{yesTyCdId}
+            , #{yesLinkProcssId}
+            , #{yesUprpdResultCdId}
+            , #{noTyCdId}
+            , #{noLinkProcssId}
+            , #{noUprpdResultCdId}
+            , #{sortSn}
+            , #{useAt}
+        )
+    </insert>
+    
+    <!-- 수정 -->
+    <update id="update">
+        UPDATE TB_CW_CL_PROCSS
+           SET PROCSS_CN                = #{procssCn}
+             , YES_TY_CD_ID             = #{yesTyCdId}
+             , YES_LINK_PROCSS_ID       = #{yesLinkProcssId}
+             , YES_UPRPD_RESULT_CD_ID   = #{yesUprpdResultCdId}
+             , NO_TY_CD_ID              = #{noTyCdId}
+             , NO_LINK_PROCSS_ID        = #{noLinkProcssId}
+             , NO_UPRPD_RESULT_CD_ID    = #{noUprpdResultCdId}
+             , SORT_SN                  = #{sortSn}
+             , USE_AT                   = #{useAt}
+         WHERE PROCSS_ID = #{procssId}
+    </update>
+    
+    <!-- 삭제 -->
+    <delete id="delete">
+        DELETE FROM TB_CW_CL_PROCSS
+         WHERE PROCSS_ID = #{procssId}
+    </delete>
+    
+    <!-- 이력등록 -->
+    <insert id="insertHist">
+        INSERT INTO TB_CW_CL_PROCSS_HIST(
+              PROCSS_ID
+            , PROCSS_BGNTMSTMP
+            , PROCSS_ENDTMSTMP
+            , PROCSS_CN
+            , YES_TY_CD_ID
+            , YES_LINK_PROCSS_ID
+            , YES_UPRPD_RESULT_CD_ID
+            , NO_TY_CD_ID
+            , NO_LINK_PROCSS_ID
+            , NO_UPRPD_RESULT_CD_ID
+            , SORT_SN
+            , USE_AT
+        ) VALUES (
+              #{procssId}
+            , CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),14),':','') + '000'
+            , '99991231235959999999'
+            , #{procssCn}
+            , #{yesTyCdId}
+            , #{yesLinkProcssId}
+            , #{yesUprpdResultCdId}
+            , #{noTyCdId}
+            , #{noLinkProcssId}
+            , #{noUprpdResultCdId}
+            , #{sortSn}
+            , #{useAt}
+        )
+    </insert>
+    
+    <!-- 이력수정 -->
+    <update id="updateHist">
+        UPDATE TB_CW_CL_PROCSS_HIST
+           SET PROCSS_ENDTMSTMP = CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),14),':','') + '000'
+         WHERE PROCSS_ID = #{procssId}
+           AND PROCSS_ENDTMSTMP = '99991231235959999999'
+    </update>
+    
+    
+</mapper>

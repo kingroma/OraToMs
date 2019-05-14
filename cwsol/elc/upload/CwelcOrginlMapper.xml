@@ -1,0 +1,722 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.elc.upload.serviceimpl.CwelcOrginlMapper">
+
+	<select id="list" resultType="EgovMap">
+		SELECT
+              A.UNITY_ID
+			, A.EXCEL_ROW_SN
+			, A.MEGA_ID
+			, A.MEGA_NO
+			, A.MEGA_NM
+			, A.MJR_ID
+			, A.MJR_NO
+			, A.MJR_NM
+			, A.SUB_ID
+			, A.SUB_NO
+			, A.SUB_NM
+			, A.RISK_ID
+			, A.RISK_NO
+			, A.RISK_NM
+			, A.RISK_CN
+			, A.WCGW
+			, A.FNLTT_DSTOR_RISK
+			, A.RISK_EVL_RESULT
+			, A.RISK_EVL_REASON
+			, A.CNRL_ID
+			, A.CNRL_NO
+			, A.CNRL_NM
+			, A.CNRL_CN
+			, A.KEY_CNRL
+			, A.REFRN_NO
+			, A.CNRL_RELATE_REF
+			, A.CNRL_EXC_UPPER_DEPT
+			, A.CNRL_EXC_DEPT
+			, A.CNRL_EXCBER
+			, A.CNRL_RSPNSBL_UPPER_DEPT
+			, A.CNRL_RSPNSBL_DEPT
+			, A.CNRL_RSPNBER
+			, A.CNRL_REG_NM
+			, A.CNRL_RELATE_DOC
+			, A.CNRL_RELATE_SYS
+			, A.CNRL_RM
+			, A.CNRL_PURPS
+			, A.CNRL_PURPS_CHOISE
+			, A.CNRL_PURPS_RELIABILITY_FIN
+			, A.CNRL_PURPS_ASSET_PROTECTION
+			, A.CNRL_PURPS_FRAUD_PREVENTION
+			, A.CNRL_TY
+			, A.CNRL_TY_CECK01
+			, A.CNRL_TY_CECK02
+			, A.CNRL_TY_CECK03
+			, A.CNRL_TY_CECK04
+			, A.CNRL_TY_CECK05
+			, A.CNRL_TY_CECK06
+			, A.CNRL_TY_CECK07
+			, A.CNRL_TY_CECK08
+			, A.CNRL_TY_CECK09
+			, A.CNRL_TY01
+			, A.CNRL_TY02
+			, A.CNRL_TY03
+			, A.CNRL_TY03_AUTO
+			, A.CNRL_TY03_MANUAL
+			, A.CNRL_TY03_AUTOMANUAL
+			, A.DELNG_TY
+			, A.CNRL_CTGRY
+			, A.CNRL_CYCLE
+			, A.CNRL_CYCLE01
+			, A.CNRL_CYCLE02
+			, A.CNRL_CYCLE03
+			, A.CNRL_CYCLE04
+			, A.CNRL_CYCLE05
+			, A.CNRL_CYCLE06
+			, A.CNRL_CYCLE07
+			, A.CNRL_CYCLE08
+			, A.CNRL_CYCLE09
+			, A.OFFICE_TY
+			, A.DSGN_EFCT
+			, A.OPER_EFCT
+			, A.CNRL_UPRPD_NO
+			, A.MRC_CNRL
+			, A.MRC_CTGRY
+			, A.MRC_NO
+			, A.IPE_CNRL
+			, A.IPE_CTGRY
+			, A.IPE_NO
+			, A.IPE_NM
+			, A.IPE_TEST_PROCSS
+			, A.COSO_NO
+			, A.TEST_CYCLE
+			, A.TEST_CYCLE01
+			, A.TEST_CYCLE02
+			, A.TEST_CYCLE03
+			, A.TEST_CYCLE04
+			, A.TEST_CYCLE05
+			, A.TEST_CYCLE06
+			, A.TEST_CYCLE07
+			, A.TEST_CYCLE08
+			, A.TEST_CYCLE09
+			, A.TEST_RELATION_DOC
+			, A.TEST_TRGET
+			, A.SAMPLE_SIZE
+			, A.TEST_PROCSS
+			, A.EXCP_CNT
+			, A.TEST_MTH
+			, A.TEST_MTH_QUESTION
+			, A.TEST_MTH_OBSERVE
+			, A.TEST_MTH_VERIFICATION
+			, A.TEST_MTH_RE_RUN
+			, A.TEST_MTH_TRACKING
+			, A.ATMC_SAMPLE
+			, A.TEST_SANCTN
+			, A.CNRL_ANT_CTGR_CODE
+			, A.CNRL_ACNTCTGR
+			, A.RELATE_ACNTCTGR_PBLNTF
+			, A.CNRL_REMARK
+			, A.ASSE_C
+			, A.ASSE_E
+			, A.ASSE_R
+			, A.ASSE_V
+			, A.ASSE_P
+			, A.ASSE_S
+			, A.ASSE_O
+			, A.ASSE_A
+			, A.ASSE_PF
+			, A.TREXAMIN_PROCSS
+			, A.TREXAMIN_PRUF
+			, A.TREXAMIN_CNCLSN
+			, A.RISK_RESIDUAL_LIKEHOOD
+			, A.RISK_RESIDUAL_IMPACT
+			, A.RISK_RESIDUAL_RATING
+			, A.CNRL_RESIDUAL_LIKEHOOD
+			, A.CNRL_RESIDUAL_IMPACT
+			, A.CNRL_RESIDUAL_RATING
+			, A.CNRL_IMPRVM_NM
+			, A.CNRL_IMPRVM_CN
+			, A.FNREP_RISKEVL_CSFCTR01
+            , A.FNREP_RISKEVL_CSFCTR02
+            , A.FNREP_RISKEVL_CSFCTR03
+            , A.FNREP_RISKEVL_CSFCTR04
+            , A.FNREP_RISKEVL_CSFCTR05
+            , A.FNREP_RISKEVL_CSFCTR06
+            , A.FNREP_RISKEVL_CSFCTR07
+            , A.FNREP_RISKEVL_CSFCTR08
+            , A.FNREP_RISKEVL_CSFCTR09
+            , A.FNREP_RISKEVL_CSFCTR10
+            , A.FNREP_CNRL_RISK_CNCLSN
+            , A.FNREP_ACNT_RISK_CNCLSN
+            , A.FNREP_PROCS_RISK_CNCLSN
+            , A.FNREP_GNRLZ_EVL_CNCLSN
+			, A.ID_ERROR_TY
+			, A.ID_ERROR_AT
+			, A.MEGA_ERROR_AT
+			, A.MJR_ERROR_AT
+			, A.SUB_ERROR_AT
+			, A.RISK_ERROR_AT
+			, A.CNRL_ERROR_TY
+			, A.CNRL_ERROR_AT
+			, A.ID_ERROR_CN
+			, A.MEGA_ERROR_CN
+			, A.MJR_ERROR_CN
+			, A.SUB_ERROR_CN
+			, A.RISK_ERROR_CN
+			, A.CNRL_ERROR_CN
+			, (CASE WHEN   A.ID_ERROR_AT = 'Y' OR A.MEGA_ERROR_AT = 'Y' OR A.MJR_ERROR_AT = 'Y'
+                        OR A.SUB_ERROR_AT = 'Y' OR A.RISK_ERROR_AT = 'Y' OR A.CNRL_ERROR_AT = 'Y' THEN 'Y' ELSE '' END) AS ERROR_AT
+            , (        (CASE WHEN A.ID_ERROR_AT = 'Y' THEN A.ID_ERROR_CN ELSE '' END)
+                +' '+(CASE WHEN A.MEGA_ERROR_AT = 'Y' THEN A.MEGA_ERROR_CN  ELSE '' END)
+                +' '+(CASE WHEN A.MJR_ERROR_AT = 'Y' THEN A.MJR_ERROR_CN  ELSE '' END)
+                +' '+(CASE WHEN A.SUB_ERROR_AT = 'Y' THEN A.SUB_ERROR_CN  ELSE '' END)
+                +' '+(CASE WHEN A.RISK_ERROR_AT = 'Y' THEN A.RISK_ERROR_CN  ELSE '' END)
+                +' '+(CASE WHEN A.CNRL_ERROR_AT = 'Y' THEN A.CNRL_ERROR_CN  ELSE '' END)
+            ) AS ERROR_CN
+        FROM TB_CW_ELC_RCM_ORGINL A
+        WHERE A.UNITY_ID = #{unityId}
+        /** RCM 검사 타입별 오류 내역 조회 */
+        <if test=' srchTy != null and srchTy == "inspct" '>
+			 <choose>
+	            <when test=' rcmCheckTy == "id"   and idInspctAt  == "Y" '> AND A.ID_ERROR_AT   IN ('B', 'Y') </when>
+	            <when test=' rcmCheckTy == "mega" and megaInspctAt== "Y" '> AND A.MEGA_ERROR_AT IN ('B', 'Y') </when>
+	            <when test=' rcmCheckTy == "mjr"  and mjrInspctAt == "Y" '> AND A.MJR_ERROR_AT  IN ('B', 'Y') </when>
+	            <when test=' rcmCheckTy == "sub"  and subInspctAt == "Y" '> AND A.SUB_ERROR_AT  IN ('B', 'Y') </when>
+	            <when test=' rcmCheckTy == "risk" and riskInspctAt== "Y" '> AND A.RISK_ERROR_AT IN ('B', 'Y') </when>
+	            <when test=' rcmCheckTy == "cnrl" and cnrlInspctAt== "Y" '> AND A.CNRL_ERROR_AT IN ('B', 'Y') </when>
+	            <otherwise> AND 1=2 </otherwise>
+			</choose>
+		</if>
+		ORDER BY A.EXCEL_ROW_SN ASC
+	</select>
+
+	<delete id="delete">
+		DELETE FROM TB_CW_ELC_RCM_ORGINL
+		WHERE UNITY_ID = #{unityId}
+	</delete>
+
+	<insert id="insertExcel">
+		INSERT INTO TB_CW_ELC_RCM_ORGINL(
+			  UNITY_ID, EXCEL_ROW_SN
+			, MEGA_ID, MEGA_NO, MEGA_NM
+			, MJR_ID, MJR_NO, MJR_NM
+			, SUB_ID, SUB_NO, SUB_NM
+			, RISK_ID, RISK_NO, RISK_NM, RISK_CN, WCGW, FNLTT_DSTOR_RISK, RISK_EVL_RESULT, RISK_EVL_REASON
+			, CNRL_ID, CNRL_NO, CNRL_NM, CNRL_CN, KEY_CNRL, REFRN_NO, CNRL_RELATE_REF
+			, CNRL_EXC_UPPER_DEPT, CNRL_EXC_DEPT, CNRL_EXCBER
+			, CNRL_RSPNSBL_UPPER_DEPT, CNRL_RSPNSBL_DEPT, CNRL_RSPNBER
+			, CNRL_REG_NM, CNRL_RELATE_DOC, CNRL_RELATE_SYS, CNRL_RM
+			, CNRL_PURPS, CNRL_PURPS_CHOISE, CNRL_PURPS_RELIABILITY_FIN, CNRL_PURPS_ASSET_PROTECTION, CNRL_PURPS_FRAUD_PREVENTION
+			, CNRL_TY, CNRL_TY_CECK01, CNRL_TY_CECK02, CNRL_TY_CECK03, CNRL_TY_CECK04, CNRL_TY_CECK05, CNRL_TY_CECK06, CNRL_TY_CECK07, CNRL_TY_CECK08, CNRL_TY_CECK09
+			, CNRL_TY01, CNRL_TY02, CNRL_TY03
+			, CNRL_TY03_AUTO
+			, CNRL_TY03_MANUAL
+			, CNRL_TY03_AUTOMANUAL
+			, DELNG_TY, CNRL_CTGRY, CNRL_CYCLE
+			, CNRL_CYCLE01, CNRL_CYCLE02, CNRL_CYCLE03, CNRL_CYCLE04, CNRL_CYCLE05, CNRL_CYCLE06, CNRL_CYCLE07, CNRL_CYCLE08, CNRL_CYCLE09
+			, OFFICE_TY, DSGN_EFCT, OPER_EFCT, CNRL_UPRPD_NO
+			, MRC_CNRL, MRC_CTGRY, MRC_NO
+			, IPE_CNRL, IPE_CTGRY, IPE_NO, IPE_NM, IPE_TEST_PROCSS
+			, COSO_NO
+			, TEST_CYCLE
+			, TEST_CYCLE01, TEST_CYCLE02, TEST_CYCLE03, TEST_CYCLE04, TEST_CYCLE05, TEST_CYCLE06, TEST_CYCLE07, TEST_CYCLE08, TEST_CYCLE09
+			, TEST_RELATION_DOC, TEST_TRGET, SAMPLE_SIZE, TEST_PROCSS, EXCP_CNT
+			, TEST_MTH, TEST_MTH_QUESTION, TEST_MTH_OBSERVE, TEST_MTH_VERIFICATION, TEST_MTH_RE_RUN, TEST_MTH_TRACKING
+			, ATMC_SAMPLE, TEST_SANCTN
+			, CNRL_ANT_CTGR_CODE, CNRL_ACNTCTGR, RELATE_ACNTCTGR_PBLNTF, CNRL_REMARK
+			, ASSE_C, ASSE_E, ASSE_R, ASSE_V, ASSE_P, ASSE_S, ASSE_O, ASSE_A, ASSE_PF
+			, TREXAMIN_PROCSS, TREXAMIN_PRUF, TREXAMIN_CNCLSN
+			, RISK_RESIDUAL_LIKEHOOD, RISK_RESIDUAL_IMPACT, RISK_RESIDUAL_RATING
+			, CNRL_RESIDUAL_LIKEHOOD, CNRL_RESIDUAL_IMPACT, CNRL_RESIDUAL_RATING, CNRL_IMPRVM_NM, CNRL_IMPRVM_CN
+			, FNREP_RISKEVL_CSFCTR01, FNREP_RISKEVL_CSFCTR02, FNREP_RISKEVL_CSFCTR03
+            , FNREP_RISKEVL_CSFCTR04, FNREP_RISKEVL_CSFCTR05, FNREP_RISKEVL_CSFCTR06
+            , FNREP_RISKEVL_CSFCTR07, FNREP_RISKEVL_CSFCTR08, FNREP_RISKEVL_CSFCTR09, FNREP_RISKEVL_CSFCTR10
+            , FNREP_CNRL_RISK_CNCLSN, FNREP_ACNT_RISK_CNCLSN, FNREP_PROCS_RISK_CNCLSN, FNREP_GNRLZ_EVL_CNCLSN
+		) VALUES (
+			  #{unityId}, #{excelRowSn}
+			, #{megaId}, #{megaNo}, #{megaNm}
+			, #{mjrId}, #{mjrNo}, #{mjrNm}
+			, #{subId}, #{subNo}, #{subNm}
+			, #{riskId}, #{riskNo}, #{riskNm}, #{riskCn}, #{wcgw}, #{fnlttDstorRisk}, #{riskEvlResult}, #{riskEvlReason}
+			, #{cnrlId}, #{cnrlNo}, #{cnrlNm}, #{cnrlCn}, #{keyCnrl}, #{refrnNo}, #{cnrlRelateRef}
+			, #{cnrlExcUpperDept}, #{cnrlExcDept}, #{cnrlExcber}
+			, #{cnrlRspnsblUpperDept}, #{cnrlRspnsblDept}, #{cnrlRspnber}
+			, #{cnrlRegNm}, #{cnrlRelateDoc}, #{cnrlRelateSys}, #{cnrlRm}
+			, #{cnrlPurps}, #{cnrlPurpsChoise}, #{cnrlPurpsReliabilityFin}, #{cnrlPurpsAssetProtection}, #{cnrlPurpsFraudPrevention}
+			, #{cnrlTy}, #{cnrlTyCeck01}, #{cnrlTyCeck02}, #{cnrlTyCeck03}, #{cnrlTyCeck04}, #{cnrlTyCeck05}, #{cnrlTyCeck06}, #{cnrlTyCeck07}, #{cnrlTyCeck08}, #{cnrlTyCeck09}
+			, #{cnrlTy01}, #{cnrlTy02}, #{cnrlTy03}
+			, #{cnrlTy03Auto}, #{cnrlTy03Manual}, #{cnrlTy03Automanual}
+			, #{delngTy}, #{cnrlCtgry}, #{cnrlCycle}
+			, #{cnrlCycle01}, #{cnrlCycle02}, #{cnrlCycle03}, #{cnrlCycle04}, #{cnrlCycle05}, #{cnrlCycle06}, #{cnrlCycle07}, #{cnrlCycle08}, #{cnrlCycle09}
+			, #{officeTy}, #{dsgnEfct}, #{operEfct}, #{cnrlUprpdNo}
+			, #{mrcCnrl}, #{mrcCtgry}, #{mrcNo}
+			, #{ipeCnrl}, #{ipeCtgry}, #{ipeNo}, #{ipeNm}, #{ipeTestProcss}
+			, #{cosoNo}
+			, #{testCycle}
+			, #{testCycle01}, #{testCycle02}, #{testCycle03}, #{testCycle04}, #{testCycle05}, #{testCycle06}, #{testCycle07}, #{testCycle08}, #{testCycle09}
+			, #{testRelationDoc}, #{testTrget}, #{sampleSize}, #{testProcss}, #{excpCnt}
+			, #{testMth}, #{testMthQuestion}, #{testMthObserve}, #{testMthVerification}, #{testMthReRun}, #{testMthTracking}
+			, #{atmcSample}, #{testSanctn}
+			, #{cnrlAntCtgrCode}, #{cnrlAcntctgr}, #{relateAcntctgrPblntf}, #{cnrlRemark}
+			, #{asseC}, #{asseE}, #{asseR}, #{asseV}, #{asseP}, #{asseS}, #{asseO}, #{asseA}, #{assePf}
+			, #{trexaminProcss}, #{trexaminPruf}, #{trexaminCnclsn}
+			, #{riskResidualLikehood}, #{riskResidualImpact}, #{riskResidualRating}, #{cnrlResidualLikehood}
+			, #{cnrlResidualImpact}, #{cnrlResidualRating}, #{cnrlImprvmNm}, #{cnrlImprvmCn}
+			, #{fnrepRiskevlCsfctr01}, #{fnrepRiskevlCsfctr02}, #{fnrepRiskevlCsfctr03}
+            , #{fnrepRiskevlCsfctr04}, #{fnrepRiskevlCsfctr05}, #{fnrepRiskevlCsfctr06}
+            , #{fnrepRiskevlCsfctr07}, #{fnrepRiskevlCsfctr08}, #{fnrepRiskevlCsfctr09}, #{fnrepRiskevlCsfctr10}
+            , #{fnrepCnrlRiskCnclsn}, #{fnrepAcntRiskCnclsn}, #{fnrepProcsRiskCnclsn}, #{fnrepGnrlzEvlCnclsn}
+		)
+	</insert>
+
+	<update id="updateError">
+		UPDATE TB_CW_ELC_RCM_ORGINL SET
+			EXCEL_ROW_SN = #{excelRowSn}
+			<choose>
+	            <when test=' rcmCheckTy == "id"'   > , ID_ERROR_AT  = #{errorAt}, ID_ERROR_CN  = #{errorCn}, ID_ERROR_TY = #{errorTy} </when>
+	            <when test=' rcmCheckTy == "mega"' > , MEGA_ERROR_AT= #{errorAt}, MEGA_ERROR_CN= #{errorCn} </when>
+	            <when test=' rcmCheckTy == "mjr"'  > , MJR_ERROR_AT = #{errorAt}, MJR_ERROR_CN = #{errorCn} </when>
+	            <when test=' rcmCheckTy == "sub"'  > , SUB_ERROR_AT = #{errorAt}, SUB_ERROR_CN = #{errorCn} </when>
+	            <when test=' rcmCheckTy == "risk"' > , RISK_ERROR_AT= #{errorAt}, RISK_ERROR_CN= #{errorCn} </when>
+	            <when test=' rcmCheckTy == "cnrl"' > , CNRL_ERROR_AT= #{errorAt}, CNRL_ERROR_CN= #{errorCn}, CNRL_ERROR_TY = #{errorTy} </when>
+			</choose>
+		WHERE UNITY_ID = #{unityId}
+			AND EXCEL_ROW_SN = #{excelRowSn}
+	</update>
+
+
+<!-- RCM 에러 초기화 -->
+	<update id="rcmErrorReset">
+		UPDATE TB_CW_ELC_RCM_ORGINL SET
+			  ID_ERROR_TY    = NULL
+			, ID_ERROR_AT    = NULL
+			, MEGA_ERROR_AT  = NULL
+			, MJR_ERROR_AT   = NULL
+			, SUB_ERROR_AT   = NULL
+			, RISK_ERROR_AT  = NULL
+			, CNRL_ERROR_TY  = NULL
+			, CNRL_ERROR_AT  = NULL
+			, ID_ERROR_CN    = NULL
+	        , MEGA_ERROR_CN  = NULL
+	        , MJR_ERROR_CN   = NULL
+	        , SUB_ERROR_CN   = NULL
+	        , RISK_ERROR_CN  = NULL
+	        , CNRL_ERROR_CN  = NULL
+		WHERE UNITY_ID = #{unityId}
+	</update>
+
+<!-- ID 검사 대상  -->
+	<select id="idInspctList" resultType="EgovMap">
+		SELECT
+              A.UNITY_ID
+			, A.EXCEL_ROW_SN
+			, A.MEGA_ID
+			, A.MEGA_NO
+			, A.MEGA_NM
+			, A.MJR_ID
+			, A.MJR_NO
+			, A.MJR_NM
+			, A.SUB_ID
+			, A.SUB_NO
+			, A.SUB_NM
+			, A.RISK_ID
+			, A.RISK_NO
+			, A.RISK_NM
+			, A.RISK_CN
+			, A.CNRL_ID
+			, A.CNRL_NO
+			, A.CNRL_NM
+			, A.CNRL_CN
+        FROM TB_CW_ELC_RCM_ORGINL A
+        WHERE UNITY_ID = #{unityId}
+		ORDER BY A.EXCEL_ROW_SN ASC
+	</select>
+
+	<select id="selectStartRowNo" resultType="int">
+		SELECT MIN(EXCEL_ROW_SN)
+		FROM TB_CW_ELC_RCM_ORGINL
+    	WHERE UNITY_ID = #{unityId}
+    	GROUP BY UNITY_ID
+	</select>
+
+<!-- ID 자리수 검사 대상  -->
+	<select id="idLenInspctList" resultType="EgovMap">
+		WITH STDR AS (	/** 비교 기준 엑셀 첫번째 행의 NO 자릿수	*/
+    		SELECT UNITY_ID
+				 , EXCEL_ROW_SN
+    			 , MEGA_NO, LEN(MEGA_NO) AS MEGA_LEN
+    			 , MJR_NO , LEN(MJR_NO) 	AS MJR_LEN
+    			 , SUB_NO , LEN(SUB_NO) 	AS SUB_LEN
+    			 , RISK_NO, LEN(RISK_NO) AS RISK_LEN
+    			 , CNRL_NO, LEN(CNRL_NO) AS CNRL_LEN
+    		FROM  TB_CW_ELC_RCM_ORGINL
+    		WHERE UNITY_ID = #{unityId}
+      			AND EXCEL_ROW_SN = #{startRowNo}
+    	),
+    	ORGINL AS (
+    		SELECT UNITY_ID
+				 , EXCEL_ROW_SN
+    			 , LEN(MEGA_NO) 	AS MEGA_LEN
+    			 , LEN(MJR_NO) 	AS MJR_LEN
+    			 , LEN(SUB_NO) 	AS SUB_LEN
+    			 , LEN(RISK_NO) 	AS RISK_LEN
+    			 , LEN(CNRL_NO) 	AS CNRL_LEN
+    		FROM TB_CW_ELC_RCM_ORGINL
+    		WHERE UNITY_ID = #{unityId}
+    	)
+    	SELECT *
+    	FROM (
+    		SELECT UNITY_ID, EXCEL_ROW_SN, MEGA_NO, MEGA_LEN, MJR_NO, MJR_LEN, SUB_NO, SUB_LEN, RISK_NO, RISK_LEN, CNRL_NO, CNRL_LEN
+			FROM  STDR
+			UNION
+			SELECT UNITY_ID, EXCEL_ROW_SN, MEGA_NO, LEN(MEGA_NO) AS MEGA_LEN, MJR_NO, LEN(MJR_NO) AS MJR_LEN, SUB_NO, LEN(SUB_NO) AS SUB_LEN, RISK_NO, LEN(RISK_NO) AS RISK_LEN, CNRL_NO, LEN(CNRL_NO) AS CNRL_LEN
+			FROM TB_CW_ELC_RCM_ORGINL
+    		WHERE UNITY_ID = #{unityId}
+    			AND EXCEL_ROW_SN NOT IN ( SELECT A.EXCEL_ROW_SN
+								      	  FROM 	 ORGINL A
+								      		  INNER JOIN STDR S
+								      			  ON  A.MEGA_LEN 	= S.MEGA_LEN
+								      			  AND A.MJR_LEN 	= S.MJR_LEN
+    			 								  <if test='elcProcsStep != null and elcProcsStep == 3'>
+								      			  AND A.SUB_LEN 	= S.SUB_LEN
+								      			  </if>
+    			 								  <if test='elcRiskUseAt != null and elcRiskUseAt == true'>
+								      			  AND A.RISK_LEN 	= S.RISK_LEN
+								      			  </if>
+								      			  AND A.CNRL_LEN 	= S.CNRL_LEN )  /** 비교 기준과 자리수가 일치하는 ROW가 아닌 ROW는 자리수 불일치*/
+    	)
+		ORDER BY EXCEL_ROW_SN
+	</select>
+
+	<select id="megaInspctList" resultType="EgovMap">
+		SELECT
+		      A.UNITY_ID, A.EXCEL_ROW_SN
+		    , A.MEGA_NO, A.MEGA_NM
+		FROM TB_CW_ELC_RCM_ORGINL A
+		WHERE A.UNITY_ID = #{unityId}
+		    AND ISNULL(A.ID_ERROR_AT, 'N') != 'Y'
+		    AND A.MEGA_NO IN (
+		        SELECT MEGA_NO FROM (
+		            SELECT DISTINCT MEGA_NO, MEGA_NM
+		            FROM TB_CW_ELC_RCM_ORGINL
+		            WHERE UNITY_ID = #{unityId}
+		                AND ISNULL(ID_ERROR_AT, 'N') != 'Y'
+		        )
+		        GROUP BY MEGA_NO
+		        HAVING COUNT(MEGA_NO) > 1
+		    )
+		ORDER BY A.MEGA_NO, A.EXCEL_ROW_SN ASC
+	</select>
+
+	<select id="mjrInspctList" resultType="EgovMap">
+		SELECT
+		      A.UNITY_ID, A.EXCEL_ROW_SN
+		    , A.MJR_NO, A.MJR_NM
+		FROM TB_CW_ELC_RCM_ORGINL A
+		WHERE A.UNITY_ID = #{unityId}
+		    AND ISNULL(A.ID_ERROR_AT, 'N') != 'Y'
+		    AND A.MJR_NO IN (
+		        SELECT MJR_NO FROM (
+		            SELECT DISTINCT MJR_NO, MJR_NM
+		            FROM TB_CW_ELC_RCM_ORGINL
+		            WHERE UNITY_ID = #{unityId}
+		                AND ISNULL(ID_ERROR_AT, 'N') != 'Y'
+		        )
+		        GROUP BY MJR_NO
+		        HAVING COUNT(MJR_NO) > 1
+		    )
+		ORDER BY A.MJR_NO, A.EXCEL_ROW_SN ASC
+	</select>
+
+	<select id="subInspctList" resultType="EgovMap">
+		SELECT
+		      A.UNITY_ID, A.EXCEL_ROW_SN
+		    , A.SUB_NO, A.SUB_NM
+		FROM TB_CW_ELC_RCM_ORGINL A
+		WHERE A.UNITY_ID = #{unityId}
+		    AND ISNULL(A.ID_ERROR_AT, 'N') != 'Y'
+		    AND A.SUB_NO IN (
+		        SELECT SUB_NO FROM (
+		            SELECT DISTINCT SUB_NO, SUB_NM
+		            FROM TB_CW_ELC_RCM_ORGINL
+		            WHERE UNITY_ID = #{unityId}
+		                AND ISNULL(ID_ERROR_AT, 'N') != 'Y'
+		        )
+		        GROUP BY SUB_NO
+		        HAVING COUNT(SUB_NO) > 1
+		    )
+		ORDER BY A.SUB_NO, A.EXCEL_ROW_SN ASC
+	</select>
+
+	<select id="riskInspctList" resultType="EgovMap">
+		SELECT
+		      A.UNITY_ID, A.EXCEL_ROW_SN
+		    , A.RISK_NO, A.RISK_NM, A.RISK_CN, A.WCGW, A.FNLTT_DSTOR_RISK, A.RISK_EVL_RESULT, A.RISK_EVL_REASON
+		FROM TB_CW_ELC_RCM_ORGINL A
+		WHERE A.UNITY_ID = #{unityId}
+		    AND ISNULL(A.ID_ERROR_AT, 'N') != 'Y'
+		    AND A.RISK_NO IN (
+		        SELECT RISK_NO FROM (
+		            SELECT DISTINCT
+		            	RISK_NO, RISK_NM, RISK_CN, WCGW, FNLTT_DSTOR_RISK, RISK_EVL_RESULT, RISK_EVL_REASON
+		            FROM TB_CW_ELC_RCM_ORGINL
+		            WHERE UNITY_ID = #{unityId}
+		                AND ISNULL(ID_ERROR_AT, 'N') != 'Y'
+		        )
+		        GROUP BY RISK_NO
+		        HAVING COUNT(RISK_NO) > 1
+		    )
+		ORDER BY A.RISK_NO, A.EXCEL_ROW_SN ASC
+	</select>
+
+	<select id="cnrlInspctList" resultType="EgovMap">
+		SELECT
+		      A.UNITY_ID, A.EXCEL_ROW_SN
+		    , A.CNRL_NO, A.CNRL_NM, A.CNRL_CN, A.KEY_CNRL, A.REFRN_NO, A.CNRL_RELATE_REF
+			, A.CNRL_EXC_UPPER_DEPT, A.CNRL_EXC_DEPT, A.CNRL_EXCBER
+			, A.CNRL_RSPNSBL_UPPER_DEPT, A.CNRL_RSPNSBL_DEPT, A.CNRL_RSPNBER
+			, A.CNRL_REG_NM, A.CNRL_RELATE_DOC, A.CNRL_RELATE_SYS, A.CNRL_RM
+			, A.CNRL_PURPS, A.CNRL_PURPS_CHOISE, A.CNRL_PURPS_RELIABILITY_FIN, A.CNRL_PURPS_ASSET_PROTECTION, A.CNRL_PURPS_FRAUD_PREVENTION
+			, A.CNRL_TY, A.CNRL_TY_CECK01, A.CNRL_TY_CECK02, A.CNRL_TY_CECK03, A.CNRL_TY_CECK04, A.CNRL_TY_CECK05, A.CNRL_TY_CECK06, A.CNRL_TY_CECK07, A.CNRL_TY_CECK08, A.CNRL_TY_CECK09
+			, A.CNRL_TY01, A.CNRL_TY02, A.CNRL_TY03
+			, A.CNRL_TY03_AUTO
+			, A.CNRL_TY03_MANUAL
+			, A.CNRL_TY03_AUTOMANUAL
+			, A.DELNG_TY, A.CNRL_CTGRY, A.CNRL_CYCLE
+			, A.CNRL_CYCLE01, A.CNRL_CYCLE02, A.CNRL_CYCLE03, A.CNRL_CYCLE04, A.CNRL_CYCLE05, A.CNRL_CYCLE06, A.CNRL_CYCLE07, A.CNRL_CYCLE08, A.CNRL_CYCLE09
+			, A.OFFICE_TY, A.DSGN_EFCT, A.OPER_EFCT, A.CNRL_UPRPD_NO
+			, A.MRC_CNRL, A.MRC_CTGRY, A.MRC_NO
+			, A.IPE_CNRL, A.IPE_CTGRY, A.IPE_NO, A.IPE_NM, A.IPE_TEST_PROCSS
+			, A.COSO_NO
+			, A.TEST_CYCLE
+			, A.TEST_CYCLE01, A.TEST_CYCLE02, A.TEST_CYCLE03, A.TEST_CYCLE04, A.TEST_CYCLE05, A.TEST_CYCLE06, A.TEST_CYCLE07, A.TEST_CYCLE08, A.TEST_CYCLE09
+			, A.TEST_RELATION_DOC, A.TEST_TRGET, A.SAMPLE_SIZE, A.TEST_PROCSS, A.EXCP_CNT
+			, A.TEST_MTH, A.TEST_MTH_QUESTION, A.TEST_MTH_OBSERVE, A.TEST_MTH_VERIFICATION, A.TEST_MTH_RE_RUN, A.TEST_MTH_TRACKING
+			, A.ATMC_SAMPLE, A.TEST_SANCTN, A.CNRL_ANT_CTGR_CODE, A.CNRL_ACNTCTGR, A.RELATE_ACNTCTGR_PBLNTF, A.CNRL_REMARK
+			, A.ASSE_C, A.ASSE_E, A.ASSE_R, A.ASSE_V, A.ASSE_P, A.ASSE_S, A.ASSE_O, A.ASSE_A, A.ASSE_PF
+			, A.TREXAMIN_PROCSS, A.TREXAMIN_PRUF, A.TREXAMIN_CNCLSN
+			, A.RISK_RESIDUAL_LIKEHOOD, A.RISK_RESIDUAL_IMPACT, A.RISK_RESIDUAL_RATING
+			, A.CNRL_RESIDUAL_LIKEHOOD, A.CNRL_RESIDUAL_IMPACT, A.CNRL_RESIDUAL_RATING, A.CNRL_IMPRVM_NM, A.CNRL_IMPRVM_CN
+			, A.FNREP_RISKEVL_CSFCTR01, A.FNREP_RISKEVL_CSFCTR02, A.FNREP_RISKEVL_CSFCTR03
+            , A.FNREP_RISKEVL_CSFCTR04, A.FNREP_RISKEVL_CSFCTR05, A.FNREP_RISKEVL_CSFCTR06
+            , A.FNREP_RISKEVL_CSFCTR07, A.FNREP_RISKEVL_CSFCTR08, A.FNREP_RISKEVL_CSFCTR09, A.FNREP_RISKEVL_CSFCTR10
+            , A.FNREP_CNRL_RISK_CNCLSN, A.FNREP_ACNT_RISK_CNCLSN, A.FNREP_PROCS_RISK_CNCLSN, A.FNREP_GNRLZ_EVL_CNCLSN
+		FROM TB_CW_ELC_RCM_ORGINL A
+		WHERE A.UNITY_ID = #{unityId}
+		    AND ISNULL(A.ID_ERROR_AT, 'N') != 'Y'
+		    AND A.CNRL_NO IN (
+		        SELECT CNRL_NO FROM (
+		            SELECT DISTINCT
+		            	  CNRL_NO, CNRL_NM, CNRL_CN, KEY_CNRL, REFRN_NO, CNRL_RELATE_REF
+						, CNRL_EXC_UPPER_DEPT, CNRL_EXC_DEPT, CNRL_EXCBER
+						, CNRL_RSPNSBL_UPPER_DEPT, CNRL_RSPNSBL_DEPT, CNRL_RSPNBER
+						, CNRL_REG_NM, CNRL_RELATE_DOC, CNRL_RELATE_SYS, CNRL_RM
+						, CNRL_PURPS, CNRL_PURPS_CHOISE, CNRL_PURPS_RELIABILITY_FIN, CNRL_PURPS_ASSET_PROTECTION, CNRL_PURPS_FRAUD_PREVENTION
+						, CNRL_TY, CNRL_TY_CECK01, CNRL_TY_CECK02, CNRL_TY_CECK03, CNRL_TY_CECK04, CNRL_TY_CECK05, CNRL_TY_CECK06, CNRL_TY_CECK07, CNRL_TY_CECK08, CNRL_TY_CECK09
+						, CNRL_TY01, CNRL_TY02, CNRL_TY03
+						, CNRL_TY03_AUTO
+						, CNRL_TY03_MANUAL
+						, CNRL_TY03_AUTOMANUAL
+						, DELNG_TY, CNRL_CTGRY, CNRL_CYCLE
+						, CNRL_CYCLE01, CNRL_CYCLE02, CNRL_CYCLE03, CNRL_CYCLE04, CNRL_CYCLE05, CNRL_CYCLE06, CNRL_CYCLE07, CNRL_CYCLE08, CNRL_CYCLE09
+						, OFFICE_TY, DSGN_EFCT, OPER_EFCT, CNRL_UPRPD_NO
+						, MRC_CNRL, MRC_CTGRY, MRC_NO
+						, IPE_CNRL, IPE_CTGRY, IPE_NO, IPE_NM, IPE_TEST_PROCSS
+						, COSO_NO
+						, TEST_CYCLE
+						, TEST_CYCLE01, TEST_CYCLE02, TEST_CYCLE03, TEST_CYCLE04, TEST_CYCLE05, TEST_CYCLE06, TEST_CYCLE07, TEST_CYCLE08, TEST_CYCLE09
+						, TEST_RELATION_DOC, TEST_TRGET, SAMPLE_SIZE, TEST_PROCSS, EXCP_CNT
+						, TEST_MTH, TEST_MTH_QUESTION, TEST_MTH_OBSERVE, TEST_MTH_VERIFICATION, TEST_MTH_RE_RUN, TEST_MTH_TRACKING
+						, ATMC_SAMPLE, TEST_SANCTN, CNRL_ANT_CTGR_CODE, CNRL_ACNTCTGR, RELATE_ACNTCTGR_PBLNTF, CNRL_REMARK
+						, ASSE_C, ASSE_E, ASSE_R, ASSE_V, ASSE_P, ASSE_S, ASSE_O, ASSE_A, ASSE_PF
+						, TREXAMIN_PROCSS, TREXAMIN_PRUF, TREXAMIN_CNCLSN
+						, RISK_RESIDUAL_LIKEHOOD, RISK_RESIDUAL_IMPACT, RISK_RESIDUAL_RATING
+						, CNRL_RESIDUAL_LIKEHOOD, CNRL_RESIDUAL_IMPACT, CNRL_RESIDUAL_RATING, CNRL_IMPRVM_NM, CNRL_IMPRVM_CN
+						, FNREP_RISKEVL_CSFCTR01, FNREP_RISKEVL_CSFCTR02, FNREP_RISKEVL_CSFCTR03
+                        , FNREP_RISKEVL_CSFCTR04, FNREP_RISKEVL_CSFCTR05, FNREP_RISKEVL_CSFCTR06
+                        , FNREP_RISKEVL_CSFCTR07, FNREP_RISKEVL_CSFCTR08, FNREP_RISKEVL_CSFCTR09, FNREP_RISKEVL_CSFCTR10
+                        , FNREP_CNRL_RISK_CNCLSN, FNREP_ACNT_RISK_CNCLSN, FNREP_PROCS_RISK_CNCLSN, FNREP_GNRLZ_EVL_CNCLSN
+		            FROM TB_CW_ELC_RCM_ORGINL
+		            WHERE UNITY_ID = #{unityId}
+		                AND ISNULL(ID_ERROR_AT, 'N') != 'Y'
+		        )
+		        GROUP BY CNRL_NO
+		        HAVING COUNT(CNRL_NO) > 1
+		    )
+		ORDER BY A.CNRL_NO, A.EXCEL_ROW_SN ASC
+	</select>
+
+	<!-- 업로드 원천데이터, 시스템 정렬 비교 -->
+	<select id="orderRcmList" resultType="EgovMap">
+		SELECT	ROWNUM AS SYS_SN
+			  , T.*
+		FROM (	SELECT
+		              A.UNITY_ID
+					, A.EXCEL_ROW_SN
+					, A.MEGA_ID
+					, A.MEGA_NO
+					, A.MEGA_NM
+					, A.MJR_ID
+					, A.MJR_NO
+					, A.MJR_NM
+					, A.SUB_ID
+					, A.SUB_NO
+					, A.SUB_NM
+					, A.RISK_ID
+					, A.RISK_NO
+					, A.RISK_NM
+					, A.RISK_CN
+					, A.WCGW
+					, A.FNLTT_DSTOR_RISK
+					, A.RISK_EVL_RESULT
+					, A.RISK_EVL_REASON
+					, A.CNRL_ID
+					, A.CNRL_NO
+					, A.CNRL_NM
+					, A.CNRL_CN
+					, A.KEY_CNRL
+					, A.REFRN_NO
+					, A.CNRL_RELATE_REF
+					, A.CNRL_EXC_UPPER_DEPT
+					, A.CNRL_EXC_DEPT
+					, A.CNRL_EXCBER
+					, A.CNRL_RSPNSBL_UPPER_DEPT
+					, A.CNRL_RSPNSBL_DEPT
+					, A.CNRL_RSPNBER
+					, A.CNRL_REG_NM
+					, A.CNRL_RELATE_DOC
+					, A.CNRL_RELATE_SYS
+					, A.CNRL_RM
+					, A.CNRL_PURPS
+					, A.CNRL_PURPS_CHOISE
+					, A.CNRL_PURPS_RELIABILITY_FIN
+					, A.CNRL_PURPS_ASSET_PROTECTION
+					, A.CNRL_PURPS_FRAUD_PREVENTION
+					, A.CNRL_TY
+					, A.CNRL_TY_CECK01
+					, A.CNRL_TY_CECK02
+					, A.CNRL_TY_CECK03
+					, A.CNRL_TY_CECK04
+					, A.CNRL_TY_CECK05
+					, A.CNRL_TY_CECK06
+					, A.CNRL_TY_CECK07
+					, A.CNRL_TY_CECK08
+					, A.CNRL_TY_CECK09
+					, A.CNRL_TY01
+					, A.CNRL_TY02
+					, A.CNRL_TY03
+					, A.CNRL_TY03_AUTO
+					, A.CNRL_TY03_MANUAL
+					, A.CNRL_TY03_AUTOMANUAL
+					, A.DELNG_TY
+					, A.CNRL_CTGRY
+					, A.CNRL_CYCLE
+					, A.CNRL_CYCLE01
+					, A.CNRL_CYCLE02
+					, A.CNRL_CYCLE03
+					, A.CNRL_CYCLE04
+					, A.CNRL_CYCLE05
+					, A.CNRL_CYCLE06
+					, A.CNRL_CYCLE07
+					, A.CNRL_CYCLE08
+					, A.CNRL_CYCLE09
+					, A.OFFICE_TY
+					, A.DSGN_EFCT
+					, A.OPER_EFCT
+					, A.CNRL_UPRPD_NO
+					, A.MRC_CNRL
+					, A.MRC_CTGRY
+					, A.MRC_NO
+					, A.IPE_CNRL
+					, A.IPE_CTGRY
+					, A.IPE_NO
+					, A.IPE_NM
+					, A.IPE_TEST_PROCSS
+					, A.COSO_NO
+					, A.TEST_CYCLE
+					, A.TEST_CYCLE01
+					, A.TEST_CYCLE02
+					, A.TEST_CYCLE03
+					, A.TEST_CYCLE04
+					, A.TEST_CYCLE05
+					, A.TEST_CYCLE06
+					, A.TEST_CYCLE07
+					, A.TEST_CYCLE08
+					, A.TEST_CYCLE09
+					, A.TEST_RELATION_DOC
+					, A.TEST_TRGET
+					, A.SAMPLE_SIZE
+					, A.TEST_PROCSS
+					, A.EXCP_CNT
+					, A.TEST_MTH
+					, A.TEST_MTH_QUESTION
+					, A.TEST_MTH_OBSERVE
+					, A.TEST_MTH_VERIFICATION
+					, A.TEST_MTH_RE_RUN
+					, A.TEST_MTH_TRACKING
+					, A.ATMC_SAMPLE
+					, A.TEST_SANCTN
+					, A.CNRL_ANT_CTGR_CODE
+					, A.CNRL_ACNTCTGR
+					, A.RELATE_ACNTCTGR_PBLNTF
+					, A.CNRL_REMARK
+					, A.ASSE_C
+					, A.ASSE_E
+					, A.ASSE_R
+					, A.ASSE_V
+					, A.ASSE_P
+					, A.ASSE_S
+					, A.ASSE_O
+					, A.ASSE_A
+					, A.ASSE_PF
+					, A.TREXAMIN_PROCSS
+					, A.TREXAMIN_PRUF
+					, A.TREXAMIN_CNCLSN
+					, A.RISK_RESIDUAL_LIKEHOOD
+					, A.RISK_RESIDUAL_IMPACT
+					, A.RISK_RESIDUAL_RATING
+					, A.CNRL_RESIDUAL_LIKEHOOD
+					, A.CNRL_RESIDUAL_IMPACT
+					, A.CNRL_RESIDUAL_RATING
+					, A.CNRL_IMPRVM_NM
+					, A.CNRL_IMPRVM_CN
+					, A.FNREP_RISKEVL_CSFCTR01
+                    , A.FNREP_RISKEVL_CSFCTR02
+                    , A.FNREP_RISKEVL_CSFCTR03
+                    , A.FNREP_RISKEVL_CSFCTR04
+                    , A.FNREP_RISKEVL_CSFCTR05
+                    , A.FNREP_RISKEVL_CSFCTR06
+                    , A.FNREP_RISKEVL_CSFCTR07
+                    , A.FNREP_RISKEVL_CSFCTR08
+                    , A.FNREP_RISKEVL_CSFCTR09
+                    , A.FNREP_RISKEVL_CSFCTR10
+                    , A.FNREP_CNRL_RISK_CNCLSN
+                    , A.FNREP_ACNT_RISK_CNCLSN
+                    , A.FNREP_PROCS_RISK_CNCLSN
+                    , A.FNREP_GNRLZ_EVL_CNCLSN
+					, A.ID_ERROR_TY
+					, A.ID_ERROR_AT
+					, A.MEGA_ERROR_AT
+					, A.MJR_ERROR_AT
+					, A.SUB_ERROR_AT
+					, A.RISK_ERROR_AT
+					, A.CNRL_ERROR_TY
+					, A.CNRL_ERROR_AT
+					, A.ID_ERROR_CN
+					, A.MEGA_ERROR_CN
+					, A.MJR_ERROR_CN
+					, A.SUB_ERROR_CN
+					, A.RISK_ERROR_CN
+					, A.CNRL_ERROR_CN
+					, (CASE WHEN   A.ID_ERROR_AT = 'Y' OR A.MEGA_ERROR_AT = 'Y' OR A.MJR_ERROR_AT = 'Y'
+		                        OR A.SUB_ERROR_AT = 'Y' OR A.RISK_ERROR_AT = 'Y' OR A.CNRL_ERROR_AT = 'Y' THEN 'Y' ELSE '' END) AS ERROR_AT
+		            , (        (CASE WHEN A.ID_ERROR_AT = 'Y' THEN A.ID_ERROR_CN ELSE '' END)
+		                +' '+(CASE WHEN A.MEGA_ERROR_AT = 'Y' THEN A.MEGA_ERROR_CN  ELSE '' END)
+		                +' '+(CASE WHEN A.MJR_ERROR_AT = 'Y' THEN A.MJR_ERROR_CN  ELSE '' END)
+		                +' '+(CASE WHEN A.SUB_ERROR_AT = 'Y' THEN A.SUB_ERROR_CN  ELSE '' END)
+		                +' '+(CASE WHEN A.RISK_ERROR_AT = 'Y' THEN A.RISK_ERROR_CN  ELSE '' END)
+		                +' '+(CASE WHEN A.CNRL_ERROR_AT = 'Y' THEN A.CNRL_ERROR_CN  ELSE '' END)
+		            ) AS ERROR_CN
+		        FROM TB_CW_ELC_RCM_ORGINL A
+		        WHERE A.UNITY_ID = #{unityId}
+				ORDER BY A.MEGA_ID, A.MJR_ID, A.SUB_ID, A.RISK_ID, A.CNRL_ID
+		) T
+	</select>
+</mapper>

@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.ee.plan.serviceimpl.CweePlanUserMapper">
+
+	<insert id="insert">
+		INSERT INTO TB_CW_EVL_EXC(
+			  EVL_ID, OBJECT_ID, CHRG_USER_TY_CD_ID, CHRG_USER_ID, CHRG_USER_BGNDE, CHRG_DEPT_ID, CHRG_DEPT_BGNDE 
+		) VALUES (
+			  #{evlId}, #{objectId}, #{chrgUserTyCdId}, #{chrgUserId}, #{chrgUserBgnde}, #{chrgDeptId}, #{chrgDeptBgnde} 
+		)
+	</insert>
+	
+	<!-- 마스터 담당자 SELECT INSERT -->
+	<insert id="insertRcmUser" >
+		INSERT INTO TB_CW_EVL_EXC(
+			EVL_ID, OBJECT_ID, CHRG_USER_TY_CD_ID, CHRG_USER_ID, CHRG_USER_BGNDE, CHRG_DEPT_ID, CHRG_DEPT_BGNDE 
+        ) 
+        SELECT
+        	  TA.EVL_ID
+        	, TA.OBJECT_ID
+        	, TA.CHRG_USER_TY_CD_ID
+        	, TA.CHRG_USER_ID
+        	, TA.CHRG_USER_BGNDE
+        	, TA.CHRG_DEPT_ID
+        	, TA.CHRG_DEPT_BGNDE
+        FROM (        
+	        SELECT
+               TT.EVL_ID, TT.OBJECT_ID, TT.CHRG_USER_TY_CD_ID, TT.CHRG_USER_ID, TT.CHRG_USER_BGNDE, TT.CHRG_DEPT_ID, TT.CHRG_DEPT_BGNDE, TT.CHRG_GROUP_SN, TT.MAPNG_CHRG_SN
+             , CASE WHEN E.EVL_TY_CD_ID = 'CTW_102_002' AND E.EVL_KND_CD_ID = 'CTW_103_004' AND TT.OBJECT_KND_CD_ID = 'CTW_001_005' THEN 'Y'      /** 조직형이고, 운영평가이면 통제항목 담당자만  */
+                    WHEN E.EVL_TY_CD_ID = 'CTW_102_002' AND E.EVL_KND_CD_ID != 'CTW_103_004' THEN 'Y'      /** 조직형이고, 설계평가는 전체  */
+                    WHEN E.EVL_TY_CD_ID = 'CTW_102_001' THEN 'Y'      /** 프로세스형은 전체  */
+                    ELSE 'N'
+               END AS USER_ADD_AT
+	         , (ROW_NUMBER() OVER (PARTITION BY TT.OBJECT_ID, TT.CHRG_USER_TY_CD_ID ORDER BY TT.MAPNG_CHRG_SN ASC) ) AS CHECK_SN     
+	        FROM (   
+		        SELECT DISTINCT  /** 위험 중복 제거 */
+		              #{evlId} 				AS EVL_ID
+		            , A.OBJECT_ID
+		            , A.CHRG_TY_CD_ID       AS CHRG_USER_TY_CD_ID
+		            , A.CHRG_USER_ID
+		            , AB.HIST_BGNDE 		AS CHRG_USER_BGNDE
+		            , AC.DEPT_ID      		AS CHRG_DEPT_ID
+		            , AC.HIST_BGNDE 		AS CHRG_DEPT_BGNDE
+		            , A.CHRG_GROUP_SN
+		            , A.MAPNG_CHRG_SN
+                    , T.OBJECT_KND_CD_ID
+		        FROM TB_CW_ELC_RCM_MAPNG_USER A
+		        INNER JOIN TB_CW_EVL_RCM_MAPNG T        /** 평가의 RCM_MAPNG에 존재하는 OBJECT_ID */
+		           ON A.OBJECT_ID = T.OBJECT_ID
+		           AND T.EVL_ID = #{evlId}
+		        INNER JOIN TB_CO_USER_HIST AB
+		            ON A.CHRG_USER_ID = AB.USER_ID
+		            AND AB.HIST_ENDDE = '99991231'       	/** 최신정보 */        
+		            AND AB.STTUS_CD_ID = 'COM_003_001'     	/** 재직자 */
+		        LEFT OUTER JOIN TB_CO_DEPT_HIST AC        	/** 부서ID 존재여부 필수인 경우 INNER JOIN으로 변경 */
+		            ON  AB.DEPT_ID = AC.DEPT_ID
+		            AND AC.HIST_ENDDE = '99991231'       	/** 부서 최신정보 */
+		            AND AC.STTUS_CD_ID = 'COM_001_001'    	/** 사용부서 */
+	        ) TT
+            INNER JOIN TB_CW_EVL E
+             ON TT.EVL_ID = E.EVL_ID
+		) TA
+		WHERE 
+         	TA.USER_ADD_AT = 'Y' 
+			/** 평가의 EXC에 이미 존재하는 OBJECT_ID는 제외 */
+        	AND TA.OBJECT_ID NOT IN (
+				SELECT OBJECT_ID
+           		FROM TB_CW_EVL_EXC
+             	WHERE EVL_ID = #{evlId}
+              		 AND CHRG_USER_TY_CD_ID = TA.CHRG_USER_TY_CD_ID
+			)			
+			<choose>
+				<when test=" evlKndCdId != null and evlKndCdId =='CTW_103_003' ">
+					AND TA.CHECK_SN = 1 	 		/**   설계평가 : 평가/테스터 1명 입력 */
+				</when>
+				<otherwise>
+					AND TA.CHRG_GROUP_SN = 1 		/**   운영평가 : 담당 그룹의 1번째 */
+				</otherwise>
+			</choose>
+    </insert>
+    
+	<delete id="delete">
+		DELETE FROM TB_CW_EVL_EXC 
+		WHERE EVL_ID = #{evlId} 
+			AND OBJECT_ID = #{objectId} 
+        <if test=' chrgUserTyCdId != null and chrgUserTyCdId !="" '>
+            AND CHRG_USER_TY_CD_ID = #{chrgUserTyCdId}
+        </if>
+        <if test=' chrgUserId != null and chrgUserId !="" '>
+            AND CHRG_USER_ID = #{chrgUserId}
+        </if>
+	</delete>
+	
+    <delete id="deleteExc"> 
+        /** 평가의 RCM_MAPNG에 존재하지않는 OBJECT_ID는 삭제 */
+        DELETE FROM TB_CW_EVL_EXC
+        WHERE EVL_ID = #{evlId}
+            AND OBJECT_ID NOT IN (SELECT OBJECT_ID 
+                                  FROM TB_CW_EVL_RCM_MAPNG 
+                                  WHERE EVL_ID = #{evlId})
+    </delete>
+
+<!-- 담당자 리스트 -->
+	<select id="chrgList" resultType="EgovMap">
+		WITH V0 AS (
+			/** 통제 없는 프로세스 제외  */
+            SELECT
+                  DISTINCT T.EVL_ID, T.OBJECT_ID, T.OBJECT_NO, T.OBJECT_NM, T.OBJECT_LEVEL, T.OBJECT_KND_CD_ID, T.UPPER_OBJECT_ID
+                , T.CHRG_TY_CD_ID, T.CNRL_CN, T.KEY_CNRL_AT, T.CNRL_RSPNBER, T.CNRL_EXCBER
+            FROM (
+                /** 위험, 통제 중복 제거 */
+                SELECT 
+                     DISTINCT A.EVL_ID, A.OBJECT_ID, A.OBJECT_NO, A.OBJECT_NM, A.OBJECT_LEVEL, A.OBJECT_KND_CD_ID
+					<choose>
+						<when test=' elcRiskUseAt != "false" '>
+		                   , (CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN B.UPPER_OBJECT_ID ELSE A.UPPER_OBJECT_ID END) AS UPPER_OBJECT_ID   
+						</when>
+						<otherwise>
+		                   , A.UPPER_OBJECT_ID AS UPPER_OBJECT_ID   
+						</otherwise>
+					</choose>
+                   , ISNULL(C.CHRG_TY_CD_ID, 'CTW_105_001') AS CHRG_TY_CD_ID
+                   , C.CNRL_CN, C.KEY_CNRL_AT, C.CNRL_RSPNBER, C.CNRL_EXCBER
+                FROM TB_CW_EVL_RCM_MAPNG A
+                LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG B
+                   ON  A.EVL_ID = B.EVL_ID
+                   AND A.UPPER_MAPNG_ID = B.MAPNG_ID
+                LEFT OUTER JOIN (
+                    /** 통제 평가자/ 테스터 */
+                    SELECT 'CTW_105_001' AS CHRG_TY_CD_ID, CNRL_ID, CNRL_CN, KEY_CNRL_AT, CNRL_RSPNBER, CNRL_EXCBER FROM TB_CW_ELC_RCM_CNRL          
+                    UNION ALL
+                    SELECT 'CTW_105_002' AS CHRG_TY_CD_ID, CNRL_ID, CNRL_CN, KEY_CNRL_AT, CNRL_RSPNBER, CNRL_EXCBER FROM TB_CW_ELC_RCM_CNRL
+                ) C
+                    ON A.OBJECT_ID = C.CNRL_ID
+         	WHERE A.EVL_ID = #{evlId}
+               	AND A.OBJECT_KND_CD_ID != 'CTW_001_004'
+           ) T                          
+		), V1 (OBJECT_ID , UPPER_OBJECT_ID , CHRG_TY_CD_ID )AS  (
+			SELECT OBJECT_ID , UPPER_OBJECT_ID , CHRG_TY_CD_ID 
+			FROM V0 
+			WHERE OBJECT_KND_CD_ID = 'CTW_001_005'
+			
+			UNION ALL 
+			
+			SELECT V.OBJECT_ID , V.UPPER_OBJECT_ID , V.CHRG_TY_CD_ID 
+			FROM V0 V , V1 ROOT
+			WHERE V.OBJECT_ID = ROOT.UPPER_OBJECT_ID
+		)  
+      	SELECT
+              MA.*
+            , MB.CODE_NM AS OBJECT_KND_CD_NM  
+            , (CASE WHEN MA.CHRG_TY_CD_ID = 'CTW_105_002' THEN #{chrgEvlSe02} ELSE #{chrgEvlSe01} END ) AS CHRG_EVL_SE
+            , SA.CHRG_USER_ID, SB.USER_CD, SB.USER_NM, SB.DEPT_NM
+       	FROM (          
+        	SELECT 
+				DISTINCT V0.* 
+				FROM V1 V1
+				INNER JOIN V0 V0 
+					ON V1.OBJECT_ID = V0.OBJECT_ID 
+					AND V1.CHRG_TY_CD_ID = V0.CHRG_TY_CD_ID  
+			ORDER BY V0.OBJECT_ID      
+        ) MA
+        LEFT OUTER JOIN TB_CO_CODE MB
+            ON MB.GROUP_ID = 'CTW_001' 
+            AND CASE WHEN MA.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{elcProcsStep} = 2 
+                		THEN 'CTW_001_003' 
+                		ELSE MA.OBJECT_KND_CD_ID END = MB.CODE_ID
+        LEFT OUTER JOIN TB_CW_EVL_EXC SA
+            ON MA.EVL_ID = SA.EVL_ID
+            AND MA.OBJECT_ID = SA.OBJECT_ID
+            AND MA.CHRG_TY_CD_ID = SA.CHRG_USER_TY_CD_ID
+        LEFT OUTER JOIN TB_CO_USER_HIST SB
+            ON  SA.CHRG_USER_ID = SB.USER_ID
+            AND SA.CHRG_USER_BGNDE = SB.HIST_BGNDE   /** 이력정보 */
+ 		ORDER BY MA.OBJECT_ID ASC, MA.CHRG_TY_CD_ID ASC
+	</select>
+	
+
+
+<!-- 전체 담당자 삭제 -->
+    <delete id="chrgDeleteAll">
+        DELETE FROM TB_CW_EVL_EXC
+        WHERE EVL_ID = #{evlId}
+    </delete>
+    
+<!-- 이전 평가 계획 담당자 복사 --> 
+    <insert id="chrgCopyPlan">
+    <![CDATA[
+	BEGIN
+		/** 이전 평가 오브젝트ID 기준으로 삭제 */
+		DELETE FROM TB_CW_EVL_EXC
+        WHERE EVL_ID = #{evlId}
+            AND OBJECT_ID IN (
+            	SELECT DISTINCT A.OBJECT_ID 
+				FROM TB_CW_EVL_EXC A
+				WHERE A.EVL_ID = #{copyEvlId}
+            );
+            
+        /** 재직자 입력 */
+		INSERT INTO TB_CW_EVL_EXC (
+     		EVL_ID, OBJECT_ID, CHRG_USER_TY_CD_ID, CHRG_USER_ID, CHRG_USER_BGNDE, CHRG_DEPT_ID, CHRG_DEPT_BGNDE 
+        )
+        SELECT TA.EVL_ID, TA.OBJECT_ID, TA.CHRG_USER_TY_CD_ID, TA.CHRG_USER_ID, TA.CHRG_USER_BGNDE, TA.CHRG_DEPT_ID, TA.CHRG_DEPT_BGNDE
+        FROM (
+		        SELECT TT.EVL_ID, TT.OBJECT_ID, TT.CHRG_USER_TY_CD_ID, TT.CHRG_USER_ID, TT.CHRG_USER_BGNDE, TT.CHRG_DEPT_ID, TT.CHRG_DEPT_BGNDE
+			         , CASE WHEN E.EVL_TY_CD_ID = 'CTW_102_002' AND E.EVL_KND_CD_ID = 'CTW_103_004' AND TT.OBJECT_KND_CD_ID = 'CTW_001_005' THEN 'Y'      /** 조직형이고, 운영평가이면 통제항목 담당자만  */
+			            	WHEN E.EVL_TY_CD_ID = 'CTW_102_002' AND E.EVL_KND_CD_ID != 'CTW_103_004' THEN 'Y'      /** 조직형이고, 설계평가는 전체  */
+			            	WHEN E.EVL_TY_CD_ID = 'CTW_102_001' THEN 'Y'      /** 프로세스형은 전체  */
+			            	ELSE 'N'
+		               END AS USER_ADD_AT
+		        FROM (
+				        SELECT 
+						      DISTINCT 
+						      #{evlId} AS EVL_ID
+						    , A.OBJECT_ID
+						    , A.CHRG_USER_TY_CD_ID
+						    , A.CHRG_USER_ID
+						    , B.HIST_BGNDE          AS CHRG_USER_BGNDE
+						    , B.DEPT_ID             AS CHRG_DEPT_ID
+						    , C.HIST_BGNDE          AS CHRG_DEPT_BGNDE
+						    , M.OBJECT_KND_CD_ID
+						FROM TB_CW_EVL_EXC A
+						INNER JOIN TB_CO_USER_HIST B 
+						    ON A.CHRG_USER_ID = B.USER_ID
+						    AND B.STTUS_CD_ID = 'COM_003_001' /**  재직자 */
+						    AND B.HIST_ENDDE = '99991231'     /** 최신정보 */
+						LEFT OUTER JOIN TB_CO_DEPT_HIST C
+						    ON  B.DEPT_ID = C.DEPT_ID
+						    AND C.HIST_ENDDE  = '99991231'     /** 최신정보 */
+						LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+							ON A.EVL_ID = M.EVL_ID
+							AND A.OBJECT_ID = M.OBJECT_ID
+						WHERE A.EVL_ID = #{copyEvlId}
+						) TT
+					  INNER JOIN TB_CW_EVL E
+					   ON TT.EVL_ID = E.EVL_ID
+				) TA
+		 WHERE TA.USER_ADD_AT = 'Y';
+	END; 
+	]]>
+    </insert>
+    
+    
+	<!-- RCM담당자 복사 --> 
+	<!-- 평가계획이 조직형이며 운영평가인 경우 통제항목의 평가자, 테스터만 복사 -->
+    <insert id="chrgCopyRcmChrg">
+	BEGIN
+		/** 이전 평가 오브젝트ID 기준으로 삭제 */
+		DELETE FROM TB_CW_EVL_EXC
+        WHERE EVL_ID = #{evlId}
+            AND OBJECT_ID IN (
+            	SELECT DISTINCT A.OBJECT_ID
+				FROM TB_CW_ELC_RCM_CHRG_USER A
+				WHERE A.UNITY_ID = #{copyUnityId}
+				    AND A.ERROR_AT = 'N'
+            );
+            
+        /** 재직자 입력 */
+		INSERT INTO TB_CW_EVL_EXC (
+     		EVL_ID, OBJECT_ID, CHRG_USER_TY_CD_ID, CHRG_USER_ID, CHRG_USER_BGNDE, CHRG_DEPT_ID, CHRG_DEPT_BGNDE 
+        )
+        SELECT
+        	  TA.EVL_ID
+        	, TA.OBJECT_ID
+        	, TA.CHRG_USER_TY_CD_ID
+        	, TA.CHRG_USER_ID
+        	, TA.CHRG_USER_BGNDE
+        	, TA.CHRG_DEPT_ID
+        	, TA.CHRG_DEPT_BGNDE
+        FROM (        
+	        SELECT
+               TT.EVL_ID
+             , TT.OBJECT_ID
+             , TT.CHRG_USER_TY_CD_ID
+             , TT.CHRG_USER_ID
+             , TT.CHRG_USER_BGNDE
+             , TT.CHRG_DEPT_ID
+             , TT.CHRG_DEPT_BGNDE
+             , TT.CHRG_GROUP_SN
+             , TT.MAPNG_CHRG_SN
+	         , (ROW_NUMBER() OVER (PARTITION BY TT.OBJECT_ID, TT.CHRG_USER_TY_CD_ID ORDER BY TT.MAPNG_CHRG_SN ASC) ) AS CHECK_SN     
+	        FROM (   
+		        SELECT DISTINCT  /** 위험 중복 제거 */
+		              #{evlId} 				AS EVL_ID
+		            , A.OBJECT_ID
+		            , A.CHRG_TY_CD_ID       AS CHRG_USER_TY_CD_ID
+		            , A.CHRG_USER_ID
+		            , AB.HIST_BGNDE 		AS CHRG_USER_BGNDE
+		            , AC.DEPT_ID      		AS CHRG_DEPT_ID
+		            , AC.HIST_BGNDE 		AS CHRG_DEPT_BGNDE
+		            , A.CHRG_GROUP_SN
+		            , A.MAPNG_CHRG_SN
+		            , CASE WHEN E.EVL_TY_CD_ID = 'CTW_102_002' AND E.EVL_KND_CD_ID = 'CTW_103_004' AND T.OBJECT_KND_CD_ID = 'CTW_001_005' THEN 'Y'      /** 조직형이고, 운영평가이면 통제항목 담당자만  */
+		            	   WHEN E.EVL_TY_CD_ID = 'CTW_102_002' AND E.EVL_KND_CD_ID != 'CTW_103_004' THEN 'Y'      /** 조직형이고, 설계평가는 전체  */
+		            	   WHEN E.EVL_TY_CD_ID = 'CTW_102_001' THEN 'Y'      /** 프로세스형은 전체  */
+		            	   ELSE 'N'
+		              END AS USER_ADD_AT
+		        FROM TB_CW_ELC_RCM_CHRG_USER A
+		        INNER JOIN TB_CW_EVL_RCM_MAPNG T        /** 평가의 RCM_MAPNG에 존재하는 OBJECT_ID */
+		           ON A.OBJECT_ID = T.OBJECT_ID
+		           AND T.EVL_ID = #{evlId}
+		        INNER JOIN TB_CO_USER_HIST AB
+		            ON A.CHRG_USER_ID = AB.USER_ID
+		            AND AB.HIST_ENDDE = '99991231'       	/** 최신정보 */        
+		            AND AB.STTUS_CD_ID = 'COM_003_001'     	/** 재직자 */
+		        LEFT OUTER JOIN TB_CO_DEPT_HIST AC        	/** 부서ID 존재여부 필수인 경우 INNER JOIN으로 변경 */
+		            ON  AB.DEPT_ID = AC.DEPT_ID
+		            AND AC.HIST_ENDDE = '99991231'       	/** 부서 최신정보 */
+		            AND AC.STTUS_CD_ID = 'COM_001_001'    	/** 사용부서 */
+		        INNER JOIN TB_CW_EVL E
+		        	ON T.EVL_ID = E.EVL_ID
+		        WHERE A.UNITY_ID = #{copyUnityId}
+                   AND A.ERROR_AT = 'N' /** 오류 제외 */    
+	        ) TT
+	        WHERE TT.USER_ADD_AT = 'Y'
+		) TA
+		WHERE 
+			1=1		
+			<choose>
+				<when test=" evlKndCdId != null and evlKndCdId =='CTW_103_003' ">
+					AND TA.CHECK_SN = 1 	 		/**   설계평가 : 평가/테스터 1명 입력 */
+				</when>
+				<otherwise>
+					AND TA.CHRG_GROUP_SN = 1 		/**   운영평가 : 담당 그룹의 1번째 */
+				</otherwise>
+			</choose>
+		;
+	END;  
+    </insert>
+
+</mapper>

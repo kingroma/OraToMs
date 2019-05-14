@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.rcm.coso.serviceimpl.CwrcmCosoSttusMapper">
+  	
+	<select id="list" resultType="EgovMap">
+		WITH G AS (	/** 전체 엔티티 별 통제 Count */
+		    SELECT A.ENTITY_ID, COUNT(1) AS CNT
+			FROM TB_CW_COSO_ENTITY_MAPPING A 
+			INNER JOIN TB_CW_COSO_ENTITY_HIST B 
+				ON A.ENTITY_ID = B.ENTITY_ID
+				AND A.BGNTMSTMP = B.BGNTMSTMP 
+                AND B.ENDTMSTMP = '99991231235959999999'
+             GROUP BY A.ENTITY_ID
+		),
+		P_G AS (	/** 엔티티 별  PLC 통제 Count */
+		    SELECT A.ENTITY_ID, COUNT(1) AS CNT
+			FROM TB_CW_COSO_ENTITY_MAPPING A 
+			INNER JOIN TB_CW_COSO_ENTITY_HIST B 
+				ON A.ENTITY_ID = B.ENTITY_ID
+				AND A.BGNTMSTMP = B.BGNTMSTMP 
+                AND B.ENDTMSTMP = '99991231235959999999'
+                AND A.RCM_SE = 'P'
+             GROUP BY A.ENTITY_ID
+		),
+		E_G AS (	/** 엔티티 별 ELC 통제 Count */
+		    SELECT A.ENTITY_ID, COUNT(1) AS CNT
+			FROM TB_CW_COSO_ENTITY_MAPPING A 
+			INNER JOIN TB_CW_COSO_ENTITY_HIST B 
+				ON A.ENTITY_ID = B.ENTITY_ID
+				AND A.BGNTMSTMP = B.BGNTMSTMP 
+                AND B.ENDTMSTMP = '99991231235959999999'
+                AND A.RCM_SE = 'E'
+             GROUP BY A.ENTITY_ID
+		)
+		<if test=' srchUpperEntityId != null and srchUpperEntityId != "" '>
+		, V1 ( ENTITY_ID , UPPER_ENTITY_ID )AS (
+			SELECT ENTITY_ID , UPPER_ENTITY_ID 
+			FROM TB_CW_COSO_ENTITY
+			WHERE UPPER_ENTITY_ID = #{srchUpperEntityId}
+				AND USE_AT= 'Y' AND DEL_AT = 'N'
+			UNION ALL 
+			
+			SELECT E.ENTITY_ID , E.UPPER_ENTITY_ID 
+			FROM TB_CW_COSO_ENTITY E , V1 ROOT 
+			WHERE ROOT.ENTITY_ID = E.UPPER_ENTITY_ID
+				AND E.USE_AT= 'Y' AND E.DEL_AT = 'N'
+		)
+		</if>
+
+		SELECT 
+				CE3.ENTITY_ID AS CNSDR_MATTER_ID
+		      , '[' + CE3.ENTITY_CD_ID + '] ' + CE3.ENTITY_NM AS CNSDR_MATTER
+			  , CE2.ENTITY_ID AS PRNCPL_ID
+		      , '[' + CE2.ENTITY_CD_ID + '] ' + CE2.ENTITY_NM AS PRNCPL
+			  , CE1.ENTITY_ID AS FACTOR_ID
+		      , '[' + CE1.ENTITY_CD_ID + '] ' + CE1.ENTITY_NM AS FACTOR
+		      , CE3.ENTITY_CD_ID
+		      , CE3.ENTITY_LEVEL
+		      , CE3.ENTITY_KND_CD_ID
+		      , CE3.UPPER_ENTITY_ID
+		      , CE3.EXCEL_NO
+		      , CE3.SORT_SN
+		      , CE3.USE_AT
+		      , CE3.DEL_AT
+		      , CE3.RGS_DT
+		      , CE3.RGS_USER_ID
+		      , CE3.UPD_DT
+		      , CE3.UPD_USER_ID
+		      , CEM.CNRL_ID
+		      , CASE WHEN CEM.RCM_SE = 'P' THEN RC.CNRL_NO ELSE ERC.CNRL_NO END AS CNRL_NO
+		      , CASE WHEN CEM.CNRL_ID IS NOT NULL THEN CEM.RCM_SE + 'LC' ELSE '' END AS RCM_SE
+              , CASE WHEN CEM.RCM_SE = 'P' THEN RC.CNRL_NM ELSE ERC.CNRL_NM END AS CNRL_NM
+              , CASE WHEN G.CNT IS NULL THEN 0 ELSE G.CNT END 
+                 + '(' + CASE WHEN P_G.CNT IS NULL THEN 0 ELSE P_G.CNT END 
+                 + '/' + CASE WHEN E_G.CNT IS NULL THEN 0 ELSE E_G.CNT END 
+                 + ')' AS CNRL_TOTCNT
+		FROM TB_CW_COSO_ENTITY CE3
+		INNER JOIN TB_CW_COSO_ENTITY CE2
+			ON CE3.UPPER_ENTITY_ID = CE2.ENTITY_ID
+		INNER JOIN TB_CW_COSO_ENTITY CE1
+			ON CE2.UPPER_ENTITY_ID = CE1.ENTITY_ID
+		LEFT OUTER JOIN (SELECT A.ENTITY_ID, A.CNRL_ID, A.RCM_SE 
+							FROM TB_CW_COSO_ENTITY_MAPPING A 
+							INNER JOIN TB_CW_COSO_ENTITY_HIST B 
+								ON A.ENTITY_ID = B.ENTITY_ID
+								AND A.BGNTMSTMP = B.BGNTMSTMP 
+							WHERE B.ENDTMSTMP = '99991231235959999999') CEM
+			ON CE3.ENTITY_ID = CEM.ENTITY_ID
+              LEFT OUTER JOIN TB_CW_RCM_CNRL RC
+                  ON CEM.CNRL_ID = RC.CNRL_ID
+                  AND CEM.RCM_SE = 'P'
+              LEFT OUTER JOIN TB_CW_ELC_RCM_CNRL ERC
+                  ON CEM.CNRL_ID = ERC.CNRL_ID
+                  AND CEM.RCM_SE = 'E'
+              LEFT OUTER JOIN G
+                  ON CE3.ENTITY_ID = G.ENTITY_ID
+              LEFT OUTER JOIN P_G
+                  ON CE3.ENTITY_ID = P_G.ENTITY_ID
+              LEFT OUTER JOIN E_G
+                  ON CE3.ENTITY_ID = E_G.ENTITY_ID
+		WHERE CE3.USE_AT = 'Y' 
+			AND CE3.DEL_AT = 'N'
+			AND CE3.ENTITY_LEVEL = '3'
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+					<when test="srchTy == 'no'" >	AND	( UPPER(RC.CNRL_NO) LIKE '%' + UPPER(#{srchWrd}) + '%' 
+															OR UPPER(ERC.CNRL_NO) LIKE '%' + UPPER(#{srchWrd}) + '%'	)</when>
+		            <when test="srchTy == 'nm'" > 	AND	( UPPER(RC.CNRL_NM) LIKE '%' + UPPER(#{srchWrd}) + '%' 
+															OR UPPER(ERC.CNRL_NM) LIKE '%' + UPPER(#{srchWrd}) + '%'	)</when>					
+					<when test="srchTy == 'cn'" >	AND	( UPPER(RC.CNRL_CN) LIKE '%' + UPPER(#{srchWrd}) + '%' 
+															OR UPPER(ERC.CNRL_CN) LIKE '%' + UPPER(#{srchWrd}) + '%'	)</when>
+				</choose>
+			</if>
+			<if test=' srchUpperEntityId != null and srchUpperEntityId != "" '>
+				AND CE3.ENTITY_ID IN (
+		            SELECT DISTINCT
+		                ENTITY_ID
+		            FROM V1	
+		        )
+			</if>
+			<if test=' srchCnsdrMatterId != null and srchCnsdrMatterId != "" '>
+				AND CE3.ENTITY_ID = #{srchCnsdrMatterId}
+			</if>
+			<if test=' srchRcmSe != null and srchRcmSe != "" '>
+				AND CEM.RCM_SE = #{srchRcmSe}
+			</if>
+		ORDER BY CE1.SORT_SN, CE2.SORT_SN, CE3.SORT_SN, CEM.RCM_SE DESC, CEM.CNRL_ID
+	</select>
+</mapper>

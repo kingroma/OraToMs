@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.sc.tiabl.serviceimpl.CwscAcntctgrMapper">
+
+  	<!-- RCM MAP  -->	
+	<resultMap id="acntctgrMap" type="EgovMap" >
+  		<result property="tiablId" 				column="TIABL_ID"   	 	/> 
+  		<result property="acntctgrSn" 			column="ACNTCTGR_SN"   	 	/> 
+  		<result property="qlyBgntmstmp" 		column="QLY_BGNTMSTMP"   	 	/> 
+  		<result property="sttusCdId" 			column="STTUS_CD_ID"   	 	/> 
+  		<collection property="qlyList" 			column="{tiablId=TIABL_ID,acntctgrSn=ACNTCTGR_SN,qlyBgntmstmp=QLY_BGNTMSTMP,sttusCdId=STTUS_CD_ID}" select="qlyList" />
+  		<collection property="mngerAssrList" 	column="{tiablId=TIABL_ID,acntctgrSn=ACNTCTGR_SN,mngerAssrBgntmstmp=MNGER_ASSR_BGNTMSTMP,sttusCdId=STTUS_CD_ID}" select="mngerAssrList" />
+  	</resultMap>
+  	
+ 	<!-- 유의계정 산정 전체 목록(상세화면용) -->
+ 	<select id="totList" resultType="EgovMap">
+ 		SELECT * FROM (
+			SELECT TOT.*, C.MNGER_ASSR_ID FROM (
+				SELECT * FROM (
+					SELECT T.TIABL_ID
+						  , T.ACNTCTGR_SN
+						  , T.ACNT_CD
+						  , T.ACNTCTGR
+						  , T.QY
+						  , T.CNCLSN
+		                  , T.ACNTCTGR_LEVEL
+					      , T.UPPER_ACNTCTGR_SN
+		                  , T.PROCS_NM
+		                  , T.MAX_ACNTCTGR_LEVEL 
+                    	  , C.QLY_ID
+                    	  , CASE WHEN ST.AMOUNT_UNIT_CD_ID = 'CTW_131_002'
+						  		THEN ROUND(T.AMOUNT/1000, 0)
+						  		WHEN ST.AMOUNT_UNIT_CD_ID = 'CTW_131_003'
+						  		THEN ROUND(T.AMOUNT/1000000, 0)
+						  		WHEN ST.AMOUNT_UNIT_CD_ID = 'CTW_131_004'
+						  		THEN ROUND(T.AMOUNT/100000000, 0) 
+						  		ELSE T.AMOUNT
+						  	END AMOUNT
+						FROM (
+						SELECT A.TIABL_ID
+							  , A.ACNTCTGR_SN
+							  , A.ACNT_CD
+							  , A.ACNTCTGR
+							  , A.AMOUNT
+							  , A.QY
+							  , A.CNCLSN
+			                  , A.ACNTCTGR_LEVEL
+						      , A.UPPER_ACNTCTGR_SN
+			                  , LISTAGG(RP.PROCS_NM, ', ') WITHIN GROUP(ORDER BY RP.PROCS_ID) AS PROCS_NM
+			                  , (SELECT MAX(ACNTCTGR_LEVEL) FROM TB_CW_SC_ACNTCTGR WHERE TIABL_ID = #{tiablId}) AS MAX_ACNTCTGR_LEVEL
+						  FROM TB_CW_SC_ACNTCTGR A
+							LEFT OUTER JOIN TB_CW_SC_ACNTCTGR_PROCS P
+								ON 	A.TIABL_ID = P.TIABL_ID
+								AND A.ACNTCTGR_SN = P.ACNTCTGR_SN
+							LEFT OUTER JOIN TB_CW_RCM_PROCS_HIST RP
+								ON 	P.PROCS_ID = RP.PROCS_ID
+								AND P.PROCS_BGNTMSTMP = RP.BGNTMSTMP
+						  WHERE A.TIABL_ID = #{tiablId} 
+						  GROUP BY A.TIABL_ID, A.ACNTCTGR_SN, A.ACNT_CD, A.ACNTCTGR, A.AMOUNT, A.QY, A.CNCLSN, A.ACNTCTGR_LEVEL, A.UPPER_ACNTCTGR_SN
+						) T
+					LEFT OUTER JOIN TB_CW_SC_ACNTCTGR_QLY_MAPNG C
+						ON 	T.TIABL_ID = C.TIABL_ID
+						AND T.ACNTCTGR_SN = C.ACNTCTGR_SN
+					INNER JOIN TB_CW_SC_TIABL ST
+            			ON ST.TIABL_ID = T.TIABL_ID
+                	)
+				 PIVOT ( COUNT(1)
+				         FOR QLY_ID IN (
+				         <foreach collection="qlyIemList" item="item" index="index" separator=",">
+				         	'${item.qlyId}' AS Q${index+1} <!-- 'GA_QLI_B001' AS Q1 -->
+				         </foreach>
+				         )
+				       )
+				)TOT 
+				LEFT OUTER JOIN TB_CW_SC_MNGER_ASSR_MAPNG C
+					ON 	TOT.TIABL_ID = C.TIABL_ID
+					AND TOT.ACNTCTGR_SN = C.ACNTCTGR_SN
+			)
+		PIVOT ( COUNT(1)
+		         FOR MNGER_ASSR_ID IN (
+		         	<foreach collection="mngerAssrViewList" item="item" index="index" separator=",">
+			         	'${item.mngerAssrId}' AS M${index+1}
+			         </foreach>
+		         )
+		       )
+		START WITH ACNTCTGR_LEVEL = 1
+        CONNECT BY PRIOR ACNTCTGR_SN = UPPER_ACNTCTGR_SN    
+ 	</select>
+ 	
+ 	<!-- 유의계정 산정 목록(엑셀다운용) -->
+ 	<select id="list" resultMap="acntctgrMap">
+ 		WITH V0 AS (
+	 		SELECT TOT.*, CASE WHEN TOT.MAX_ACNTCTGR_LEVEL != '1' AND TOT.ACNT_CD IS NOT NULL 
+				      		THEN TOT.ACNTCTGR_LEVEL+'. ['+TOT.ACNT_CD+'] '+TOT.ACNTCTGR
+	                        WHEN TOT.MAX_ACNTCTGR_LEVEL != '1' AND TOT.ACNT_CD IS NULL 
+	                        THEN TOT.ACNTCTGR_LEVEL+'. '+TOT.ACNTCTGR 
+	                        WHEN TOT.MAX_ACNTCTGR_LEVEL = '1' AND TOT.ACNT_CD IS NOT NULL 
+	                        THEN '['+TOT.ACNT_CD+'] '+TOT.ACNTCTGR
+				      		ELSE TOT.ACNTCTGR
+				      	END AS ACNTCTGR_EXCEL, ST.AMOUNT_UNIT_CD_ID
+			FROM (
+		 		SELECT 	A.TIABL_ID
+					  , A.ACNTCTGR_SN
+					  , A.ACNT_CD
+					  , A.ACNTCTGR
+					  , A.AMOUNT
+					  , A.STDR_IEM_AT
+					  , A.QY
+					  , A.CNCLSN 
+				      , LISTAGG(P.PROCS_ID, ',') WITHIN GROUP(ORDER BY P.PROCS_ID) AS PROCS_ID
+				      , LISTAGG(RP.PROCS_NM, ', ') WITHIN GROUP(ORDER BY RP.PROCS_ID) AS PROCS_NM
+				      , #{qlyBgntmstmp}	AS QLY_BGNTMSTMP
+				      , #{mngerAssrBgntmstmp}	AS MNGER_ASSR_BGNTMSTMP
+				      , #{sttusCdId}	AS STTUS_CD_ID
+				      , A.ACNTCTGR_LEVEL
+				      , A.UPPER_ACNTCTGR_SN
+				      , (SELECT MAX(ACNTCTGR_LEVEL) FROM TB_CW_SC_ACNTCTGR WHERE TIABL_ID = #{tiablId}) AS MAX_ACNTCTGR_LEVEL
+				      , A.AMOUNT  AS AMOUNT_EXCEL
+				      , LISTAGG(RP.PROCS_NO, '|') WITHIN GROUP(ORDER BY RP.PROCS_NO) AS PROCS_NO
+				FROM TB_CW_SC_ACNTCTGR A
+				LEFT OUTER JOIN TB_CW_SC_ACNTCTGR_PROCS P
+					ON 	A.TIABL_ID = P.TIABL_ID
+					AND A.ACNTCTGR_SN = P.ACNTCTGR_SN
+				LEFT OUTER JOIN TB_CW_RCM_PROCS_HIST RP
+					ON 	P.PROCS_ID = RP.PROCS_ID
+					AND P.PROCS_BGNTMSTMP = RP.BGNTMSTMP
+		        WHERE  A.TIABL_ID = #{tiablId} 
+		        GROUP BY A.TIABL_ID, A.ACNTCTGR_SN, A.ACNT_CD, A.ACNTCTGR, A.AMOUNT, A.STDR_IEM_AT, A.QY, A.CNCLSN, A.ACNTCTGR_LEVEL, A.UPPER_ACNTCTGR_SN
+	        ) TOT
+	        INNER JOIN TB_CW_SC_TIABL ST
+            	ON ST.TIABL_ID = TOT.TIABL_ID
+		),
+		V1 (ACNTCTGR_SN ,UPPER_ACNTCTGR_SN ,ROWNUM2 ) AS (
+			SELECT
+				ACNTCTGR_SN ,
+				UPPER_ACNTCTGR_SN ,
+				LPAD(TO_CHAR(ACNTCTGR_SN),5,'0') + LPAD(TO_CHAR(ACNTCTGR_LEVEL),5,'0') AS ROWNUM2
+			FROM V0 
+			WHERE ACNTCTGR_LEVEL = 1
+			
+			UNION ALL 
+			
+			SELECT
+				V.ACNTCTGR_SN ,
+				V.UPPER_ACNTCTGR_SN ,
+				ROOT.ROWNUM2 + LPAD(TO_CHAR(V.ACNTCTGR_SN),5,'0') + LPAD(TO_CHAR(V.ACNTCTGR_LEVEL),5,'0') AS ROWNUM2
+			FROM V0 V , V1 ROOT 
+			WHERE ROOT.ACNTCTGR_SN = V.UPPER_ACNTCTGR_SN
+		)SELECT V0.TIABL_ID
+			  , V0.ACNTCTGR_SN
+			  , V0.ACNT_CD
+			  , V0.ACNTCTGR
+			  , V0.STDR_IEM_AT
+			  , V0.QY
+			  , V0.CNCLSN 
+		      , V0.PROCS_ID
+		      , V0.PROCS_NM
+		      , V0.QLY_BGNTMSTMP
+		      , V0.MNGER_ASSR_BGNTMSTMP
+		      , V0.STTUS_CD_ID
+		      , V0.ACNTCTGR_LEVEL
+		      , V0.UPPER_ACNTCTGR_SN
+		      , V0.MAX_ACNTCTGR_LEVEL
+		      , V0.PROCS_NO
+			  , V0.ACNTCTGR_EXCEL
+			  , V0.AMOUNT_UNIT_CD_ID 
+			  , V0.AMOUNT
+			  , CASE WHEN V0.AMOUNT_UNIT_CD_ID = 'CTW_131_002'
+			  		THEN TO_CHAR(ROUND(V0.AMOUNT/1000, 0), '999,999,999,999,999,999')+' 천원'
+			  		WHEN V0.AMOUNT_UNIT_CD_ID = 'CTW_131_003'
+			  		THEN TO_CHAR(ROUND(V0.AMOUNT/1000000, 0), '999,999,999,999,999,999')+' 백만원'
+			  		WHEN V0.AMOUNT_UNIT_CD_ID = 'CTW_131_004'
+			  		THEN TO_CHAR(ROUND(V0.AMOUNT/100000000, 0) , '999,999,999,999,999,999')+' 억원'
+			  		ELSE TO_CHAR(V0.AMOUNT, '999,999,999,999,999,999')+' 원'
+			  	END AS AMOUNT_EXCEL
+		FROM V1 V1
+		INNER JOIN V0 V0 
+			ON V0.ACNTCTGR_SN = V1.ACNTCTGR_SN
+		ORDER BY ROWNUM2
+	</select>
+	
+	<!-- 질적항목 목록(최신) -->
+ 	<select id="qlyIemList" resultType="EgovMap">
+		SELECT  A.QLY_ID
+		      , A.QLY_NM
+		      , A.QLY_ABRV
+		      , A.SORT_SN
+		FROM TB_CW_SC_ACNTCTGR_QLY A
+		WHERE A.USE_AT = 'Y'
+		ORDER BY A.SORT_SN ASC
+	</select>
+	
+	<!-- 질적항목 목록(조회) -->
+ 	<select id="qlyIemViewList" resultType="EgovMap">
+		SELECT  A.QLY_ID
+		      , A.QLY_NM
+		      , A.QLY_ABRV
+		      , A.SORT_SN
+		FROM TB_CW_SC_ACNTCTGR_QLY_HIST A
+		WHERE  1=1
+		<choose>
+			<when test=' qlyBgntmstmp != null and qlyBgntmstmp != "" and sttusCdId != null and sttusCdId == "CTW_121_002" '>
+			AND A.QLY_BGNTMSTMP = #{qlyBgntmstmp}
+			</when>
+			<otherwise>
+			AND A.QLY_ENDTMSTMP = '99991231235959999999'
+			</otherwise>
+		</choose>
+			AND  A.USE_AT = 'Y'
+		ORDER BY A.SORT_SN ASC
+	</select>
+	
+	<!-- 질적항목 MAPNG 목록 -->
+ 	<select id="qlyList" resultType="EgovMap">
+		SELECT  A.TIABL_ID
+          	  , A.ACNTCTGR_SN
+		      , B.QLY_ID
+		      , B.QLY_NM
+		      , B.USE_AT
+		      , (CASE WHEN C.QLY_ID = B.QLY_ID THEN 'Y' ELSE 'N' END) CHCK_AT
+		FROM TB_CW_SC_ACNTCTGR A
+			<if test=' sttusCdId != "CTW_121_002" '>
+		     	LEFT OUTER JOIN TB_CW_SC_ACNTCTGR_QLY_HIST B
+		     	 	ON B.QLY_ENDTMSTMP = '99991231235959999999'
+			</if>
+			<if test=' sttusCdId == "CTW_121_002" '>
+		     	LEFT OUTER JOIN TB_CW_SC_ACNTCTGR_QLY_HIST B
+		     	 	ON B.QLY_BGNTMSTMP = #{qlyBgntmstmp}
+			</if>
+			LEFT OUTER JOIN TB_CW_SC_ACNTCTGR_QLY_MAPNG C
+				ON 	A.TIABL_ID = C.TIABL_ID
+				AND A.ACNTCTGR_SN = C.ACNTCTGR_SN
+      		  	AND B.QLY_ID = C.QLY_ID
+		WHERE  A.TIABL_ID = #{tiablId} 
+			AND  A.ACNTCTGR_SN = #{acntctgrSn} 
+			AND  B.USE_AT = 'Y'
+		ORDER BY B.SORT_SN ASC
+	</select>
+	
+	<!-- 관련 업무프로세스 목록 -->
+ 	<select id="procsList" resultType="EgovMap">
+		SELECT  A.TIABL_ID
+		      , A.ACNTCTGR_SN
+		      , LISTAGG(P.PROCS_ID, ',') WITHIN GROUP(ORDER BY P.PROCS_ID)
+		FROM TB_CW_SC_ACNTCTGR_PROCS A
+			LEFT OUTER JOIN TB_CW_RCM_PROCS_HIST P
+				ON A.PROCS_ID = P.PROCS_ID
+				AND A.PROCS_BGNTMSTMP = P.BGNTMSTMP
+		WHERE  A.TIABL_ID = #{tiablId} 
+			AND  A.ACNTCTGR_SN = #{acntctgrSn} 
+        GROUP BY A.TIABL_ID, A.ACNTCTGR_SN
+	</select>
+	
+	
+	<select id="view" resultType="CwscTiablVO">
+        SELECT TIABL_ID
+             , ACNTCTGR_SN
+             , ACNTCTGR
+             , ACNT_CD
+             , AMOUNT
+             , STDR_IEM_AT
+             , QY
+             , CNCLSN
+             , QLY_BGNTMSTMP
+             , UPPER_ACNTCTGR_SN
+             , ACNTCTGR_LEVEL
+        FROM TB_CW_SC_ACNTCTGR 
+        WHERE TIABL_ID = #{tiablId}
+        AND  ACNTCTGR_SN = #{acntctgrSn}
+    </select>
+	
+	<!-- 수정(결론 수정) -->
+	<!-- 계정과목 결론 단건 update -->
+	<update id="update">
+		UPDATE TB_CW_SC_ACNTCTGR 
+			SET   CNCLSN = CASE WHEN (SELECT COUNT(ACNTCTGR_SN) 
+							  		  FROM TB_CW_SC_ACNTCTGR_QLY_MAPNG 
+									  WHERE TIABL_ID = #{tiablId}
+										AND ACNTCTGR_SN = #{acntctgrSn}) > 0 
+						  		THEN 'Y'
+						  		WHEN AMOUNT > (SELECT ACNTCTGR_STDR_AMOUNT FROM TB_CW_SC_TIABL WHERE TIABL_ID = #{tiablId})
+					  			THEN 'Y'
+					  			ELSE 'N'
+						   END
+		WHERE TIABL_ID 	= #{tiablId}
+			AND  ACNTCTGR_SN = #{acntctgrSn}
+	</update>
+	
+	<!-- 질적항목: 'Y' mapping 입력 -->
+	<insert id="insertQly">
+		INSERT INTO TB_CW_SC_ACNTCTGR_QLY_MAPNG (
+			TIABL_ID, ACNTCTGR_SN, QLY_ID
+		) VALUES (
+			#{tiablId}, #{acntctgrSn}, #{qlyId}
+		) 
+	</insert>
+	
+	<!-- 질적항목: mapping 삭제  -->
+	<delete id="deleteQly">
+		DELETE FROM TB_CW_SC_ACNTCTGR_QLY_MAPNG
+		WHERE  	TIABL_ID    	= #{tiablId}
+			AND ACNTCTGR_SN 	= #{acntctgrSn}
+			AND QLY_ID      	= #{qlyId}
+	</delete>
+	
+	<!-- 관련 업무프로세스: mapping 입력 -->
+	<insert id="insertProcs">
+		INSERT INTO TB_CW_SC_ACNTCTGR_PROCS (
+			TIABL_ID, ACNTCTGR_SN, PROCS_ID, PROCS_BGNTMSTMP
+		) VALUES (
+			#{tiablId}, #{acntctgrSn}, #{procsId}, #{procsBgntmstmp}
+		) 
+	</insert>
+	
+	<!-- 관련 업무프로세스 : mapping 삭제  -->
+	<delete id="deleteProcs">
+		DELETE FROM TB_CW_SC_ACNTCTGR_PROCS
+		WHERE  	TIABL_ID    = #{tiablId}
+			AND ACNTCTGR_SN = #{acntctgrSn}
+	</delete>
+	
+	<!-- 계정과목 목록 엑셀 입력 -->
+	<insert id="insertExcel">
+		INSERT INTO TB_CW_SC_ACNTCTGR (
+			TIABL_ID, ACNTCTGR_SN, ACNTCTGR, AMOUNT, STDR_IEM_AT
+		) VALUES (
+			#{tiablId}, #{excelRowSn}, #{cell0}, #{cell1}, #{cell2}
+		) 
+	</insert>
+	
+	
+	<!-- RCM 프로세스 목록 -->
+ 	<select id="selectProcsList" resultType="EgovMap">
+		SELECT  A.PROCS_ID
+		      , A.PROCS_NM
+		FROM TB_CW_RCM_PROCS A
+		WHERE A.PROCS_KND_CD_ID = 'CTW_001_001'
+		ORDER BY A.PROCS_ID
+	</select>
+	
+	<!-- 계정과목 별 프로세스 목록 -->
+ 	<select id="acntctgrProcsList" resultType="EgovMap">
+		SELECT  A.TIABL_ID
+		      , A.ACNTCTGR_SN
+		      , LISTAGG(P.PROCS_ID, ',') WITHIN GROUP(ORDER BY P.PROCS_ID)
+		      , LISTAGG(P.PROCS_NM, ', ') WITHIN GROUP(ORDER BY P.PROCS_ID) AS PROCS_NM
+		FROM TB_CW_SC_ACNTCTGR_PROCS A
+			LEFT OUTER JOIN TB_CW_RCM_PROCS_HIST P
+				ON A.PROCS_ID = P.PROCS_ID
+				AND A.PROCS_BGNTMSTMP = P.BGNTMSTMP
+		WHERE  A.TIABL_ID = #{tiablId} 
+			AND  A.ACNTCTGR_SN = #{acntctgrSn} 
+        GROUP BY A.TIABL_ID, A.ACNTCTGR_SN
+	</select>	
+	
+	<!-- 현재 프로세스 목록 -->
+	<select id="rcmProcsList" resultType="EgovMap">
+		<choose>
+			<when test='srchWrd == null or srchWrd == ""'>
+				SELECT 
+				        T.OBJECT_ID
+		          	  , T.OBJECT_NO
+		          	  , T.OBJECT_NM
+		          	  , T.BGNTMSTMP
+		          	  , T.OBJECT_LEVEL
+		          	  , T.OBJECT_KND_CD_ID
+		              , T.UPPER_OBJECT_ID
+		              , T.UPPER_MAPNG_ID
+		              , T.OBJECT_ID + '_' + ISNULL(T.UPPER_OBJECT_ID, 'TOP') AS MAPNG_ID
+		              , CASE WHEN A.PROCS_ID IS NOT NULL THEN 'Y' ELSE 'N' END CHECK_AT
+				FROM TB_CW_RCM_MAPNG_HIST T
+				INNER JOIN TB_CW_RCM_PROCS_HIST P
+					ON T.OBJECT_ID = P.PROCS_ID
+					AND T.BGNTMSTMP = P.BGNTMSTMP
+					AND T.ENDTMSTMP = '99991231235959999999'
+				LEFT OUTER JOIN TB_CW_SC_ACNTCTGR_PROCS A
+					ON T.OBJECT_ID = A.PROCS_ID
+					AND T.BGNTMSTMP = A.PROCS_BGNTMSTMP
+					AND A.TIABL_ID = #{tiablId} 
+					AND A.ACNTCTGR_SN = #{acntctgrSn}  
+		        ORDER BY T.OBJECT_ID
+			</when>
+			<otherwise>
+				WITH V0 AS (
+					SELECT DISTINCT 
+						  T.OBJECT_ID
+			        	, T.OBJECT_NO
+				        , T.OBJECT_NM
+				        , T.BGNTMSTMP
+				        , T.OBJECT_LEVEL
+				        , T.OBJECT_KND_CD_ID
+				        , T.UPPER_OBJECT_ID
+				        , T.MAPNG_ID
+				        , T.UPPER_MAPNG_ID
+				        , CASE WHEN A.PROCS_ID IS NOT NULL THEN 'Y' ELSE 'N' END CHECK_AT
+					FROM TB_CW_RCM_MAPNG_HIST T
+				    INNER JOIN TB_CW_RCM_PROCS_HIST P
+				     	ON T.OBJECT_ID = P.PROCS_ID
+				      	AND T.BGNTMSTMP = P.BGNTMSTMP
+				       	AND T.ENDTMSTMP = '99991231235959999999'
+                    LEFT OUTER JOIN TB_CW_SC_ACNTCTGR_PROCS A
+						ON T.OBJECT_ID = A.PROCS_ID
+						AND T.BGNTMSTMP = A.PROCS_BGNTMSTMP
+						AND A.TIABL_ID = #{tiablId} 
+						AND A.ACNTCTGR_SN = #{acntctgrSn}
+						  
+				) , V1 (OBJECT_ID, MAPNG_ID, UPPER_MAPNG_ID) AS (
+					SELECT 
+						OBJECT_ID, MAPNG_ID, UPPER_MAPNG_ID
+					FROM V0 
+					<if test="srchTy == 'no'" >  WHERE OBJECT_NO LIKE '%'+#{srchWrd}+'%' 	</if>
+					<if test="srchTy == 'nm'" >	 WHERE OBJECT_NM LIKE '%'+#{srchWrd}+'%' 	</if>
+					
+					UNION ALL 
+					
+					SELECT 
+						V.OBJECT_ID, V.MAPNG_ID, V.UPPER_MAPNG_ID
+					FROM V0 V , V1 ROOT 
+					WHERE ROOT.UPPER_MAPNG_ID = V.MAPNG_ID
+				) 
+				
+				SELECT 
+					TT.*
+				FROM (
+				         SELECT DISTINCT
+				        	V0.*
+				        FROM V1 V1
+				        INNER JOIN V0 V0 
+				        	ON V0.OBJECT_ID = V1.OBJECT_ID
+                ) TT
+                ORDER BY TT.OBJECT_ID
+			</otherwise>
+		</choose>
+	</select>
+	
+	
+	<!-- 시산표 별 관련자의 주장 목록 -->
+ 	<select id="mngerAssrViewList" resultType="EgovMap">
+		SELECT  A.MNGER_ASSR_ID
+		      , A.MNGER_ASSR_NM
+		      , A.MNGER_ASSR_ABRV
+		      , A.SORT_SN
+		FROM TB_CW_SC_MNGER_ASSR_HIST A
+		WHERE  1=1
+		<choose>
+			<when test=' mngerAssrBgntmstmp != null and mngerAssrBgntmstmp != "" and sttusCdId != null and sttusCdId == "CTW_121_002" '>
+			AND A.MNGER_ASSR_BGNTMSTMP = #{mngerAssrBgntmstmp}
+			</when>
+			<otherwise>
+			AND A.MNGER_ASSR_ENDTMSTMP = '99991231235959999999'
+			</otherwise>
+		</choose>
+			AND  A.USE_AT = 'Y'
+		ORDER BY A.SORT_SN ASC
+	</select>
+	
+	<!-- 경영자의 주장: 'Y' mapping 입력 -->
+	<insert id="insertMngerAssr">
+		INSERT INTO TB_CW_SC_MNGER_ASSR_MAPNG (
+			TIABL_ID, ACNTCTGR_SN, MNGER_ASSR_ID
+		) VALUES (
+			#{tiablId}, #{acntctgrSn}, #{mngerAssrId}
+		) 
+	</insert>
+	
+	<!-- 경영자의 주장: mapping 삭제  -->
+	<delete id="deleteMngerAssr">
+		DELETE FROM TB_CW_SC_MNGER_ASSR_MAPNG
+		WHERE  	TIABL_ID    	= #{tiablId}
+			AND ACNTCTGR_SN 	= #{acntctgrSn}
+			AND MNGER_ASSR_ID   = #{mngerAssrId}
+	</delete>
+	
+	<!-- 경영자의 주장 MAPNG 목록 -->
+ 	<select id="mngerAssrList" resultType="EgovMap">
+		SELECT  A.TIABL_ID
+          	  , A.ACNTCTGR_SN
+		      , B.MNGER_ASSR_ID
+		      , B.MNGER_ASSR_NM
+		      , B.USE_AT
+		      , (CASE WHEN C.MNGER_ASSR_ID = B.MNGER_ASSR_ID THEN 'Y' ELSE 'N' END) CHCK_AT
+		FROM TB_CW_SC_ACNTCTGR A
+			<if test=' sttusCdId != "CTW_121_002" '>
+		     	LEFT OUTER JOIN TB_CW_SC_MNGER_ASSR_HIST B
+		     	 	ON B.MNGER_ASSR_ENDTMSTMP = '99991231235959999999'
+			</if>
+			<if test=' sttusCdId == "CTW_121_002" '>
+		     	LEFT OUTER JOIN TB_CW_SC_MNGER_ASSR_HIST B
+		     	 	ON B.MNGER_ASSR_BGNTMSTMP = #{mngerAssrBgntmstmp}
+			</if>
+			LEFT OUTER JOIN TB_CW_SC_MNGER_ASSR_MAPNG C
+				ON 	A.TIABL_ID = C.TIABL_ID
+				AND A.ACNTCTGR_SN = C.ACNTCTGR_SN
+      		  	AND B.MNGER_ASSR_ID = C.MNGER_ASSR_ID
+		WHERE  A.TIABL_ID = #{tiablId} 
+			AND  A.ACNTCTGR_SN = #{acntctgrSn} 
+			AND  B.USE_AT = 'Y'
+		ORDER BY B.SORT_SN ASC
+	</select>
+</mapper>

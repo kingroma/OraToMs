@@ -1,0 +1,489 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.rcm.euc.serviceimpl.CwrcmJobTrnsferMapper">
+  	<!-- 
+ 	* 1. XML에서 사용하는 태그 문제 발생시 <![CDATA[, ]]>를 사용
+	* 2. 각 mapper 인터페이스의 메소드와 id가 같도록 선언
+	* [Mybatis 에러] java.lang.NumberFormatException: For input string : if문에서 비교문자가 한글자인 경우 발생 
+	* 	- "" 로 묶음 :  <if test='testParam == "A"'>
+	* 	- eq와 toString사용 : <if test="testParam eq 'A'.toString())">​ 
+	--> 
+	
+ 	<select id = "list" resultType = "EgovMap" > 	
+		SELECT DISTINCT
+			A.SANCTN_ID
+			, A.SANCTN_NM
+			, A.STTUS_CD_ID
+			, C.CODE_NM           AS STTUS_CD_NM
+			, A.RGS_CHNG_USER_ID
+			, D.USER_NM           AS RGS_CHNG_USER_NM
+			, TO_CHAR(TO_DATE( A.RGSDE, 'YY-MM-DD') , 'YYYY-MM-DD')							AS RGSDE
+			, A.RGS_USER_ID
+			, E.USER_NM           AS RGS_USER_NM
+			, A.UPDDE
+			, A.UPD_USER_ID
+			, ( SELECT CU.USER_NM
+              FROM TB_CO_SANCTN_USER SU
+                LEFT OUTER JOIN TB_CO_USER CU
+                  ON SU.SANCTN_USER_ID = CU.USER_ID
+             WHERE SU.SANCTN_ID = A.SANCTN_ID
+               AND SU.SANCTN_USER_SE_CD_ID = 'COM_008_002'
+               AND ROWNUM = 1        
+	          ) AS CONFM_USER_NM       
+	        , ( SELECT COUNT(1)
+	              FROM TB_CO_SANCTN_USER SU
+	                LEFT OUTER JOIN TB_CO_USER CU
+	                  ON SU.SANCTN_USER_ID = CU.USER_ID
+	             WHERE SU.SANCTN_ID = A.SANCTN_ID
+	               AND SU.SANCTN_USER_SE_CD_ID = 'COM_008_002'  
+	          ) AS CONFM_USER_CNT   
+		FROM TB_CW_EUC_SANCTN A
+			LEFT OUTER JOIN TB_CO_CODE C
+			  	ON C.CODE_ID = A.STTUS_CD_ID
+			LEFT OUTER JOIN TB_CO_USER D
+			  	ON D.USER_ID = A.RGS_CHNG_USER_ID
+			LEFT OUTER JOIN TB_CO_USER E
+			  	ON E.USER_ID = A.RGS_USER_ID
+		<if test='menuMngrAt == "N"'>
+	  	  	WHERE
+	  	  		(
+				A.RGS_USER_ID = #{suserId}
+	  	  		--AND SORT_SN = '1'
+	  	  		)
+  		</if>
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test='menuMngrAt == "" '>
+				AND RGS_USER_ID = #{suserId}
+			</if>
+			<if test=' srchpolicyClCdId != null and srchpolicyClCdId != "" '>
+				AND	UPPER(A.POLICY_CL_CD_ID) LIKE '%' + UPPER(#{srchpolicyClCdId}) + '%' 
+			</if>
+			<if test=' srchWrd != null and srchWrd != "" '>
+				AND	UPPER(A.DOC_NM) LIKE '%' + UPPER(#{srchWrd}) + '%'
+			</if>
+			<if test=' srchCdId != null and srchCdId != "" '>
+				AND	UPPER(A.STTUS_CD_ID) LIKE '%' + UPPER(#{srchCdId}) + '%'
+			</if>
+			<if test=' srchUserId != null and srchUserId != "" '>
+				AND	UPPER(D.CHARGER_ID) LIKE '%' + UPPER(#{srchUserId}) + '%'
+			</if>
+		</trim>
+				
+		ORDER BY SANCTN_ID DESC
+ 	</select>
+ 	
+ 	<select id = "listEuc" resultType = "EgovMap" > 	
+		SELECT
+			A.POLICY_ID
+	      , CONVERT ( VARCHAR , CONVERT ( DATE , A.POLICY_BGNDE , 112 ) , 23 ) 	AS POLICY_BGNDE
+	      , CONVERT ( VARCHAR , CONVERT ( DATE , A.POLICY_ENDDE , 112 ) , 23 ) 	AS POLICY_ENDDE
+	      , E.USER_NM														AS CHARGER_NM
+	      , (
+	      		SELECT
+	      		 COUNT( * )
+				FROM TB_CW_EUC_PERSON AA
+				WHERE AA.POLICY_ID = A.POLICY_ID
+				AND AA.POLICY_BGNDE = A.POLICY_BGNDE
+				AND AA.HIST_STDDE =  (
+       	  						SELECT MAX(AAA.HIST_STDDE)
+       	  						FROM TB_CW_EUC_PERSON AAA
+       	  						WHERE AAA.POLICY_ID = AA.POLICY_ID
+       	  						AND AAA.POLICY_BGNDE = AA.POLICY_BGNDE
+       	  					  )
+				AND AA.SORT_SN != '1'
+			)																AS CHARGER_COUNT
+	      , A.DOC_NO
+	      , A.POLICY_CL_CD_ID
+	      , B.CODE_NM 														AS POLICY_CL_CD_NM
+	      , A.DOC_NM
+	      , A.VER
+	      , CONVERT ( VARCHAR , CONVERT ( DATE , A.ESTBSH_DE , 112 ) , 23 )		AS ESTBSH_DE
+	      , CONVERT ( VARCHAR , CONVERT ( DATE , A.REFORM_DE , 112 ) , 23 )		AS REFORM_DE
+	      , A.REFORM_CN
+	      , A.STTUS_CD_ID
+	      , C.CODE_NM														AS STTUS_CD_NM
+	      , A.WRTER_ID
+	      , G.USER_NM AS WRTER_NM
+	      , CONVERT ( VARCHAR , CONVERT ( DATE , A.WRTER_BGNDE , 112 ) , 23 )	AS WRTER_BGNDE
+	      , A.CONFMER_ID
+	      , CONVERT ( VARCHAR , CONVERT ( DATE , A.CONFMER_BGNDE , 112 ) , 23 )	AS CONFMER_BGNDE
+	      , A.UNITY_ID
+	      , A.RGSDE
+	      , A.RGS_USER_ID
+	      , F.USER_NM AS RGS_USER_NM
+	      , A.UPDDE
+	      , A.UPD_USER_ID
+	      , (
+            SELECT COUNT(*)
+            FROM TB_CW_EUC_HIST H
+            WHERE H.POLICY_ID = A.POLICY_ID
+            AND REFORM_DE > chr(0)
+          ) AS UPDATE_CNT
+          , ( SELECT CU.USER_NM
+              FROM TB_CO_SANCTN_USER SU
+                LEFT OUTER JOIN TB_CO_USER CU
+                  ON SU.SANCTN_USER_ID = CU.USER_ID
+             WHERE SU.SANCTN_ID = A.SANCTN_ID
+               AND SU.SANCTN_USER_SE_CD_ID = 'COM_008_002'
+               AND ROWNUM = 1        
+          	) AS CONFM_USER_NM       
+	        , ( SELECT COUNT(1)
+	              FROM TB_CO_SANCTN_USER SU
+	                LEFT OUTER JOIN TB_CO_USER CU
+	                  ON SU.SANCTN_USER_ID = CU.USER_ID
+	             WHERE SU.SANCTN_ID = A.SANCTN_ID
+	               AND SU.SANCTN_USER_SE_CD_ID = 'COM_008_002'  
+	          ) AS CONFM_USER_CNT      
+
+		FROM TB_CW_EUC A
+			LEFT OUTER JOIN TB_CO_CODE B
+				ON B.CODE_ID = A.POLICY_CL_CD_ID
+			LEFT OUTER JOIN TB_CO_CODE C
+				ON C.CODE_ID = A.STTUS_CD_ID
+			LEFT OUTER JOIN TB_CW_EUC_PERSON D
+	        	ON D.POLICY_ID = A.POLICY_ID
+	        	AND D.POLICY_BGNDE = A.POLICY_BGNDE
+	            AND D.SORT_SN = '1'
+	        LEFT OUTER JOIN TB_CO_USER E
+	        	ON E.USER_ID = D.CHARGER_ID
+	        LEFT OUTER JOIN TB_CO_USER F
+	        	ON F.USER_ID = A.RGS_USER_ID
+	        LEFT OUTER JOIN TB_CO_USER G
+	        	ON G.USER_ID = A.WRTER_ID
+	        <if test='modiFlag == "Y" '>
+		        INNER JOIN TB_CW_EUC_SANCTN H
+					ON A.POLICY_ID = H.POLICY_ID
+					AND H.SANCTN_ID = #{sanctnId}
+	        </if>
+  	  	WHERE A.POLICY_BGNDE = (
+								SELECT MAX(POLICY_BGNDE)
+								FROM TB_CW_EUC AA
+								WHERE AA.POLICY_ID = A.POLICY_ID
+  	  						)
+  	  		AND A.STTUS_CD_ID = 'COM_021_005'
+  	  		<if test='menuMngrAt == "N"'>
+		  	  	AND 
+		  	  		(
+					A.RGS_USER_ID = #{suserId}
+		  	  		--AND SORT_SN = '1'
+		  	  		)
+	  		</if>
+			<if test=' srchpolicyClCdId != null and srchpolicyClCdId != "" '>
+					AND	UPPER(A.POLICY_CL_CD_ID) LIKE '%' + UPPER(#{srchpolicyClCdId}) + '%' 
+			</if>
+			<if test=' srchWrd != null and srchWrd != "" '>
+					AND	UPPER(A.DOC_NM) LIKE '%' + UPPER(#{srchWrd}) + '%'
+			</if>
+			<if test=' srchCdId != null and srchCdId != "" '>
+					AND	UPPER(A.STTUS_CD_ID) LIKE '%' + UPPER(#{srchCdId}) + '%'
+			</if>
+			<if test=' srchUserId != null and srchUserId != "" '>
+				AND	UPPER(D.CHARGER_ID) LIKE '%' + UPPER(#{srchUserId}) + '%'
+			</if>
+				
+		ORDER BY A.POLICY_ID, A.POLICY_CL_CD_ID
+ 	</select>
+ 	
+ 	<select id = "view" resultType = "CwrcmJobTrsnferVO" > 	
+		SELECT DISTINCT
+			A.SANCTN_ID
+			, A.SANCTN_NM
+			, A.STTUS_CD_ID
+			, C.CODE_NM           AS STTUS_CD_NM
+			, A.RGS_CHNG_USER_ID
+			, D.USER_NM           AS RGS_CHNG_USER_NM
+			, CONVERT ( VARCHAR , CONVERT ( DATE , A.RGS_CHNG_USER_BGNDE , 112 ) , 23 )	AS RGS_CHNG_USER_BGNDE
+			, TO_CHAR(TO_DATE( A.RGSDE, 'YY-MM-DD') , 'YYYY-MM-DD')							AS RGSDE
+			, A.RGS_USER_ID
+			, E.USER_NM           AS RGS_USER_NM
+			, A.UPDDE
+			, A.UPD_USER_ID
+		FROM TB_CW_EUC_SANCTN A
+			LEFT OUTER JOIN TB_CO_CODE C
+			  	ON C.CODE_ID = A.STTUS_CD_ID
+			LEFT OUTER JOIN TB_CO_USER D
+			  	ON D.USER_ID = A.RGS_CHNG_USER_ID
+			LEFT OUTER JOIN TB_CO_USER E
+			  	ON E.USER_ID = A.RGS_USER_ID
+		WHERE A.SANCTN_ID = #{sanctnId}
+		ORDER BY SANCTN_ID DESC
+ 	</select>
+ 	
+ 	<select id="selectRgsChngUser" resultType = "EgovMap" >
+		SELECT 
+			A.SANCTN_ID
+			, A.SANCTN_NM
+			, A.RGS_CHNG_USER_ID
+			, C.USER_NM AS RGS_CHNG_USER_NM
+			, A.RGS_BEFORE_USER_ID
+			, D.USER_NM AS RGS_BEFORE_USER_NM
+			, B.POLICY_ID
+			, B.VER
+			, B.DOC_NO
+			, B.DOC_NM
+			, CONVERT ( VARCHAR , CONVERT ( DATE , A.RGSDE , 112 ) , 23 ) AS RGSDE
+			, B.POLICY_CL_CD_ID
+			, E.CODE_NM AS POLICY_CL_CD_NM
+			, F.USER_NM AS CHARGER_NM
+			, (
+			SELECT COUNT( * )
+    		FROM TB_CW_EUC_PERSON AA
+    		WHERE AA.POLICY_ID = B.POLICY_ID
+      			AND AA.POLICY_BGNDE = B.POLICY_BGNDE
+      			AND AA.HIST_STDDE =  (
+                      							SELECT MAX(AAA.HIST_STDDE)
+       	  										FROM TB_CW_EUC_PERSON AAA
+       	  										WHERE AAA.POLICY_ID = AA.POLICY_ID
+       	  										AND AAA.POLICY_BGNDE = AA.POLICY_BGNDE
+       	  					  					)
+				AND AA.SORT_SN != '1'
+			)	AS CHARGER_COUNT
+		FROM TB_CW_EUC_SANCTN A
+		LEFT OUTER JOIN TB_CW_EUC B
+			ON A.POLICY_ID = B.POLICY_ID
+		LEFT OUTER JOIN TB_CO_USER C
+		  	ON C.USER_ID = A.RGS_CHNG_USER_ID
+		LEFT OUTER JOIN TB_CO_USER D
+		  	ON D.USER_ID = A.RGS_BEFORE_USER_ID
+		LEFT OUTER JOIN TB_CO_CODE E
+		  	ON E.CODE_ID = B.POLICY_CL_CD_ID
+		LEFT OUTER JOIN TB_CW_EUC_PERSON P
+		  	ON P.POLICY_ID = B.POLICY_ID
+		  	AND P.POLICY_BGNDE = B.POLICY_BGNDE
+		  	AND P.SORT_SN = '1'
+		LEFT OUTER JOIN TB_CO_USER F
+		  	ON F.USER_ID = P.CHARGER_ID
+  		WHERE A.SANCTN_ID = #{sanctnId}
+  		ORDER BY B.POLICY_ID, B.POLICY_CL_CD_ID
+ 	</select>
+ 	
+ 	<!-- EUC 정보 조회 -->
+ 	<select id="selectEucInfo" resultType="CwrcmJobTrsnferVO">
+ 		SELECT
+		    POLICY_ID
+			, POLICY_BGNDE
+			, POLICY_ENDDE
+			, DOC_NO
+			, POLICY_CL_CD_ID
+			, DOC_NM
+			, VER
+			, ESTBSH_DE
+			, REFORM_DE
+			, REFORM_CN
+			, STTUS_CD_ID
+			, WRTER_ID
+			, WRTER_BGNDE
+			, CONFMER_ID
+			, CONFMER_BGNDE
+			, UNITY_ID
+			, RGSDE
+			, RGS_USER_ID
+			, UPDDE
+			, UPD_USER_ID
+		FROM TB_CW_EUC
+		WHERE POLICY_ID = #{policyId}
+ 	</select>
+ 	
+ 	<!-- 열람자 조회 -->
+ 	<select id="selectEucPersonInfo" resultType="EgovMap">
+ 		SELECT
+			POLICY_ID
+			, POLICY_BGNDE
+			, HIST_STDDE
+			, CHARGER_ID
+			, CHARGER_BGNDE
+			, HIST_ENDDE
+			, CHARGER_DC
+			, SORT_SN
+			, RGSDE
+			, RGS_USER_ID
+			, UPDDE
+			, UPD_USER_ID
+		FROM TB_CW_EUC_PERSON
+		WHERE POLICY_ID = #{policyId}
+ 	</select>
+ 	
+ 	<!-- 변경될 등록자 저장 -->
+ 	<insert id="insertRgsChngUser">
+ 		INSERT INTO TB_CW_EUC_SANCTN
+ 			(
+				SANCTN_ID
+	 			, POLICY_ID
+				, POLICY_CL_CD_ID
+				, SANCTN_NM
+				, STTUS_CD_ID
+				, RGS_BEFORE_USER_ID
+				, RGS_BEFORE_USER_BGNDE
+				, RGS_CHNG_USER_ID
+				, RGS_CHNG_USER_BGNDE
+				, CONFMER_ID
+				, CONFMER_BGNDE
+				, UNITY_ID
+				, RGSDE
+				, RGS_USER_ID
+				, UPDDE
+				, UPD_USER_ID
+ 			)
+ 		VALUES
+ 			(
+				#{sanctnId}
+	 			, #{policyId}
+				, #{policyClCdId}
+				, #{sanctnNm}
+				, #{sttusCdId}
+				, #{rgsUserId}
+				, REPLACE( #{rgsBeforeUserBgnde}, '-')
+				, #{rgsChngUserId}
+				, REPLACE( #{rgsChngUserBgnde}, '-')
+				, #{confmerId}
+				, REPLACE( #{confmerBgnde}, '-')
+				, #{unityId}
+				, CONVERT ( VARCHAR , GETDATE() , 112 ) 
+				, #{suserId}
+				, #{updde}
+				, #{updUserId}
+ 			) 
+ 	</insert>
+ 	
+ 	<!-- 변경될 등록자 수정 -->
+ 	<update id="updateRgsChngUser">
+ 		UPDATE TB_CW_EUC_SANCTN
+ 		SET 
+ 			POLICY_ID = #{policyId}
+			, POLICY_CL_CD_ID = #{policyClCdId}
+			, SANCTN_NM = #{sanctnNm}
+			, STTUS_CD_ID = #{sttusCdId}
+			, RGS_BEFORE_USER_ID = #{rgsUserId}
+			, RGS_CHNG_USER_ID = #{rgsChngUserId}
+			, CONFMER_ID = #{confmerId}
+			, UNITY_ID = #{unityId}
+			, RGSDE = CONVERT ( VARCHAR , GETDATE() , 112 ) 
+			, RGS_USER_ID = #{suserId}
+			, UPDDE = #{updde}
+			, UPD_USER_ID = #{updUserId}
+		WHERE SANCTN_ID = #{sanctnId}
+ 	</update>
+ 	
+ 	<!-- 변경될 등록자 삭제 -->
+ 	<delete id="deleteRgsChngUser">
+ 		DELETE FROM TB_CW_EUC_SANCTN
+		WHERE SANCTN_ID = #{sanctnId}
+			AND POLICY_ID = #{policyId}
+ 	</delete>
+ 	
+ 	<!-- 변경될 등록자 변경이력 삭제 -->
+ 	<delete id="deleteRgsChngUserHist">
+ 		DELETE FROM TB_CW_EUC_HIST
+		WHERE SANCTN_ID = #{sanctnId}
+ 	</delete>
+ 	
+ 	<!-- 등록자 변경 -->
+ 	<update id="updateRgsUserId">
+ 		UPDATE TB_CW_EUC 
+ 		SET RGS_USER_ID = #{rgsChngUserId}
+ 		WHERE POLICY_ID = #{policyId}
+ 	</update>
+ 	
+ 	<!-- 결재상태 변경 -->
+ 	<update id="updateSanctnSttus">
+ 		UPDATE TB_CW_EUC_SANCTN 
+ 		SET STTUS_CD_ID = #{sttusCdId}
+ 		WHERE SANCTN_ID = #{sanctnId}
+ 	</update>
+ 	
+ 	<!-- 이력 저장 -->
+ 	<insert id = "insertEucHist" >
+		INSERT	INTO TB_CW_EUC_HIST
+			(
+				POLICY_ID
+				, BGNTMSTMP
+		 		, ENDTMSTMP
+				, POLICY_BGNDE
+				, POLICY_ENDDE
+				, DOC_NO
+				, POLICY_CL_CD_ID
+				, DOC_NM
+				, VER
+			<if test="   estbshDe != null    and    estbshDe !=  ''   ">
+				, ESTBSH_DE
+			</if>
+				, REFORM_DE
+				, REFORM_CN
+				, SANCTN_ID
+				, STTUS_CD_ID
+				, WRTER_ID
+				, WRTER_BGNDE
+
+				, UNITY_ID
+				, RGSDE
+				, RGS_USER_ID
+			)
+		VALUES
+			(
+				#{policyId}
+				, #{bgntmstmp}
+		  		, #{endtmstmp}
+				, CONVERT ( VARCHAR , GETDATE() , 112 ) 
+				, #{policyEndde}
+				, #{docNo}
+				, #{policyClCdId}
+				, #{docNm}
+				, #{ver}
+			<if test="   estbshDe != null    and    estbshDe !=  ''   ">
+				, REPLACE( #{estbshDe}, '-')
+			</if>
+				, CONVERT ( VARCHAR , GETDATE() , 112 ) 
+				, '등록자 업무이관'
+				, #{sanctnId}
+				, #{sttusCdId}
+				, #{wrterId}
+				, REPLACE( #{wrterBgnde}, '-')
+
+				, #{unityId}
+				, GETDATE()
+				, #{rgsUserId}
+			) 
+ 	</insert>
+ 	
+ 	<!-- 열람자 이력 저장 -->
+ 	<insert id = "insertChargerHist" >
+ 		INSERT INTO
+ 		  TB_CW_EUC_PERSON_HIST 
+ 			(
+				POLICY_ID
+	 			, BGNTMSTMP
+		 		, ENDTMSTMP
+				, POLICY_BGNDE
+				, HIST_STDDE
+				, CHARGER_ID
+				, CHARGER_BGNDE
+				, HIST_ENDDE
+				, CHARGER_DC
+				, SORT_SN
+				, RGSDE
+				, RGS_USER_ID
+			) VALUES (
+				  #{policyId}
+				, #{bgntmstmp}
+		  		, #{endtmstmp}
+				, REPLACE( #{policyBgnde} , '-' )
+				, CONVERT ( VARCHAR , GETDATE() , 112 ) 
+				, #{chargerId}
+				, REPLACE( #{chargerBgnde}, '-' )
+				, #{histEndde}
+				, #{chargerDc}
+				, #{sortSn}
+				, CONVERT ( VARCHAR , GETDATE() , 112 ) 
+				, #{suserId}
+			)
+ 	</insert>
+ 	
+ 	<!-- 상태 수정 -->
+	<update id="updateSttus">
+		UPDATE TB_CW_EUC SET 
+			STTUS_CD_ID 	= #{sttusCdId}  
+		WHERE
+			POLICY_ID     	 = #{policyId}
+			AND POLICY_BGNDE = REPLACE(#{policyBgnde}, '-')
+	</update>
+</mapper>

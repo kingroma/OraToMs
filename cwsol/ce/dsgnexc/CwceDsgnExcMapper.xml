@@ -1,0 +1,651 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.ce.dsgnexc.serviceimpl.CwceDsgnExcMapper">
+
+    <select id="list" resultType="EgovMap">
+		WITH MNDT_LIST AS (
+		    SELECT #{suserId} AS MNDT_USER_ID 
+		    UNION
+		    SELECT A.MNDT_USER_ID
+		    FROM TB_CO_MNDT A
+		         LEFT OUTER JOIN TB_CO_MNDT_KND B
+		          ON A.MNDT_ID = B.MNDT_ID
+		    WHERE A.AGENT_USER_ID = #{suserId}
+		        AND CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),8),':','') BETWEEN A.MNDT_BGNDE+A.MNDT_BGNTM AND A.MNDT_ENDDE+A.MNDT_ENDTM
+		        AND A.STTUS_CD_ID = 'COM_021_005'
+		        AND B.MNDT_KND_CD_ID = 'COM_019_001'
+		)
+        SELECT    A.EVL_ID
+                , A.EVL_TY_CD_ID
+                , C1.CODE_NM AS EVL_TY_CD_NM
+                , A.EVL_KND_CD_ID
+                , C2.CODE_NM AS EVL_KND_CD_NM
+                , A.EVL_SJ
+                , A.ACCNUT_YY
+                , A.ACCNUT_SE_CD_ID
+                , C3.CODE_NM AS ACCNUT_SE_CD_NM
+                , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_BGNDE , 112 ) , 23 ) AS EVL_BGNDE
+                , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_ENDDE , 112 ) , 23 ) AS EVL_ENDDE
+                , CASE WHEN CONVERT ( VARCHAR , GETDATE() , 112 )  BETWEEN A.EVL_BGNDE AND A.EVL_ENDDE THEN 'Y'
+                       ELSE 'N'
+                  END AS CRRSPND_AT
+                , A.EVL_CN
+                , A.STTUS_CD_ID
+                , C4.CODE_NM AS STTUS_CD_NM
+                , A.SANCTN_ID
+                , A.UNITY_ID
+                , A.RGS_DT
+                , A.RGS_USER_ID
+                , A.UPD_DT
+                , A.UPD_USER_ID
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_005' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_002' THEN 1 END)  AS CNRL_TEST_TOT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_005' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_001' THEN 1 END)  AS CNRL_CHRG_TOT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_003' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_001' THEN 1 END)  AS SUB_CHRG_TOT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_002' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_001' THEN 1 END)  AS MJR_CHRG_TOT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_001' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_001' THEN 1 END)  AS MEGA_CHRG_TOT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_005' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND ISNULL(EXC.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN 1 END) AS CNRL_TEST_COMPT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_005' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_001' AND ISNULL(EXC.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN 1 END) AS CNRL_CHRG_COMPT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_003' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_001' AND ISNULL(EXC.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN 1 END) AS SUB_CHRG_COMPT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_002' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_001' AND ISNULL(EXC.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN 1 END) AS MJR_CHRG_COMPT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_001' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_001' AND ISNULL(EXC.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN 1 END) AS MEGA_CHRG_COMPT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_005' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_002' AND ISNULL(EXC.STTUS_CD_ID, 'CTW_106_001') NOT IN ('CTW_106_003', 'CTW_106_005') THEN 1 END) AS CNRL_TEST_UNCOMPT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_005' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_001' AND ISNULL(EXC.STTUS_CD_ID, 'CTW_106_001') NOT IN ('CTW_106_003', 'CTW_106_005') THEN 1 END) AS CNRL_CHRG_UNCOMPT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_003' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_001' AND ISNULL(EXC.STTUS_CD_ID, 'CTW_106_001') NOT IN ('CTW_106_003', 'CTW_106_005') THEN 1 END) AS SUB_CHRG_UNCOMPT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_002' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_001' AND ISNULL(EXC.STTUS_CD_ID, 'CTW_106_001') NOT IN ('CTW_106_003', 'CTW_106_005') THEN 1 END) AS MJR_CHRG_UNCOMPT_CNT
+                , COUNT(CASE WHEN EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND B.OBJECT_KND_CD_ID = 'CTW_001_001' AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_001' AND ISNULL(EXC.STTUS_CD_ID, 'CTW_106_001') NOT IN ('CTW_106_003', 'CTW_106_005') THEN 1 END) AS MEGA_CHRG_UNCOMPT_CNT
+                , CASE WHEN A.STTUS_CD_ID = 'CTW_101_005' AND CONVERT ( VARCHAR , GETDATE() , 112 )  BETWEEN A.EVL_BGNDE AND A.EVL_ENDDE THEN 'Y' ELSE 'N' END AS EXC_AT
+                , COUNT(DISTINCT CASE WHEN DC1.CONFM_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) THEN DC1.CHRG_DEPT_ID ELSE NULL END) AS CONFM1_TOT_CNT
+                , COUNT(DISTINCT CASE WHEN DC2.CONFM_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) THEN DC2.CHRG_DEPT_ID ELSE NULL END) AS CONFM2_TOT_CNT
+                , COUNT(DISTINCT CASE WHEN DC3.CONFM_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) THEN DC3.CHRG_DEPT_ID ELSE NULL END) AS CONFM3_TOT_CNT
+                , COUNT(DISTINCT CASE WHEN DC1.CONFM_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND DC1.CONFM_AT = 'Y' AND ISNULL(DC1.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN DC1.CHRG_DEPT_ID ELSE NULL END) AS CONFM1_COMPT_CNT
+                , COUNT(DISTINCT CASE WHEN DC2.CONFM_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND DC2.CONFM_AT = 'Y' AND ISNULL(DC2.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN DC2.CHRG_DEPT_ID ELSE NULL END) AS CONFM2_COMPT_CNT
+                , COUNT(DISTINCT CASE WHEN DC3.CONFM_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND DC3.CONFM_AT = 'Y' AND ISNULL(DC3.STTUS_CD_ID, 'CTW_106_001') IN ('CTW_106_003', 'CTW_106_005') THEN DC3.CHRG_DEPT_ID ELSE NULL END) AS CONFM3_COMPT_CNT
+                , COUNT(DISTINCT CASE WHEN DC1.CONFM_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND DC1.CONFM_AT = 'Y' AND ISNULL(DC1.STTUS_CD_ID, 'CTW_106_001') NOT IN ('CTW_106_003', 'CTW_106_005') THEN DC1.CHRG_DEPT_ID ELSE NULL END) AS CONFM1_UNCOMPT_CNT
+                , COUNT(DISTINCT CASE WHEN DC2.CONFM_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND DC2.CONFM_AT = 'Y' AND ISNULL(DC2.STTUS_CD_ID, 'CTW_106_001') NOT IN ('CTW_106_003', 'CTW_106_005') THEN DC2.CHRG_DEPT_ID ELSE NULL END) AS CONFM2_UNCOMPT_CNT
+                , COUNT(DISTINCT CASE WHEN DC3.CONFM_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST) AND DC3.CONFM_AT = 'Y' AND ISNULL(DC3.STTUS_CD_ID, 'CTW_106_001') NOT IN ('CTW_106_003', 'CTW_106_005') THEN DC3.CHRG_DEPT_ID ELSE NULL END) AS CONFM3_UNCOMPT_CNT
+        FROM TB_CW_EVL A
+            LEFT OUTER JOIN TB_CW_EVL_EXC EXC
+                ON  A.EVL_ID = EXC.EVL_ID
+            LEFT OUTER JOIN (SELECT EVL_ID, OBJECT_ID, OBJECT_KND_CD_ID
+                             FROM TB_CW_EVL_RCM_MAPNG
+                             GROUP BY EVL_ID, OBJECT_ID, OBJECT_KND_CD_ID) B    /** 통제ID 중복 제거 */
+                ON  EXC.EVL_ID = B.EVL_ID
+                AND EXC.OBJECT_ID = B.OBJECT_ID
+            LEFT OUTER JOIN TB_CO_CODE C1
+                ON A.EVL_TY_CD_ID = C1.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE C2
+                ON A.EVL_KND_CD_ID = C2.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE C3
+                ON A.ACCNUT_SE_CD_ID = C3.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE C4
+                ON A.STTUS_CD_ID = C4.CODE_ID
+            LEFT OUTER JOIN TB_CW_EVL_DEPT_CONFM DC1
+                ON EXC.EVL_ID = DC1.EVL_ID
+                AND EXC.CHRG_DEPT_ID = DC1.CHRG_DEPT_ID
+                AND 1 = DC1.CONFM_STEP
+            LEFT OUTER JOIN TB_CW_EVL_DEPT_CONFM DC2
+                ON EXC.EVL_ID = DC2.EVL_ID
+                AND EXC.CHRG_DEPT_ID = DC2.CHRG_DEPT_ID
+                AND 2 = DC2.CONFM_STEP
+            LEFT OUTER JOIN TB_CW_EVL_DEPT_CONFM DC3
+                ON EXC.EVL_ID = DC3.EVL_ID
+                AND EXC.CHRG_DEPT_ID = DC3.CHRG_DEPT_ID
+                AND 3 = DC3.CONFM_STEP
+        <trim prefix="WHERE" prefixOverrides="AND|OR ">
+            AND A.STTUS_CD_ID IN ( 'CTW_101_005', 'CTW_101_006' )
+            AND A.EVL_KND_CD_ID = 'CTW_103_001'
+            <if test='menuMngrAt == "N"'>
+	            AND (
+	             EXC.CHRG_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST)      /** 위임자로 지정된 평가 조회 */
+	             OR DC1.CONFM_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST)      /** 1승인 위임자로 지정된 평가 조회 */
+	             OR DC2.CONFM_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST)      /** 2승인 위임자로 지정된 평가 조회 */
+	             OR DC3.CONFM_USER_ID IN (SELECT MNDT_USER_ID FROM MNDT_LIST)      /** 3승인(위임자)로 지정된 평가 조회 */
+	             )
+            </if>
+            <if test=' srchBgnde != null and srchBgnde != "" '>
+                <![CDATA[  AND A.EVL_BGNDE >= REPLACE(#{srchBgnde},'-','')  ]]>
+            </if>
+            <if test=' srchEndde != null and srchEndde != "" '>
+                <![CDATA[  AND A.EVL_ENDDE <= REPLACE(#{srchEndde},'-','')  ]]>
+            </if>
+
+            <if test=' srchAccnutYy != null and srchAccnutYy != "" '>
+                AND A.ACCNUT_YY = #{srchAccnutYy}
+            </if>
+            <if test=' srchAccnutSeCdId != null and srchAccnutSeCdId != "" '>
+                AND A.ACCNUT_SE_CD_ID = #{srchAccnutSeCdId}
+            </if>
+            <if test=' srchEvlTyCdId != null and srchEvlTyCdId != "" '>
+                AND A.EVL_TY_CD_ID = #{srchEvlTyCdId}
+            </if>
+            <if test=' srchSttusCdId != null and srchSttusCdId != "" '>
+                AND A.STTUS_CD_ID = #{srchSttusCdId}
+            </if>
+            <if test=' srchWrd != null and srchWrd != "" '>
+                <choose>
+                    <when test="srchTy == 'sj'" >           AND A.EVL_SJ LIKE '%' + #{srchWrd} + '%'          </when>
+                    <when test="srchTy == 'cn'" >           AND A.EVL_CN LIKE '%' + #{srchWrd} + '%'          </when>
+                </choose>
+            </if>
+         </trim>
+         GROUP BY A.EVL_ID
+                , A.EVL_TY_CD_ID
+                , C1.CODE_NM
+                , A.EVL_KND_CD_ID
+                , C2.CODE_NM
+                , A.EVL_SJ
+                , A.ACCNUT_YY
+                , A.ACCNUT_SE_CD_ID
+                , C3.CODE_NM
+                , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_BGNDE , 112 ) , 23 )
+                , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_ENDDE , 112 ) , 23 )
+                , CASE WHEN CONVERT ( VARCHAR , GETDATE() , 112 )  BETWEEN EVL_BGNDE AND EVL_ENDDE THEN 'Y' ELSE 'N' END
+                , A.EVL_CN
+                , A.STTUS_CD_ID
+                , C4.CODE_NM
+                , A.SANCTN_ID
+                , A.UNITY_ID
+                , A.RGS_DT
+                , A.RGS_USER_ID
+                , A.UPD_DT
+                , A.UPD_USER_ID
+                , CASE WHEN A.STTUS_CD_ID = 'CTW_101_005' AND CONVERT ( VARCHAR , GETDATE() , 112 )  BETWEEN A.EVL_BGNDE AND A.EVL_ENDDE THEN 'Y' ELSE 'N' END
+         ORDER BY A.EVL_ID DESC
+    </select>
+
+    <!-- detailList 화면의 평가계획 상세조회 -->
+    <select id="view" resultType="CwceDsgnExcVO">
+        SELECT    A.EVL_ID
+                , A.EVL_TY_CD_ID
+                , C1.CODE_NM AS EVL_TY_CD_NM
+                , A.EVL_KND_CD_ID
+                , C2.CODE_NM AS EVL_KND_CD_NM
+                , A.EVL_SJ
+                , A.ACCNUT_YY
+                , A.ACCNUT_SE_CD_ID
+                , C3.CODE_NM AS ACCNUT_SE_CD_NM
+                , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_BGNDE , 112 ) , 23 ) AS EVL_BGNDE
+                , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_ENDDE , 112 ) , 23 ) AS EVL_ENDDE
+                , A.EVL_CN
+                , A.STTUS_CD_ID
+                , C4.CODE_NM AS STTUS_CD_NM
+                , A.SANCTN_ID
+                , A.UNITY_ID
+                , A.RGS_DT
+                , A.RGS_USER_ID
+                , A.UPD_DT
+                , A.UPD_USER_ID
+                , #{srchPage}               AS SRCH_PAGE
+                , #{srchObjectKndCdId}      AS SRCH_OBJECT_KND_CD_ID
+	            <![CDATA[
+	            , (CASE WHEN A.STTUS_CD_ID = 'CTW_101_005' AND CONVERT ( VARCHAR , GETDATE() , 112 )  BETWEEN A.EVL_BGNDE AND A.EVL_ENDDE THEN 'Y'
+	                      ELSE 'N'
+	                END) AS EXC_AT
+                , CASE WHEN CONVERT ( VARCHAR , GETDATE() , 112 )  BETWEEN A.EVL_BGNDE AND A.EVL_ENDDE THEN 'Y'
+                       ELSE 'N'
+                  END AS CRRSPND_AT
+	            ]]>
+        FROM TB_CW_EVL A
+            LEFT OUTER JOIN TB_CO_CODE C1
+                ON A.EVL_TY_CD_ID = C1.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE C2
+                ON A.EVL_KND_CD_ID = C2.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE C3
+                ON A.ACCNUT_SE_CD_ID = C3.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE C4
+                ON A.STTUS_CD_ID = C4.CODE_ID
+        WHERE A.EVL_ID = #{evlId}
+    </select>
+
+    <!-- 내부통제 평가 수행 수정 -->
+    <update id="update">
+        UPDATE TB_CW_EVL_EXC SET
+              EVL_OPINION       = #{evlOpinion}
+            , EVL_CNCLSN_CD_ID  = #{evlCnclsnCdId}
+            , UNITY_ID          = #{unityId}
+            , STTUS_CD_ID       = #{sttusCdId}
+            , SANCTN_ID         = #{sanctnId}
+            , UPD_DT            = GETDATE()
+            , UPD_USER_ID       = #{suserId}
+        WHERE   EVL_ID          = #{evlId}
+            AND OBJECT_ID       = #{objectId}
+        <choose>
+            <when test=' srchPage != null and srchPage == "test" '>
+                AND CHRG_USER_TY_CD_ID = 'CTW_105_002'
+            </when>
+            <otherwise>
+                AND CHRG_USER_TY_CD_ID = 'CTW_105_001'
+            </otherwise>
+        </choose>
+            AND CHRG_USER_ID = #{chrgUserId}
+    </update>
+
+    <!-- 평가기준 결과 등록 -->
+    <insert id="insertExcStdr">
+        INSERT INTO TB_CW_EVL_EXC_STDR (
+                  EVL_ID, OBJECT_ID, CHRG_USER_ID, CHRG_USER_TY_CD_ID, EVL_STDR_ID, STDR_CD_ID
+            ) VALUES (
+                  #{evlId}, #{objectId}, #{chrgUserId}, #{chrgUserTyCdId}, #{evlStdrId}, #{stdrCdId}
+            )
+    </insert>
+
+    <!-- 평가기준 결과 삭제 -->
+    <delete id="deleteExcStdr">
+        DELETE FROM TB_CW_EVL_EXC_STDR
+         WHERE EVL_ID = #{evlId}
+           AND OBJECT_ID = #{objectId}
+           AND CHRG_USER_ID = #{chrgUserId}
+           AND CHRG_USER_TY_CD_ID = #{chrgUserTyCdId}
+           AND EVL_STDR_ID = #{evlStdrId}
+    </delete>
+
+    <!-- 하위 RCM 상태 COUNT -->
+    <select id="selectLowerSttus" resultType="int">
+        SELECT SUM(CASE WHEN A.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005') THEN 0 ELSE 1 END) AS RESULT
+          FROM TB_CW_EVL_EXC A
+            LEFT OUTER JOIN (
+                             SELECT DISTINCT MA.EVL_ID
+                                  , MA.OBJECT_ID
+                                  , MA.OBJECT_NO
+                                  , MA.OBJECT_NM
+                                  , MA.OBJECT_LEVEL
+                                  , MA.OBJECT_KND_CD_ID
+                                  , ( CASE
+                                           WHEN MA.OBJECT_KND_CD_ID = 'CTW_001_005' THEN MB.UPPER_OBJECT_ID
+                                           ELSE MA.UPPER_OBJECT_ID
+                                      END ) AS UPPER_OBJECT_ID
+                               FROM TB_CW_EVL_RCM_MAPNG MA
+                                  LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG MB
+                                    ON MA.UPPER_MAPNG_ID    = MB.MAPNG_ID
+                              WHERE MA.EVL_ID               = #{evlId}
+                                AND MA.OBJECT_KND_CD_ID    != 'CTW_001_004'
+                            ) M
+              ON A.EVL_ID = M.EVL_ID
+             AND A.OBJECT_ID = M.OBJECT_ID
+         WHERE A.EVL_ID                         = #{evlId}
+            <choose>
+                <when test=' chrgUserTyCdId == "CTW_105_002" '>
+                    AND A.OBJECT_ID             = #{objectId}
+                    AND A.CHRG_USER_TY_CD_ID    = 'CTW_105_002'
+                </when>
+                <otherwise>
+                    AND M.UPPER_OBJECT_ID       = #{upperObjectId}
+                    AND A.CHRG_USER_TY_CD_ID    = 'CTW_105_001'
+                </otherwise>
+            </choose>
+         GROUP BY A.EVL_ID, M.UPPER_OBJECT_ID
+    </select>
+
+    <!-- 상위 RCM 담당자 ID -->
+    <select id="selectUpperChrgUser" resultType="String">
+        SELECT CHRG_USER_ID
+          FROM TB_CW_EVL_EXC A
+             LEFT OUTER JOIN (
+                             SELECT DISTINCT MA.EVL_ID
+                                  , MA.OBJECT_ID
+                                  , MA.OBJECT_NO
+                                  , MA.OBJECT_NM
+                                  , MA.OBJECT_LEVEL
+                                  , MA.OBJECT_KND_CD_ID
+                                  , ( CASE
+                                           WHEN MA.OBJECT_KND_CD_ID = 'CTW_001_005' THEN MB.UPPER_OBJECT_ID
+                                           ELSE MA.UPPER_OBJECT_ID
+                                      END ) AS UPPER_OBJECT_ID
+                               FROM TB_CW_EVL_RCM_MAPNG MA
+                                  LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG MB
+                                    ON MA.UPPER_MAPNG_ID = MB.MAPNG_ID
+                              WHERE MA.EVL_ID            = #{evlId}
+                                AND MA.OBJECT_KND_CD_ID != 'CTW_001_004'
+                             ) M
+               ON  A.EVL_ID = M.EVL_ID
+              AND A.OBJECT_ID = M.OBJECT_ID
+         WHERE A.EVL_ID             = #{evlId}
+           AND A.CHRG_USER_TY_CD_ID = 'CTW_105_001'
+           AND A.OBJECT_ID          = #{upperObjectId}
+    </select>
+
+    <!-- 하위 RCM 완료 상태 COUNT -->
+    <select id="selectLowerCompCnt" resultType="String">
+        SELECT SUM(CASE WHEN A.STTUS_CD_ID = 'CTW_106_005' THEN 0 ELSE 1 END) AS RESULT
+          FROM TB_CW_EVL_EXC A
+            LEFT OUTER JOIN (
+                             SELECT DISTINCT MA.EVL_ID
+                                  , MA.OBJECT_ID
+                                  , MA.OBJECT_NO
+                                  , MA.OBJECT_NM
+                                  , MA.OBJECT_LEVEL
+                                  , MA.OBJECT_KND_CD_ID
+                                  , ( CASE
+                                           WHEN MA.OBJECT_KND_CD_ID = 'CTW_001_005' THEN MB.UPPER_OBJECT_ID
+                                           ELSE MA.UPPER_OBJECT_ID
+                                      END ) AS UPPER_OBJECT_ID
+                               FROM TB_CW_EVL_RCM_MAPNG MA
+                                  LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG MB
+                                    ON MA.UPPER_MAPNG_ID    = MB.MAPNG_ID
+                              WHERE MA.EVL_ID               = #{evlId}
+                                AND MA.OBJECT_KND_CD_ID    != 'CTW_001_004'
+                            ) M
+              ON A.EVL_ID = M.EVL_ID
+             AND A.OBJECT_ID = M.OBJECT_ID
+         WHERE A.EVL_ID                         = #{evlId}
+               <choose>
+                <when test=' chrgUserTyCdId == "CTW_105_002" '>
+                    AND A.OBJECT_ID             = #{objectId}
+                    AND A.CHRG_USER_TY_CD_ID    = 'CTW_105_002'
+                </when>
+                <otherwise>
+                    AND M.UPPER_OBJECT_ID       = #{upperObjectId}
+                    AND A.CHRG_USER_TY_CD_ID    = 'CTW_105_001'
+                </otherwise>
+            </choose>
+         GROUP BY A.EVL_ID, M.UPPER_OBJECT_ID
+    </select>
+
+    <!-- 평가 수행 상태 수정 : 대기 -->
+    <update id="updateReadySttus">
+        UPDATE TB_CW_EVL_EXC
+           SET STTUS_CD_ID          = 'CTW_106_001'
+             , UPD_DT               = GETDATE()
+         WHERE   EVL_ID             = #{evlId}
+           AND OBJECT_ID           = #{upperObjectId}
+           AND CHRG_USER_TY_CD_ID  = 'CTW_105_001'
+           AND CHRG_USER_ID        = #{upperChrgUserId}
+    </update>
+
+    <!-- 평가 수행 상태 수정 -->
+    <insert id="updateSttus">
+        <selectKey keyProperty="confmId" resultType="String" order="BEFORE">
+            SELECT CASE WHEN #{confmId} IS NOT NULL THEN #{confmId}
+                        ELSE (
+                            SELECT 'CFI_'+ CONVERT ( VARCHAR , GETDATE() , 112 )  + '_' + (LPAD(ISNULL(MAX(CONVERT ( NUMERIC , SUBSTR(CONFM_ID, 14))),0)+1, 5, '0'))
+                            FROM TB_CW_EVL_EXC_CONFM
+                            WHERE CONFM_ID LIKE 'CFI_'+ CONVERT ( VARCHAR , GETDATE() , 112 ) +'%'
+                        )
+                    END AS CONFM_ID
+            
+        </selectKey>
+        BEGIN
+            UPDATE TB_CW_EVL_EXC_CONFM
+               SET LAST_AT = 'N'
+             WHERE CONFM_ID = #{confmId};
+
+            INSERT INTO TB_CW_EVL_EXC_CONFM (
+                  CONFM_ID, CONFM_SN, CONFM_AT, LAST_AT, CONFM_CN, CONFM_USER_ID, CONFM_USER_BGNDE, CONFM_DT
+            ) VALUES (
+                  #{confmId}, ISNULL((SELECT MAX(CONFM_SN) FROM TB_CW_EVL_EXC_CONFM WHERE CONFM_ID = #{confmId}), 0)+1, #{confmAt}, 'Y', #{confmCn}, #{suserId}, #{suserBgnde}, GETDATE()
+            );
+
+            UPDATE TB_CW_EVL_EXC
+               SET STTUS_CD_ID          = #{sttusCdId}
+                 , CONFM_ID             = #{confmId}
+             WHERE   EVL_ID             = #{evlId}
+               AND OBJECT_ID           = #{objectId}
+               AND CHRG_USER_ID        = #{chrgUserId}
+               AND CHRG_USER_TY_CD_ID  = #{chrgUserTyCdId};
+        END;
+    </insert>
+
+    <!-- 승인/반려 조회 -->
+    <select id="confmView" resultType="CwceDsgnExcVO">
+        SELECT CONFM_ID
+             , CONFM_SN
+             , CONFM_AT
+             , LAST_AT
+             , CONFM_CN
+             , CONFM_USER_ID
+             , CONFM_USER_BGNDE
+             , CONVERT ( VARCHAR , CONFM_DT , 23 ) + ' ' + CONVERT ( VARCHAR , CONFM_DT , 8) AS CONFM_DT
+             , U.USER_NM                                   AS CONFM_USER_NM
+             , U.DEPT_NM                                   AS CONFM_DEPT_NM
+          FROM TB_CW_EVL_EXC_CONFM A
+            LEFT OUTER JOIN TB_CO_USER_HIST U
+              ON  A.CONFM_USER_ID = U.USER_ID
+             AND A.CONFM_USER_BGNDE = U.HIST_BGNDE
+         WHERE A.CONFM_ID = #{confmId}
+           AND A.LAST_AT  = 'Y'
+    </select>
+
+    <!-- 미비점 평가 등록 -->
+    <insert id="insertUprpd">
+        INSERT INTO TB_CW_UPRPD (
+              EVL_ID
+            , OBJECT_ID
+            , CHRG_USER_ID
+            , CHRG_USER_TY_CD_ID
+            , UPRPD_CL_CD_ID
+            , ORGINL_UPRPD_CL_CD_ID
+            , CHANGE_RESN
+            , UPRPD_TY_CD_ID
+            , UPRPD_CN
+            , UPRPD_IMPRVM_PLAN
+            , EXC_USER_ID
+            , EXC_USER_BGNDE
+            , UPRPD_IMPRVM_PLAN_GOAL_DE
+        ) VALUES (
+              #{evlId}
+            , #{objectId}
+            , #{chrgUserId}
+            , #{chrgUserTyCdId}
+            , #{uprpdClCdId}
+            , #{orginlUprpdClCdId}
+            , #{changeResn}
+            , #{uprpdTyCdId}
+            , #{uprpdCn}
+            , #{uprpdImprvmPlan}
+            , #{excUserId}
+            , #{excUserBgnde}
+            , REPLACE(#{uprpdImprvmPlanGoalDe}, '-', '')
+        )
+    </insert>
+
+    <!-- 미비점 수행 등록 -->
+    <insert id="insertUprpdExc">
+        INSERT INTO TB_CW_UPRPD_EXC (
+              EVL_ID
+            , OBJECT_ID
+            , EXC_USER_ID
+            , EXC_USER_BGNDE
+            , EXC_SJ
+            , EXC_CN
+            , EXC_DE
+            , STTUS_CD_ID
+            , EXC_COMPT_CD_ID
+            , RGS_DT
+            , RGS_USER_ID
+            , UPD_DT
+            , UPD_USER_ID
+        ) VALUES (
+              #{evlId}
+            , #{objectId}
+            , #{excUserId}
+            , #{excUserBgnde}
+            , #{excSj}
+            , #{excCn}
+            , REPLACE(#{excDe}, '-', '')
+            , #{sttusCdId}
+            , #{excComptCdId}
+            , GETDATE()
+            , #{suserId}
+            , GETDATE()
+            , #{suserId}
+        )
+    </insert>
+
+    <!-- walkthrougth 체크리스트 결과 등록 -->
+    <insert id="insertChkListResult">
+        INSERT INTO TB_CW_EVL_WLKG_THRGH (
+              EVL_ID
+            , OBJECT_ID
+            , CHRG_USER_ID
+            , CHRG_USER_TY_CD_ID
+            , CHCK_IEM_ID
+            , CHCK_IEM_BGNTMSTMP
+            , ANSWER_IEM_CD_ID
+            , ANSWER_CN
+            , UNITY_ID
+        ) VALUES (
+              #{evlId}
+            , #{objectId}
+            , #{chrgUserId}
+            , #{chrgUserTyCdId}
+            , #{chckIemId}
+            , #{chckIemBgntmstmp}
+            , #{answerIemCdId}
+            , #{answerCn}
+            , #{walkUnityId}
+        )
+    </insert>
+
+    <!-- walkthrougth 체크리스트 결과 삭제 -->
+    <delete id="deleteChkListResult">
+        DELETE TB_CW_EVL_WLKG_THRGH
+         WHERE EVL_ID               = #{evlId}
+           AND OBJECT_ID            = #{objectId}
+           AND CHRG_USER_ID         = #{chrgUserId}
+           AND CHRG_USER_TY_CD_ID   = #{chrgUserTyCdId}
+    </delete>
+
+    <!-- 분류절차 결과 등록 -->
+    <insert id="insertProcssResult">
+        INSERT INTO TB_CW_CL_PROCSS_IEM_RESULT (
+              EVL_ID
+            , OBJECT_ID
+            , PROCSS_ID
+            , TMSTMP
+            , RESULT_VALUE
+        ) VALUES (
+              #{evlId}
+            , #{objectId}
+            , #{procssId}
+            , CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),14),':','') + '000'
+            , #{resultValue}
+        )
+    </insert>
+
+    <!-- 미비점 평가, 수행 삭제 -->
+    <delete id="deleteUprpd">
+        BEGIN
+
+            DELETE TB_CW_UPRPD
+             WHERE EVL_ID               = #{evlId}
+               AND OBJECT_ID            = #{objectId}
+               AND CHRG_USER_ID         = #{chrgUserId}
+               AND CHRG_USER_TY_CD_ID   = #{chrgUserTyCdId}
+            ;
+
+            DELETE TB_CW_UPRPD_EXC
+             WHERE EVL_ID               = #{evlId}
+               AND OBJECT_ID            = #{objectId}
+            ;
+
+            DELETE TB_CW_CL_PROCSS_IEM_RESULT
+             WHERE EVL_ID               = #{evlId}
+               AND OBJECT_ID            = #{objectId}
+            ;
+
+        END;
+    </delete>
+
+    <!-- 테스트 결재 처리에 따른 상태 수정 -->
+    <update id="updateSanctnSttus">
+        UPDATE TB_CW_EVL_EXC
+           SET STTUS_CD_ID         = #{sttusCdId}
+         WHERE EVL_ID              = #{evlId}
+           AND OBJECT_ID           = #{objectId}
+           AND CHRG_USER_ID        = #{chrgUserId}
+           AND CHRG_USER_TY_CD_ID  = #{chrgUserTyCdId}
+    </update>
+
+
+	<!-- 미비점 평가 -->
+	<select id="uprpdEvlView" resultType="CwceDsgnExcVO">
+		SELECT
+	    	EX.UNITY_ID 			-- 파일 리스트 출력 위한 unityId
+		  , EX.OBJECT_ID 			--objectId
+		  , EM.OBJECT_NM
+		  , EM.OBJECT_NO
+		  , EM.OBJECT_KND_CD_ID
+		  , EX.SANCTN_ID 					--결재ID
+		  --, EX.STTUS_CD_ID 				--업무상태코드
+		  , EV.EVL_ID 						--평가ID
+		  , EV.EVL_SJ  						--평가제목
+		  , EV.ACCNUT_YY 					--회계년도
+		  , EV.EVL_KND_CD_ID  				--평가종류코드ID
+		  , C1.CODE_NM 	AS EVL_KND_CD_NM 	--평가종류코드명
+		  , UP.UPRPD_CL_CD_ID 				--미비점분류코드
+		  , C2.CODE_NM 	AS UPRPD_CL_CD_NM 	--미비점분류코드명
+		  , UP.ORGINL_UPRPD_CL_CD_ID 		--미비점유형코드
+		  , C3.CODE_NM 	AS ORGINL_UPRPD_CL_CD_NM --미비점분류코드명
+		  , UP.CHANGE_RESN					--변경사유
+		  , UP.UPRPD_TY_CD_ID 				--미비점유형코드
+		  , C4.CODE_NM	AS UPRPD_TY_CD_NM 	--미비점유형코드명
+		  , CASE WHEN EV.EVL_KND_CD_ID IN ('CTW_103_001', 'CTW_103_002') THEN ISNULL(CR.CNRL_NM, PR.PROCS_NM )
+		    	 WHEN EV.EVL_KND_CD_ID IN ('CTW_103_003', 'CTW_103_004') THEN CER.CNRL_NM	END AS CNRL_NM --통제명
+		  , ( CASE WHEN CR.CNRL_NM IS NOT NULL THEN 'Y'
+				ELSE 'N' END ) AS CNRL_VIEW_AT --통제조회버튼 설정용
+		  , CR.CNRL_ID 						--통제ID
+		  , CR.CNRL_NO 						--통제번호
+		  , UP.UPRPD_IMPRVM_PLAN 			--미비점 개선 계획
+		  , UP.UPRPD_CN  					--미비점 발생 내용
+		  , EX.EXC_USER_ID 					--미비점 담당 사용자ID (미비점 수행자)
+		  , UH1.USER_NM AS EXC_USER_NM 		--미비점 수행 사용자 이름 (미비점 수행자)
+		  , UH1.DEPT_NM AS EXC_DEPT_NM 		--미비점 수행 사용자 부서명 (미비점 수행자)
+		  , EE.CHRG_USER_ID 				--미비점 담당 사용자ID (미비점 평가자)
+		  , UH2.USER_NM AS CHRG_USER_NM 	--미비점 담당 사용자 이름 (미비점 평가자)
+		  , UH2.DEPT_NM AS CHRG_DEPT_NM 	--미비점 담당 사용자 부서명 (미비점 평가자)
+		  , CASE WHEN UP.UPRPD_IMPRVM_PLAN_GOAL_DE IS NULL THEN UP.UPRPD_IMPRVM_PLAN_GOAL_DE
+		     	ELSE SUBSTR(UP.UPRPD_IMPRVM_PLAN_GOAL_DE,1,4) + '-' +  SUBSTR(UP.UPRPD_IMPRVM_PLAN_GOAL_DE,5,2) + '-' + SUBSTR(UP.UPRPD_IMPRVM_PLAN_GOAL_DE,7,2) END AS UPRPD_IMPRVM_PLAN_GOAL_DE -- 개선계획 목표일자
+		  , CONVERT ( VARCHAR , EE.UPD_DT , 23 ) AS EXC_REQ_DE --미비점 개선 수행 요청일 
+		  , EX.EXC_USER_ID
+		  , DR.UNITY_ID		AS DOC_UNITY_ID
+		  , UDR.UNITY_ID   	AS UPDT_DOC_UNITY_ID
+		FROM TB_CW_UPRPD UP
+		LEFT OUTER JOIN TB_CW_UPRPD_EXC EX
+			ON	UP.EVL_ID = EX.EVL_ID
+	        AND UP.OBJECT_ID = EX.OBJECT_ID
+		LEFT OUTER JOIN TB_CW_EVL EV
+			ON	UP.EVL_ID = EV.EVL_ID
+		LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG EM
+			ON 	UP.EVL_ID 		= EM.EVL_ID
+			AND	UP.OBJECT_ID 	= EM.OBJECT_ID
+		LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL CR
+			ON	UP.EVL_ID 		= CR.EVL_ID
+	        AND UP.OBJECT_ID 	= CR.CNRL_ID
+		LEFT OUTER JOIN TB_CW_EVL_ELC_RCM_CNRL CER
+			ON  UP.EVL_ID 		= CER.EVL_ID
+			AND UP.OBJECT_ID 	= CER.CNRL_ID
+		LEFT OUTER JOIN TB_CW_EVL_EXC EE
+			ON	UP.EVL_ID 	= EE.EVL_ID
+	        AND UP.OBJECT_ID 	= EE.OBJECT_ID
+	        AND UP.CHRG_USER_ID = EE.CHRG_USER_ID
+	        AND UP.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+		LEFT OUTER JOIN TB_CW_EVL_RCM_PROCS PR
+			ON	UP.EVL_ID 		= PR.EVL_ID
+            AND UP.OBJECT_ID 	= PR.PROCS_ID
+		LEFT OUTER JOIN TB_CW_EVL_RCM_DOC DR
+			ON  UP.EVL_ID 		= DR.EVL_ID
+			AND UP.OBJECT_ID 	= DR.PROCS_ID
+		LEFT OUTER JOIN TB_CW_EVL_RCM_DOC_UPDT UDR
+			ON  UP.EVL_ID 		= UDR.EVL_ID
+			AND UP.OBJECT_ID 	= UDR.PROCS_ID
+        LEFT OUTER JOIN TB_CO_USER_HIST UH1
+        	ON EX.EXC_USER_ID 	= UH1.USER_ID
+        	AND EX.EXC_USER_BGNDE = UH1.HIST_BGNDE
+        LEFT OUTER JOIN TB_CO_USER_HIST UH2
+        	ON EE.CHRG_USER_ID 	= UH2.USER_ID
+        	AND EE.CHRG_USER_BGNDE = UH2.HIST_BGNDE
+        LEFT OUTER JOIN TB_CO_CODE C1
+		  	ON C1.CODE_ID 		= EV.EVL_KND_CD_ID
+        LEFT OUTER JOIN TB_CO_CODE C2
+		  	ON C2.CODE_ID 		= UP.UPRPD_CL_CD_ID
+        LEFT OUTER JOIN TB_CO_CODE C3
+		  	ON C3.CODE_ID 		= UP.ORGINL_UPRPD_CL_CD_ID
+        LEFT OUTER JOIN TB_CO_CODE C4
+		  	ON C4.CODE_ID 		= UP.UPRPD_TY_CD_ID
+        <trim prefix="WHERE" prefixOverrides="AND|OR ">
+	        AND EX.STTUS_CD_ID IS NOT NULL
+	   		AND EX.EVL_ID = #{evlId}
+	    	AND EX.OBJECT_ID = #{objectId}
+		</trim>
+	</select>
+</mapper>

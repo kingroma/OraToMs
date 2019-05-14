@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.co.dashboard.serviceimpl.CwcoDashBoardRcmMapper">
+ 	
+    <!-- 평가별RCM사용현황 MAP  -->
+    <resultMap id="evlRcmSttusMap" type="EgovMap" >
+        <result property="evlId"             		column="EVL_ID"          />
+        <result property="planDcsnTmstmp"        	column="PLAN_DCSN_TMSTMP"   />
+        <result property="nextPlanDcsnTmstmp"       column="NEXT_PLAN_DCSN_TMSTMP"   />
+        <result property="evlBgnde"        			column="EVL_BGNDE"   />
+        <result property="evlEndde"        			column="EVL_ENDDE"   />
+        <result property="evlSj"        			column="EVL_SJ"   />
+        <result property="accnutYy"        			column="ACCNUT_YY"   />
+        <result property="evlKndCdId"        		column="EVL_KND_CD_ID"   />
+        <result property="accnutSeCdId"        		column="ACCNUT_SE_CD_ID"   />
+        <collection property="typeList"         	column="{evlId=EVL_ID}" select="byEvlRcmSttusCnt" />
+    </resultMap>
+ 	
+    <!-- RCM EVL MAP  -->
+    <resultMap id="rcmEvlMap" type="EgovMap" >
+        <result property="evlId"             		column="EVL_ID"          />
+        <result property="planDcsnTmstmp"        	column="PLAN_DCSN_TMSTMP"   />
+        <result property="nextPlanDcsnTmstmp"       column="NEXT_PLAN_DCSN_TMSTMP"   />
+        <result property="evlBgnde"        			column="EVL_BGNDE"   />
+        <result property="evlEndde"        			column="EVL_ENDDE"   />
+        <result property="evlSj"        			column="EVL_SJ"   />
+        <result property="accnutYy"        			column="ACCNUT_YY"   />
+        <result property="evlKndCdId"        		column="EVL_KND_CD_ID"   />
+        <result property="accnutSeCdId"        		column="ACCNUT_SE_CD_ID"   />
+        <collection property="typeList"         	column="{planDcsnTmstmp=PLAN_DCSN_TMSTMP,nextPlanDcsnTmstmp=NEXT_PLAN_DCSN_TMSTMP}" select="byEvlSttusList" />
+    </resultMap>
+    
+    <!-- 평가별 ELC RCM사용현황 MAP  -->
+    <resultMap id="evlElcRcmSttusMap" type="EgovMap" >
+        <result property="evlId"             		column="EVL_ID"          />
+        <result property="planDcsnTmstmp"        	column="PLAN_DCSN_TMSTMP"   />
+        <result property="nextPlanDcsnTmstmp"       column="NEXT_PLAN_DCSN_TMSTMP"   />
+        <result property="evlBgnde"        			column="EVL_BGNDE"   />
+        <result property="evlEndde"        			column="EVL_ENDDE"   />
+        <result property="evlSj"        			column="EVL_SJ"   />
+        <result property="accnutYy"        			column="ACCNUT_YY"   />
+        <result property="evlKndCdId"        		column="EVL_KND_CD_ID"   />
+        <result property="accnutSeCdId"        		column="ACCNUT_SE_CD_ID"   />
+        <collection property="typeList"         	column="{evlId=EVL_ID}" select="byEvlElcRcmSttusCnt" />
+    </resultMap>
+ 	
+    <!-- ELC RCM EVL MAP  -->
+    <resultMap id="elcRcmEvlMap" type="EgovMap" >
+        <result property="evlId"             		column="EVL_ID"          />
+        <result property="planDcsnTmstmp"        	column="PLAN_DCSN_TMSTMP"   />
+        <result property="nextPlanDcsnTmstmp"       column="NEXT_PLAN_DCSN_TMSTMP"   />
+        <result property="evlBgnde"        			column="EVL_BGNDE"   />
+        <result property="evlEndde"        			column="EVL_ENDDE"   />
+        <result property="evlSj"        			column="EVL_SJ"   />
+        <result property="accnutYy"        			column="ACCNUT_YY"   />
+        <result property="evlKndCdId"        		column="EVL_KND_CD_ID"   />
+        <result property="accnutSeCdId"        		column="ACCNUT_SE_CD_ID"   />
+        <collection property="typeList"         	column="{planDcsnTmstmp=PLAN_DCSN_TMSTMP,nextPlanDcsnTmstmp=NEXT_PLAN_DCSN_TMSTMP}" select="byEvlElcSttusList" />
+    </resultMap>
+    
+<!--RCM TAB - 현재 RCM 현황 CNT --> 
+ 	<select id="rcmCnt" resultType="EgovMap">
+ 		--현재 PCL RCM
+		SELECT 
+		  ISNULL(SUM((CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_001' THEN 1 ELSE 0 END )), 0) AS MEGA_CNT,
+		  ISNULL(SUM((CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_002' THEN 1 ELSE 0 END )), 0) AS MJR_CNT,
+		  ISNULL(SUM((CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_003' THEN 1 ELSE 0 END )), 0) AS SUB_CNT,
+		  /** ISNULL(SUM((CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_004' THEN 1 ELSE 0 END)), 0) AS RISK_CNT, */
+		  ISNULL(SUM((CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN 1 ELSE 0 END)), 0) AS CNRL_CNT
+		FROM TB_CW_RCM_MAPNG A
+ 	</select>
+ 	
+
+<!--RCM TAB - 현재 RCM 현황 (수정현황) -->  	
+ 	<select id="rcmSttus" resultType="EgovMap">
+ 		WITH DEL_PROCS 
+ 		AS (-- 프로세스 삭제
+	        SELECT DISTINCT PH.PROCS_ID AS OBJECT_ID, PH.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+	        FROM TB_CW_RCM_PROCS_HIST PH
+			<choose>
+				<when test='srchYy != null and srchYy != "" '>
+					<![CDATA[
+					WHERE PH.BGNTMSTMP >= #{srchYy} + '0101000000000000'
+						AND PH.BGNTMSTMP < #{srchYy}+1 + '0101000000000000'
+					]]>
+				</when>
+				<otherwise>
+					<![CDATA[
+					WHERE PH.BGNTMSTMP >= CONVERT(VARCHAR(4),GETDATE(),112)  + '0101000000000000'
+						AND PH.BGNTMSTMP < CONVERT(VARCHAR(4),GETDATE(),112) +1 + '0101000000000000'
+					]]>
+				</otherwise>
+			</choose>	
+              	AND PH.ENDTMSTMP != '99991231235959999999'
+	        EXCEPT
+	        SELECT DISTINCT P.PROCS_ID AS OBJECT_ID, P.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+	        FROM TB_CW_RCM_PROCS P
+		), 
+    	DEL_CNRL AS ( -- 통제 삭제
+	        SELECT DISTINCT CH.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+	        FROM TB_CW_RCM_CNRL_HIST CH
+			<choose>
+				<when test='srchYy != null and srchYy != "" '>
+					<![CDATA[
+					WHERE CH.BGNTMSTMP >= #{srchYy} + '0101000000000000'
+						AND CH.BGNTMSTMP < #{srchYy}+1 + '0101000000000000'
+					]]>
+				</when>
+				<otherwise>
+					<![CDATA[
+					WHERE CH.BGNTMSTMP >= CONVERT(VARCHAR(4),GETDATE(),112)  + '0101000000000000'
+						AND CH.BGNTMSTMP < CONVERT(VARCHAR(4),GETDATE(),112) +1 + '0101000000000000'
+					]]>
+				</otherwise>
+			</choose>	
+              	AND CH.ENDTMSTMP != '99991231235959999999'
+	        EXCEPT      
+	        SELECT DISTINCT C.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+	        FROM TB_CW_RCM_CNRL C
+		),
+ 		MODIFY_PROCS AS (-- 프로세스 수정
+	        SELECT DISTINCT PH.PROCS_ID AS OBJECT_ID, PH.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+	        FROM TB_CW_RCM_PROCS_HIST PH
+			<choose>
+				<when test='srchYy != null and srchYy != "" '>
+					<![CDATA[
+					WHERE PH.BGNTMSTMP >= #{srchYy} + '0101000000000000'
+						AND PH.BGNTMSTMP < #{srchYy}+1 + '0101000000000000'
+					]]>
+				</when>
+				<otherwise>
+					<![CDATA[
+					WHERE PH.BGNTMSTMP >= CONVERT(VARCHAR(4),GETDATE(),112)  + '0101000000000000'
+						AND PH.BGNTMSTMP < CONVERT(VARCHAR(4),GETDATE(),112) +1 + '0101000000000000'
+					]]>
+				</otherwise>
+			</choose>	
+	        INTERSECT
+	        SELECT DISTINCT P.PROCS_ID AS OBJECT_ID, P.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+	        FROM TB_CW_RCM_PROCS P
+		), 
+    	MODIFY_CNRL AS ( -- 통제 수정
+	        SELECT DISTINCT CH.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+	        FROM TB_CW_RCM_CNRL_HIST CH
+			<choose>
+				<when test='srchYy != null and srchYy != "" '>
+					<![CDATA[
+					WHERE CH.BGNTMSTMP >= #{srchYy} + '0101000000000000'
+						AND CH.BGNTMSTMP < #{srchYy}+1 + '0101000000000000'
+					]]>
+				</when>
+				<otherwise>
+					<![CDATA[
+					WHERE CH.BGNTMSTMP >= CONVERT(VARCHAR(4),GETDATE(),112)  + '0101000000000000'
+						AND CH.BGNTMSTMP < CONVERT(VARCHAR(4),GETDATE(),112) +1 + '0101000000000000'
+					]]>
+				</otherwise>
+			</choose>	
+        	INTERSECT      
+	        SELECT DISTINCT C.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+	        FROM TB_CW_RCM_CNRL C
+		)
+		SELECT 	TB.OBJECT_KND_CD_ID
+			  , TB.OBJECT_KND_CD_NM
+			  , COUNT(TB.OBJECT_ID)								AS TOTAL_RCM_CNT
+			  , SUM(CASE WHEN TB.ORGINL_OBJECT_ID IS NOT NULL 
+			  					AND TB.MODIFY_OBJECT_ID IS NULL THEN 1 ELSE 0 END)	AS ORGINL_RCM_CNT
+			  , SUM(CASE WHEN TB.MODIFY_OBJECT_ID IS NOT NULL THEN 1 ELSE 0 END) 	AS MODIFY_RCM_CNT
+			  , SUM(CASE WHEN TB.DEL_OBJECT_ID IS NOT NULL THEN 1 ELSE 0 END) 		AS DELETE_RCM_CNT
+    	FROM (
+     		SELECT  M.OBJECT_ID
+	        	  , M.OBJECT_KND_CD_ID
+	        	  , C.CODE_NM	AS OBJECT_KND_CD_NM
+            	  , OM.OBJECT_ID AS ORGINL_OBJECT_ID
+            	  , CASE WHEN M.OBJECT_KND_CD_ID != 'CTW_001_005' THEN DP.OBJECT_ID
+              			 ELSE DC.OBJECT_ID END DEL_OBJECT_ID
+            	  , CASE WHEN M.OBJECT_KND_CD_ID != 'CTW_001_005' THEN MP.OBJECT_ID
+              			 ELSE MC.OBJECT_ID END MODIFY_OBJECT_ID
+      		FROM (SELECT OBJECT_ID, OBJECT_KND_CD_ID FROM TB_CW_RCM_MAPNG_HIST GROUP BY OBJECT_ID, OBJECT_KND_CD_ID) M 
+            LEFT OUTER JOIN TB_CW_RCM_MAPNG OM
+            	ON M.OBJECT_ID = OM.OBJECT_ID
+            LEFT OUTER JOIN DEL_PROCS DP
+              	ON M.OBJECT_ID = DP.OBJECT_ID
+            LEFT OUTER JOIN DEL_CNRL DC
+              	ON M.OBJECT_ID = DC.OBJECT_ID
+            LEFT OUTER JOIN MODIFY_PROCS MP
+              	ON M.OBJECT_ID = MP.OBJECT_ID
+            LEFT OUTER JOIN MODIFY_CNRL MC
+              	ON M.OBJECT_ID = MC.OBJECT_ID
+      		LEFT OUTER JOIN TB_CO_CODE C
+        		ON CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+		               	THEN 'CTW_001_003' 
+		               	ELSE M.OBJECT_KND_CD_ID END = C.CODE_ID
+          	WHERE M.OBJECT_KND_CD_ID != 'CTW_001_004'
+    	) TB
+		GROUP BY TB.OBJECT_KND_CD_ID, TB.OBJECT_KND_CD_NM
+		ORDER BY TB.OBJECT_KND_CD_ID ASC
+ 	</select>
+
+
+<!--RCM TAB - 평가별 RCM 사용현황 현재년도.. --> 
+ 	<select id="byEvlRcmSttus" resultMap="evlRcmSttusMap">
+ 		SELECT 
+ 			  E.EVL_ID, E.PLAN_DCSN_TMSTMP, E.EVL_BGNDE, E.EVL_ENDDE
+ 			, E.EVL_SJ, E.ACCNUT_YY, E.EVL_KND_CD_ID, E.ACCNUT_SE_CD_ID
+ 			, LEAD( E.PLAN_DCSN_TMSTMP ) OVER( ORDER BY E.ACCNUT_YY ASC, E.EVL_BGNDE ASC, E.EVL_ENDDE ASC ) AS NEXT_PLAN_DCSN_TMSTMP  -- 다음행의 타임스탬프
+		FROM TB_CW_EVL E
+		<choose>
+			<when test='srchYy != null and srchYy != "" '>
+				<![CDATA[
+				WHERE E.STTUS_CD_ID >= 'CTW_101_005'
+					AND E.ACCNUT_YY =  #{srchYy}
+					AND E.EVL_KND_CD_ID IN ('CTW_103_001', 'CTW_103_002')
+				]]>
+			</when>
+			<otherwise>
+				<![CDATA[
+				WHERE E.STTUS_CD_ID >= 'CTW_101_005'
+					AND E.ACCNUT_YY = CONVERT(VARCHAR(4),GETDATE(),112)
+					AND E.EVL_KND_CD_ID IN ('CTW_103_001', 'CTW_103_002')
+				]]>
+			</otherwise>
+		</choose>	
+		ORDER BY E.ACCNUT_YY, E.EVL_BGNDE, E.EVL_ENDDE
+	</select>
+	
+<!--RCM TAB -평가별 RCMcnt -->  	
+ 	<select id="byEvlRcmSttusCnt" resultType="EgovMap">
+ 		WITH HIST_RCM 
+ 		AS (-- 프로세스 
+			SELECT DISTINCT PH.PROCS_ID AS OBJECT_ID, PH.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+			FROM TB_CW_EVL_RCM_PROCS PH
+			WHERE PH.EVL_ID = #{evlId}
+			
+			UNION
+			-- 통제 
+			SELECT DISTINCT CH.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+			FROM TB_CW_EVL_RCM_CNRL CH
+			WHERE CH.EVL_ID = #{evlId}
+		)
+		SELECT 
+			  SUM((CASE WHEN H.OBJECT_KND_CD_ID = 'CTW_001_001' THEN 1 ELSE 0 END)) 	AS CNT1
+			, SUM((CASE WHEN H.OBJECT_KND_CD_ID = 'CTW_001_002' THEN 1 ELSE 0 END)) 	AS CNT2
+			, SUM((CASE WHEN H.OBJECT_KND_CD_ID = 'CTW_001_003' THEN 1 ELSE 0 END)) 	AS CNT3
+			, SUM((CASE WHEN H.OBJECT_KND_CD_ID = 'CTW_001_005' THEN 1 ELSE 0 END)) 	AS CNT5
+		FROM HIST_RCM H
+ 	</select> 
+ 	
+<!--RCM TAB - RCM  변천이력 현황 (평가별 변경현황) 1년간.. --> 
+ 	<select id="rcmModifySttusList" resultMap="rcmEvlMap">
+ 		SELECT 
+ 			  E.EVL_ID, E.PLAN_DCSN_TMSTMP, E.EVL_BGNDE, E.EVL_ENDDE
+ 			, E.EVL_SJ, E.ACCNUT_YY, E.EVL_KND_CD_ID, E.ACCNUT_SE_CD_ID
+ 			, LEAD( E.PLAN_DCSN_TMSTMP ) OVER( ORDER BY E.ACCNUT_YY ASC, E.EVL_BGNDE ASC, E.EVL_ENDDE ASC ) AS NEXT_PLAN_DCSN_TMSTMP  -- 다음행의 타임스탬프
+		FROM TB_CW_EVL E
+		<![CDATA[
+		WHERE 	E.STTUS_CD_ID >= 'CTW_101_005'
+			AND E.ACCNUT_YY < ISNULL(#{srchYy}, CONVERT(VARCHAR(4),GETDATE(),112))+1
+			AND E.ACCNUT_YY > ISNULL(#{srchYy}, CONVERT(VARCHAR(4),GETDATE(),112))-1 --N년간으로 변경시 이부분 변수입력으로 수정!!
+		]]>
+		ORDER BY E.ACCNUT_YY, E.EVL_BGNDE, E.EVL_ENDDE
+	</select>
+	
+<!--RCM TAB - RCM  변천이력 현황 (평가별 변경현황) -->  	
+  	<select id="byEvlSttusList" resultType="EgovMap">
+ 		WITH HIST_MODIFY_RCM 
+ 		AS (--MAPING 변경
+			SELECT DISTINCT MH.OBJECT_ID, MH. OBJECT_KND_CD_ID
+			FROM TB_CW_RCM_MAPNG_HIST MH
+			<![CDATA[
+			WHERE MH.BGNTMSTMP >= #{planDcsnTmstmp}
+				AND MH.BGNTMSTMP < #{nextPlanDcsnTmstmp}
+			]]>
+			
+			UNION
+			-- 프로세스 변경
+			SELECT DISTINCT PH.PROCS_ID AS OBJECT_ID, PH.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+			FROM TB_CW_RCM_PROCS_HIST PH
+			<![CDATA[
+			WHERE PH.BGNTMSTMP >= #{planDcsnTmstmp}
+				AND PH.BGNTMSTMP < #{nextPlanDcsnTmstmp}
+			]]>
+
+			/**			
+			UNION
+			-- 리스크 변경
+			SELECT DISTINCT RH.RISK_ID AS OBJECT_ID, 'CTW_001_004' AS OBJECT_KND_CD_ID
+			FROM TB_CW_RCM_RISK_HIST RH
+			<![CDATA[
+			WHERE RH.BGNTMSTMP >= #{planDcsnTmstmp}
+				AND RH.BGNTMSTMP < #{nextPlanDcsnTmstmp}
+			]]>
+			*/
+			
+			UNION
+			-- 통제 변경
+			SELECT DISTINCT CH.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+			FROM TB_CW_RCM_CNRL_HIST CH
+			<![CDATA[
+			WHERE CH.BGNTMSTMP >= #{planDcsnTmstmp}
+				AND CH.BGNTMSTMP < #{nextPlanDcsnTmstmp}
+			]]>
+		), HIST_RCM 
+			AS (--MAPING 변경
+			SELECT DISTINCT MH.OBJECT_ID, MH. OBJECT_KND_CD_ID
+			FROM TB_CW_RCM_MAPNG_HIST MH
+			WHERE #{planDcsnTmstmp} BETWEEN MH.BGNTMSTMP AND MH.ENDTMSTMP
+			
+			UNION
+			-- 프로세스 변경
+			SELECT DISTINCT PH.PROCS_ID AS OBJECT_ID, PH.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+			FROM TB_CW_RCM_PROCS_HIST PH
+			WHERE #{planDcsnTmstmp} BETWEEN PH.BGNTMSTMP AND PH.ENDTMSTMP
+			
+			/**		
+			UNION
+			-- 리스크 변경
+			SELECT DISTINCT RH.RISK_ID AS OBJECT_ID, 'CTW_001_004' AS OBJECT_KND_CD_ID
+			FROM TB_CW_RCM_RISK_HIST RH
+			WHERE #{planDcsnTmstmp} BETWEEN RH.BGNTMSTMP AND RH.ENDTMSTMP
+			*/
+			
+			UNION
+			-- 통제 변경
+			SELECT DISTINCT CH.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+			FROM TB_CW_RCM_CNRL_HIST CH
+			WHERE #{planDcsnTmstmp} BETWEEN CH.BGNTMSTMP AND CH.ENDTMSTMP
+		)
+		SELECT 
+			  M.OBJECT_KND_CD_ID
+			, C.CODE_NM	AS OBJECT_KND_CD_NM
+			, COUNT(M.OBJECT_ID)					AS TOTAL_RCM_CNT
+			, SUM((CASE WHEN H.OBJECT_ID IS NULL THEN 1 ELSE 0 END)) 	AS ORGINL_RCM_CNT
+			, SUM((CASE WHEN H.OBJECT_ID IS NULL THEN 0 ELSE 1 END)) 	AS MODIFY_RCM_CNT
+			, SUM((CASE WHEN M.OBJECT_ID IS NULL THEN 1 ELSE 0 END)) 	AS DELETE_RCM_CNT
+		FROM HIST_RCM M 
+		LEFT OUTER JOIN HIST_MODIFY_RCM H
+			ON M.OBJECT_ID = H.OBJECT_ID
+		LEFT OUTER JOIN TB_CO_CODE C
+			ON CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+               		THEN 'CTW_001_003' 
+               		ELSE M.OBJECT_KND_CD_ID END = C.CODE_ID
+		GROUP BY M.OBJECT_KND_CD_ID, C.CODE_NM
+ 	</select> 	 
+ 	
+<!-- ELC PART : START -->
+<!--RCM TAB - 현재 RCM 현황 CNT --> 
+ 	<select id="elcRcmCnt" resultType="EgovMap">
+		--현재  ELC RCM
+		SELECT 
+		  ISNULL(SUM((CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_001' THEN 1 ELSE 0 END )), 0) AS ELC_MEGA_CNT,
+		  ISNULL(SUM((CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_002' THEN 1 ELSE 0 END )), 0) AS ELC_MJR_CNT,
+		  ISNULL(SUM((CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_003' THEN 1 ELSE 0 END )), 0) AS ELC_SUB_CNT,
+		  /** ISNULL(SUM((CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_004' THEN 1 ELSE 0 END)), 0) AS ELC_RISK_CNT, */
+		  ISNULL(SUM((CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN 1 ELSE 0 END )), 0) AS ELC_CNRL_CNT
+		FROM TB_CW_ELC_RCM_MAPNG A
+ 	</select>
+ 	
+<!--RCM TAB - 현재 RCM 현황 (수정현황) -->  	
+ 	<select id="elcRcmSttus" resultType="EgovMap">
+ 		WITH DEL_PROCS 
+ 		AS (-- 프로세스 삭제
+	        SELECT DISTINCT PH.PROCS_ID AS OBJECT_ID, PH.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+	        FROM TB_CW_ELC_RCM_PROCS_HIST PH
+			<choose>
+				<when test='srchYy != null and srchYy != "" '>
+					<![CDATA[
+					WHERE PH.BGNTMSTMP >= #{srchYy} + '0101000000000000'
+						AND PH.BGNTMSTMP < #{srchYy}+1 + '0101000000000000'
+					]]>
+				</when>
+				<otherwise>
+					<![CDATA[
+					WHERE PH.BGNTMSTMP >= CONVERT(VARCHAR(4),GETDATE(),112)  + '0101000000000000'
+						AND PH.BGNTMSTMP < CONVERT(VARCHAR(4),GETDATE(),112) +1 + '0101000000000000'
+					]]>
+				</otherwise>
+			</choose>	
+              	AND PH.ENDTMSTMP != '99991231235959999999'
+	        EXCEPT
+	        SELECT DISTINCT P.PROCS_ID AS OBJECT_ID, P.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+	        FROM TB_CW_ELC_RCM_PROCS P
+		), 
+    	DEL_CNRL AS ( -- 통제 삭제
+	        SELECT DISTINCT CH.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+	        FROM TB_CW_ELC_RCM_CNRL_HIST CH
+			<choose>
+				<when test='srchYy != null and srchYy != "" '>
+					<![CDATA[
+					WHERE CH.BGNTMSTMP >= #{srchYy} + '0101000000000000'
+						AND CH.BGNTMSTMP < #{srchYy}+1 + '0101000000000000'
+					]]>
+				</when>
+				<otherwise>
+					<![CDATA[
+					WHERE CH.BGNTMSTMP >= CONVERT(VARCHAR(4),GETDATE(),112)  + '0101000000000000'
+						AND CH.BGNTMSTMP < CONVERT(VARCHAR(4),GETDATE(),112) +1 + '0101000000000000'
+					]]>
+				</otherwise>
+			</choose>	
+              	AND CH.ENDTMSTMP != '99991231235959999999'
+	        EXCEPT      
+	        SELECT DISTINCT C.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+	        FROM TB_CW_ELC_RCM_CNRL C
+		),
+ 		MODIFY_PROCS AS (-- 프로세스 수정
+	        SELECT DISTINCT PH.PROCS_ID AS OBJECT_ID, PH.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+	        FROM TB_CW_ELC_RCM_PROCS_HIST PH
+			<choose>
+				<when test='srchYy != null and srchYy != "" '>
+					<![CDATA[
+					WHERE PH.BGNTMSTMP >= #{srchYy} + '0101000000000000'
+						AND PH.BGNTMSTMP < #{srchYy}+1 + '0101000000000000'
+					]]>
+				</when>
+				<otherwise>
+					<![CDATA[
+					WHERE PH.BGNTMSTMP >= CONVERT(VARCHAR(4),GETDATE(),112)  + '0101000000000000'
+						AND PH.BGNTMSTMP < CONVERT(VARCHAR(4),GETDATE(),112) +1 + '0101000000000000'
+					]]>
+				</otherwise>
+			</choose>	
+	        INTERSECT
+	        SELECT DISTINCT P.PROCS_ID AS OBJECT_ID, P.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+	        FROM TB_CW_ELC_RCM_PROCS P
+		), 
+    	MODIFY_CNRL AS ( -- 통제 수정
+	        SELECT DISTINCT CH.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+	        FROM TB_CW_ELC_RCM_CNRL_HIST CH
+			<choose>
+				<when test='srchYy != null and srchYy != "" '>
+					<![CDATA[
+					WHERE CH.BGNTMSTMP >= #{srchYy} + '0101000000000000'
+						AND CH.BGNTMSTMP < #{srchYy}+1 + '0101000000000000'
+					]]>
+				</when>
+				<otherwise>
+					<![CDATA[
+					WHERE CH.BGNTMSTMP >= CONVERT(VARCHAR(4),GETDATE(),112)  + '0101000000000000'
+						AND CH.BGNTMSTMP < CONVERT(VARCHAR(4),GETDATE(),112) +1 + '0101000000000000'
+					]]>
+				</otherwise>
+			</choose>	
+        	INTERSECT      
+	        SELECT DISTINCT C.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+	        FROM TB_CW_ELC_RCM_CNRL C
+		)
+		SELECT 	TB.OBJECT_KND_CD_ID
+			  , TB.OBJECT_KND_CD_NM
+			  , COUNT(TB.OBJECT_ID)								AS TOTAL_RCM_CNT
+			  , SUM(CASE WHEN TB.ORGINL_OBJECT_ID IS NOT NULL 
+			  					AND TB.MODIFY_OBJECT_ID IS NULL THEN 1 ELSE 0 END)	AS ORGINL_RCM_CNT
+			  , SUM(CASE WHEN TB.MODIFY_OBJECT_ID IS NOT NULL THEN 1 ELSE 0 END) 	AS MODIFY_RCM_CNT
+			  , SUM(CASE WHEN TB.DEL_OBJECT_ID IS NOT NULL THEN 1 ELSE 0 END) 		AS DELETE_RCM_CNT
+    	FROM (
+     		SELECT  M.OBJECT_ID
+	        	  , M.OBJECT_KND_CD_ID
+	        	  , C.CODE_NM	AS OBJECT_KND_CD_NM
+            	  , OM.OBJECT_ID AS ORGINL_OBJECT_ID
+            	  , CASE WHEN M.OBJECT_KND_CD_ID != 'CTW_001_005' THEN DP.OBJECT_ID
+              			 ELSE DC.OBJECT_ID END DEL_OBJECT_ID
+            	  , CASE WHEN M.OBJECT_KND_CD_ID != 'CTW_001_005' THEN MP.OBJECT_ID
+              			 ELSE MC.OBJECT_ID END MODIFY_OBJECT_ID
+      		FROM (SELECT OBJECT_ID, OBJECT_KND_CD_ID FROM TB_CW_ELC_RCM_MAPNG_HIST GROUP BY OBJECT_ID, OBJECT_KND_CD_ID) M 
+            LEFT OUTER JOIN TB_CW_ELC_RCM_MAPNG OM
+            	ON M.OBJECT_ID = OM.OBJECT_ID
+            LEFT OUTER JOIN DEL_PROCS DP
+              	ON M.OBJECT_ID = DP.OBJECT_ID
+            LEFT OUTER JOIN DEL_CNRL DC
+              	ON M.OBJECT_ID = DC.OBJECT_ID
+            LEFT OUTER JOIN MODIFY_PROCS MP
+              	ON M.OBJECT_ID = MP.OBJECT_ID
+            LEFT OUTER JOIN MODIFY_CNRL MC
+              	ON M.OBJECT_ID = MC.OBJECT_ID
+      		LEFT OUTER JOIN TB_CO_CODE C
+        		ON CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+		               	THEN 'CTW_001_003' 
+		               	ELSE M.OBJECT_KND_CD_ID END = C.CODE_ID
+          	WHERE M.OBJECT_KND_CD_ID != 'CTW_001_004'
+    	) TB
+		GROUP BY TB.OBJECT_KND_CD_ID, TB.OBJECT_KND_CD_NM
+		ORDER BY TB.OBJECT_KND_CD_ID ASC
+ 	</select>
+
+<!--RCM TAB - 평가별 RCM 사용현황 현재년도.. --> 
+ 	<select id="byEvlElcRcmSttus" resultMap="evlElcRcmSttusMap">
+ 		SELECT 
+ 			  E.EVL_ID, E.PLAN_DCSN_TMSTMP, E.EVL_BGNDE, E.EVL_ENDDE
+ 			, E.EVL_SJ, E.ACCNUT_YY, E.EVL_KND_CD_ID, E.ACCNUT_SE_CD_ID
+ 			, LEAD( E.PLAN_DCSN_TMSTMP ) OVER( ORDER BY E.ACCNUT_YY ASC, E.EVL_BGNDE ASC, E.EVL_ENDDE ASC ) AS NEXT_PLAN_DCSN_TMSTMP  -- 다음행의 타임스탬프
+		FROM TB_CW_EVL E
+		<choose>
+			<when test='srchYy != null and srchYy != "" '>
+				<![CDATA[
+				WHERE E.STTUS_CD_ID >= 'CTW_101_005'
+					AND E.ACCNUT_YY =  #{srchYy}
+					AND E.EVL_KND_CD_ID IN ('CTW_103_003', 'CTW_103_004')
+				]]>
+			</when>
+			<otherwise>
+				<![CDATA[
+				WHERE E.STTUS_CD_ID >= 'CTW_101_005'
+					AND E.ACCNUT_YY = CONVERT(VARCHAR(4),GETDATE(),112)
+					AND E.EVL_KND_CD_ID IN ('CTW_103_003', 'CTW_103_004')
+				]]>
+			</otherwise>
+		</choose>	
+		ORDER BY E.ACCNUT_YY, E.EVL_BGNDE, E.EVL_ENDDE
+	</select>
+	
+<!--RCM TAB -평가별 RCMcnt -->  	
+ 	<select id="byEvlElcRcmSttusCnt" resultType="EgovMap">
+ 		WITH HIST_RCM 
+ 		AS (-- 프로세스 
+			SELECT DISTINCT PH.PROCS_ID AS OBJECT_ID, PH.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+			FROM TB_CW_EVL_ELC_RCM_PROCS PH
+			WHERE PH.EVL_ID = #{evlId}
+			
+			UNION
+			-- 통제 
+			SELECT DISTINCT CH.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+			FROM TB_CW_EVL_ELC_RCM_CNRL CH
+			WHERE CH.EVL_ID = #{evlId}
+		)
+		SELECT 
+			  SUM((CASE WHEN H.OBJECT_KND_CD_ID = 'CTW_001_001' THEN 1 ELSE 0 END )) 	AS CNT1
+			, SUM((CASE WHEN H.OBJECT_KND_CD_ID = 'CTW_001_002' THEN 1 ELSE 0 END)) 	AS CNT2
+			, SUM((CASE WHEN H.OBJECT_KND_CD_ID = 'CTW_001_003' THEN 1 ELSE 0 END)) 	AS CNT3
+			, SUM((CASE WHEN H.OBJECT_KND_CD_ID = 'CTW_001_005' THEN 1 ELSE 0 END)) 	AS CNT5
+		FROM HIST_RCM H
+ 	</select> 
+ 	
+<!--RCM TAB - RCM  변천이력 현황 (평가별 변경현황) 1년간.. --> 
+ 	<select id="elcRcmModifySttusList" resultMap="elcRcmEvlMap">
+ 		SELECT 
+ 			  E.EVL_ID, E.PLAN_DCSN_TMSTMP, E.EVL_BGNDE, E.EVL_ENDDE
+ 			, E.EVL_SJ, E.ACCNUT_YY, E.EVL_KND_CD_ID, E.ACCNUT_SE_CD_ID
+ 			, LEAD( E.PLAN_DCSN_TMSTMP ) OVER( ORDER BY E.ACCNUT_YY ASC, E.EVL_BGNDE ASC, E.EVL_ENDDE ASC ) AS NEXT_PLAN_DCSN_TMSTMP  -- 다음행의 타임스탬프
+		FROM TB_CW_EVL E
+		<![CDATA[
+		WHERE 	E.STTUS_CD_ID >= 'CTW_101_005'
+			AND E.ACCNUT_YY < ISNULL(#{srchYy}, CONVERT(VARCHAR(4),GETDATE(),112))+1
+			AND E.ACCNUT_YY > ISNULL(#{srchYy}, CONVERT(VARCHAR(4),GETDATE(),112))-1 --N년간으로 변경시 이부분 변수입력으로 수정!!
+		]]>
+		ORDER BY E.ACCNUT_YY, E.EVL_BGNDE, E.EVL_ENDDE
+	</select>
+	
+<!--RCM TAB - RCM  변천이력 현황 (평가별 변경현황) -->  	
+  	<select id="byEvlElcSttusList" resultType="EgovMap">
+ 		WITH HIST_MODIFY_RCM 
+ 		AS (--MAPING 변경
+			SELECT DISTINCT MH.OBJECT_ID, MH. OBJECT_KND_CD_ID
+			FROM TB_CW_ELC_RCM_MAPNG_HIST MH
+			<![CDATA[
+			WHERE MH.BGNTMSTMP >= #{planDcsnTmstmp}
+				AND MH.BGNTMSTMP < #{nextPlanDcsnTmstmp}
+				AND 
+			]]>
+			
+			UNION
+			-- 프로세스 변경
+			SELECT DISTINCT PH.PROCS_ID AS OBJECT_ID, PH.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+			FROM TB_CW_ELC_RCM_PROCS_HIST PH
+			<![CDATA[
+			WHERE PH.BGNTMSTMP >= #{planDcsnTmstmp}
+				AND PH.BGNTMSTMP < #{nextPlanDcsnTmstmp}
+			]]>
+			
+			/**
+			UNION
+			-- 리스크 변경
+			SELECT DISTINCT RH.RISK_ID AS OBJECT_ID, 'CTW_001_004' AS OBJECT_KND_CD_ID
+			FROM TB_CW_ELC_RCM_RISK_HIST RH
+			<![CDATA[
+			WHERE RH.BGNTMSTMP >= #{planDcsnTmstmp}
+				AND RH.BGNTMSTMP < #{nextPlanDcsnTmstmp}
+			]]>
+			*/
+			
+			UNION
+			-- 통제 변경
+			SELECT DISTINCT CH.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+			FROM TB_CW_ELC_RCM_CNRL_HIST CH
+			<![CDATA[
+			WHERE CH.BGNTMSTMP >= #{planDcsnTmstmp}
+				AND CH.BGNTMSTMP < #{nextPlanDcsnTmstmp}
+			]]>
+		), HIST_RCM 
+			AS (--MAPING 변경
+			SELECT DISTINCT MH.OBJECT_ID, MH. OBJECT_KND_CD_ID
+			FROM TB_CW_ELC_RCM_MAPNG_HIST MH
+			WHERE #{planDcsnTmstmp} BETWEEN MH.BGNTMSTMP AND MH.ENDTMSTMP
+			
+			UNION
+			-- 프로세스 변경
+			SELECT DISTINCT PH.PROCS_ID AS OBJECT_ID, PH.PROCS_KND_CD_ID AS OBJECT_KND_CD_ID
+			FROM TB_CW_ELC_RCM_PROCS_HIST PH
+			WHERE #{planDcsnTmstmp} BETWEEN PH.BGNTMSTMP AND PH.ENDTMSTMP
+			
+			/**
+			UNION
+			-- 리스크 변경
+			SELECT DISTINCT RH.RISK_ID AS OBJECT_ID, 'CTW_001_004' AS OBJECT_KND_CD_ID
+			FROM TB_CW_ELC_RCM_RISK_HIST RH
+			WHERE #{planDcsnTmstmp} BETWEEN RH.BGNTMSTMP AND RH.ENDTMSTMP
+			*/
+			
+			UNION
+			-- 통제 변경
+			SELECT DISTINCT CH.CNRL_ID AS OBJECT_ID, 'CTW_001_005' AS OBJECT_KND_CD_ID
+			FROM TB_CW_ELC_RCM_CNRL_HIST CH
+			WHERE #{planDcsnTmstmp} BETWEEN CH.BGNTMSTMP AND CH.ENDTMSTMP
+		)
+		SELECT 
+			  M.OBJECT_KND_CD_ID
+			, C.CODE_NM	AS OBJECT_KND_CD_NM
+			, COUNT(M.OBJECT_ID)					AS TOTAL_RCM_CNT
+			, SUM((CASE WHEN H.OBJECT_ID IS NULL THEN 1 ELSE 0 END)) 	AS ORGINL_RCM_CNT
+			, SUM((CASE WHEN H.OBJECT_ID IS NULL THEN 0 ELSE 1 END)) 	AS MODIFY_RCM_CNT
+			, SUM((CASE WHEN M.OBJECT_ID IS NULL THEN 1 ELSE 0 END)) 	AS DELETE_RCM_CNT
+		FROM HIST_RCM M 
+		LEFT OUTER JOIN HIST_MODIFY_RCM H
+			ON M.OBJECT_ID = H.OBJECT_ID
+		LEFT OUTER JOIN TB_CO_CODE C
+			ON CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+               		THEN 'CTW_001_003' 
+               		ELSE M.OBJECT_KND_CD_ID END = C.CODE_ID
+		GROUP BY M.OBJECT_KND_CD_ID, C.CODE_NM
+ 	</select> 	 
+<!-- ELC PART : END   -->
+ 	
+</mapper>

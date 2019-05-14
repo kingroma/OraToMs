@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.sc.tiabl.serviceimpl.CwscQlyIemMapper">
+	<!-- 질적항목 추가 목록 -->
+	<select id="list" resultType="EgovMap">
+		 SELECT
+		 	  A.QLY_ID
+			, A.QLY_BGNTMSTMP
+			, A.QLY_NM
+			, A.QLY_ABRV
+            , A.SORT_SN
+            , A.USE_AT
+            , (SELECT COUNT(QLY_ID) FROM TB_CW_SC_ACNTCTGR_QLY_MAPNG WHERE QLY_ID = A.QLY_ID AND QLY_BGNTMSTMP = A.QLY_BGNTMSTMP) LOWER_CNT      
+        FROM TB_CW_SC_ACNTCTGR_QLY_HIST A	
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			AND A.QLY_ENDTMSTMP = '99991231235959999999'
+	        <if test=' srchUseAt != null and srchUseAt != "" '>
+				AND A.USE_AT = #{srchUseAt} 
+			</if>	
+		</trim>
+        ORDER BY A.SORT_SN
+	</select>
+	
+	<!-- 질적항목 insert/update/delete -->
+	<insert id="insert">
+		BEGIN
+			
+			INSERT INTO TB_CW_SC_ACNTCTGR_QLY (
+				  QLY_ID, QLY_NM, QLY_ABRV, SORT_SN, USE_AT
+				, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+			) VALUES (
+				  #{qlyId}, #{qlyNm}, #{qlyAbrv}, #{sortSn}, #{useAt}
+				, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+			);
+			
+			INSERT INTO TB_CW_SC_ACNTCTGR_QLY_HIST (
+				  QLY_ID, QLY_BGNTMSTMP, QLY_ENDTMSTMP
+				, QLY_NM, QLY_ABRV, SORT_SN, USE_AT
+				, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+			) VALUES (
+				  #{qlyId}, #{qlyBgntmstmp}, '99991231235959999999'
+				, #{qlyNm}, #{qlyAbrv}, #{sortSn}, #{useAt}
+				, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+			);
+		END;
+	</insert>
+	
+	<update id="update">
+	<![CDATA[
+		BEGIN
+			UPDATE 	TB_CW_SC_ACNTCTGR_QLY_HIST 
+			SET		QLY_ENDTMSTMP 	= #{qlyEndtmstmp}
+			WHERE 	QLY_BGNTMSTMP 	< #{qlyEndtmstmp}
+				AND QLY_ENDTMSTMP 	= '99991231235959999999';
+			
+			DELETE FROM TB_CW_SC_ACNTCTGR_QLY;
+		END;
+	]]>
+	</update>
+	
+<!-- 	<delete id="delete">
+		DELETE 	TB_CW_SC_ACNTCTGR_QLY
+		WHERE 	QLY_ID 			= #{qlyId}
+			AND	QLY_BGNTMSTMP 	= #{qlyBgntmstmp}
+	</delete> -->
+	
+</mapper>

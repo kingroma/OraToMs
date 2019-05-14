@@ -1,0 +1,2394 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.elc.upload.serviceimpl.CwelcUploadMapper">
+
+	<select id="list" resultType="EgovMap">
+		SELECT 
+              A.UNITY_ID
+            , A.ID_INSPCT_AT   
+			, A.MEGA_INSPCT_AT 
+			, A.MJR_INSPCT_AT
+			, A.SUB_INSPCT_AT  
+			, A.RISK_INSPCT_AT 
+			, A.CNRL_INSPCT_AT 
+			, A.ORDER_INSPCT_AT 
+			<choose>
+				<when test=' elcRiskUseAt != "false" '>
+					, (CASE WHEN A.ID_INSPCT_AT='Y' AND A.MEGA_INSPCT_AT='Y' AND A.MJR_INSPCT_AT='Y' AND A.SUB_INSPCT_AT='Y' AND A.RISK_INSPCT_AT='Y' AND A.CNRL_INSPCT_AT='Y' 
+					   THEN 'Y' ELSE 'N' END) AS RCM_INSPCT_AT
+				</when>
+				<otherwise>
+					, (CASE WHEN A.ID_INSPCT_AT='Y' AND A.MEGA_INSPCT_AT='Y' AND A.MJR_INSPCT_AT='Y' AND A.SUB_INSPCT_AT='Y' AND A.CNRL_INSPCT_AT='Y' 
+					   THEN 'Y' ELSE 'N' END) AS RCM_INSPCT_AT
+				</otherwise>
+			</choose>
+            , A.MEGA_REFLCT_AT
+            , A.MJR_REFLCT_AT
+            , A.SUB_REFLCT_AT
+            , A.RISK_REFLCT_AT
+            , A.CNRL_REFLCT_AT
+            , A.UPD_DT
+            , CONVERT ( VARCHAR , A.UPD_DT , 23 ) + ' ' + CONVERT ( VARCHAR , A.UPD_DT , 8) AS UPD_DT_STR
+            , A.UPD_USER_ID
+            , B.USER_NM AS UPD_USER_NM
+            , C.FILE_ID
+            , C.FILE_SN
+            , C.FILE_EXTSN
+            , C.FILE_PATH
+            , C.FILE_NM
+            , C.FILE_ORGINL_NM
+            , C.FILE_SIZE
+        FROM TB_CW_ELC_RCM_UPLOAD A  
+        LEFT OUTER JOIN TB_CO_USER B   
+            ON A.UPD_USER_ID = B.USER_ID 
+        LEFT OUTER JOIN TB_CO_FILE C
+        	ON A.UNITY_ID = C.UNITY_ID
+        	AND C.DEL_AT = 'N'	
+        <trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+		            <when test="srchTy == 'fn'" > 	AND	C.FILE_ORGINL_NM LIKE '%' + #{srchWrd} + '%' 	</when>
+		            <when test="srchTy == 'un'" > 	AND	B.USER_NM        LIKE '%' + #{srchWrd} + '%' 	</when>
+				</choose>
+			</if> 
+		</trim>
+		ORDER BY A.RGS_DT DESC
+	</select>
+
+	<select id="view" resultType="CwelcUploadVO">
+		SELECT 
+              A.UNITY_ID
+            , A.ID_INSPCT_AT   
+			, A.MEGA_INSPCT_AT 
+			, A.MJR_INSPCT_AT
+			, A.SUB_INSPCT_AT  
+			, A.RISK_INSPCT_AT 
+			, A.CNRL_INSPCT_AT
+			, A.ORDER_INSPCT_AT
+			, (CASE WHEN A.ID_INSPCT_AT='Y' AND A.MEGA_INSPCT_AT='Y' AND A.MJR_INSPCT_AT='Y' AND A.SUB_INSPCT_AT='Y' AND A.RISK_INSPCT_AT='Y' AND A.CNRL_INSPCT_AT='Y' 
+			   THEN 'Y' ELSE 'N' END) AS RCM_INSPCT_AT   
+            , A.MEGA_REFLCT_AT
+            , A.MJR_REFLCT_AT
+            , A.SUB_REFLCT_AT
+            , A.RISK_REFLCT_AT
+            , A.CNRL_REFLCT_AT
+            , A.UPD_DT
+            , CONVERT ( VARCHAR , A.UPD_DT , 23 ) + ' ' + CONVERT ( VARCHAR , A.UPD_DT , 8) AS UPD_DT_STR
+            , A.UPD_USER_ID
+        FROM TB_CW_ELC_RCM_UPLOAD A  
+        WHERE A.UNITY_ID = #{unityId}	
+	</select>
+	
+<!-- context-excel.xml에서 이용 -->	
+	<insert id="insert">
+		INSERT INTO TB_CW_ELC_RCM_UPLOAD (
+			    UNITY_ID, ID_INSPCT_AT, MEGA_INSPCT_AT, MJR_INSPCT_AT, SUB_INSPCT_AT, RISK_INSPCT_AT, CNRL_INSPCT_AT, ORDER_INSPCT_AT
+			  , MEGA_REFLCT_AT, MJR_REFLCT_AT, SUB_REFLCT_AT, RISK_REFLCT_AT, CNRL_REFLCT_AT
+			  , RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES (
+			  #{unityId}, ISNULL(#{idInspctAt}, 'N'), ISNULL(#{megaInspctAt}, 'N'),  ISNULL(#{mjrInspctAt}, 'N'),  ISNULL(#{subInspctAt}, 'N'),  ISNULL(#{riskInspctAt}, 'N'),  ISNULL(#{cnrlInspctAt}, 'N'),  ISNULL(#{orderInspctAt}, 'N')
+			, ISNULL(#{megaReflctAt}, 'N'),  ISNULL(#{mjrReflctAt}, 'N'),  ISNULL(#{subReflctAt}, 'N'),  ISNULL(#{riskReflctAt}, 'N'),  ISNULL(#{cnrlReflctAt}, 'N')  
+			, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE TB_CW_ELC_RCM_UPLOAD SET 
+			  UPD_DT 	      = GETDATE()
+			, UPD_USER_ID     = #{suserId}
+			<if test=' idInspctAt != null and idInspctAt != "" '>     	, ID_INSPCT_AT   	= #{idInspctAt} 	</if>			
+			<if test=' megaInspctAt != null and megaInspctAt != "" '> 	, MEGA_INSPCT_AT 	= #{megaInspctAt} 	</if>			
+			<if test=' mjrInspctAt != null and mjrInspctAt != "" '>   	, MJR_INSPCT_AT  	= #{mjrInspctAt} 	</if>
+			<if test=' subInspctAt != null and subInspctAt != "" '>   	, SUB_INSPCT_AT  	= #{subInspctAt} 	</if>
+			<if test=' riskInspctAt != null and riskInspctAt != "" '> 	, RISK_INSPCT_AT 	= #{riskInspctAt} 	</if>		
+			<if test=' cnrlInspctAt != null and cnrlInspctAt != "" '> 	, CNRL_INSPCT_AT 	= #{cnrlInspctAt} 	</if>
+			<if test=' orderInspctAt != null and orderInspctAt != "" '> , ORDER_INSPCT_AT 	= #{orderInspctAt} 	</if>
+			<if test=' megaReflctAt != null and megaReflctAt != "" '> 	, MEGA_REFLCT_AT 	= #{megaReflctAt} 	</if>
+			<if test=' mjrReflctAt != null and mjrReflctAt != "" '>   	, MJR_REFLCT_AT  	= #{mjrReflctAt} 	</if>
+			<if test=' subReflctAt != null and subReflctAt != "" '>   	, SUB_REFLCT_AT  	= #{subReflctAt} 	</if>
+			<if test=' riskReflctAt != null and riskReflctAt != "" '> 	, RISK_REFLCT_AT 	= #{riskReflctAt} 	</if>
+			<if test=' cnrlReflctAt != null and cnrlReflctAt != "" '> 	, CNRL_REFLCT_AT 	= #{cnrlReflctAt} 	</if>
+		WHERE UNITY_ID = #{unityId}
+	</update>
+	
+	<delete id="delete">
+		DELETE FROM TB_CW_ELC_RCM_UPLOAD 
+		WHERE UNITY_ID = #{unityId}
+	</delete>
+	
+<!-- 업로드 정보 초기화 -->	
+	<update id="rcmUploadReset">
+		UPDATE TB_CW_ELC_RCM_UPLOAD SET 
+			  ID_INSPCT_AT    = 'N'
+			, MEGA_INSPCT_AT  = 'N'
+			, MJR_INSPCT_AT   = 'N'
+			, SUB_INSPCT_AT   = 'N'
+			, RISK_INSPCT_AT  = 'N'
+			, CNRL_INSPCT_AT  = 'N'
+			, ORDER_INSPCT_AT = 'N'
+			, MEGA_REFLCT_AT  = 'N'
+			, MJR_REFLCT_AT   = 'N'
+			, SUB_REFLCT_AT   = 'N'
+			, RISK_REFLCT_AT  = 'N'
+			, CNRL_REFLCT_AT  = 'N'
+			, UPD_DT 	      = GETDATE()
+			, UPD_USER_ID     = #{suserId}
+		WHERE UNITY_ID = #{unityId}
+	</update>
+
+	
+<!-- 메가 반영 : MAPNG_ID = 오프젝트ID+'_'+상위오프젝트ID -->
+	<insert id="megaReflct">
+	<![CDATA[
+	BEGIN
+		FOR list IN (
+			SELECT 
+			    DISTINCT MEGA_ID, MEGA_NO, MEGA_NM
+			FROM TB_CW_ELC_RCM_ORGINL
+			WHERE MEGA_ID IS NOT NULL
+				AND ISNULL(ID_ERROR_AT, 'N') !='Y' AND ISNULL(MEGA_ERROR_AT, 'N') != 'Y'
+				AND UNITY_ID = #{unityId}
+			ORDER BY MEGA_ID ASC	
+		) LOOP
+			
+		/** 01. 맵핑 입력/수정 */
+			MERGE INTO TB_CW_ELC_RCM_MAPNG T1
+			USING (VALUES (1)) AS Source (Number) 
+			ON ( T1.MAPNG_ID = list.MEGA_ID  ) 
+			WHEN MATCHED THEN
+				UPDATE SET
+					  OBJECT_ID			= list.MEGA_ID
+					, OBJECT_NO 		= list.MEGA_NO
+					, OBJECT_NM  		= list.MEGA_NM
+					, OBJECT_LEVEL  	= 1
+					, OBJECT_KND_CD_ID 	= 'CTW_001_001'
+					, UPPER_OBJECT_ID  	= NULL
+					, UPPER_MAPNG_ID   	= NULL
+					, UPD_DT 			= GETDATE()
+					, UPD_USER_ID 		= #{suserId} 
+			WHEN NOT MATCHED THEN 
+				INSERT (
+					  MAPNG_ID, OBJECT_ID, OBJECT_NO, OBJECT_NM, OBJECT_LEVEL, OBJECT_KND_CD_ID, UPPER_OBJECT_ID, UPPER_MAPNG_ID, CMPNY_CD_ID
+					, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+				) VALUES (
+					  list.MEGA_ID, list.MEGA_ID, list.MEGA_NO, list.MEGA_NM, 1, 'CTW_001_001', NULL, NULL, #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+				);
+				
+		/** 02. 맵핑 이력 종료/시작 */    
+	    	UPDATE TB_CW_ELC_RCM_MAPNG_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			      ,UPD_DT = GETDATE()
+			      ,UPD_USER_ID = #{suserId} 
+			 WHERE MAPNG_ID = list.MEGA_ID
+			   AND ENDTMSTMP = '99991231235959999999';
+	    
+			INSERT INTO TB_CW_ELC_RCM_MAPNG_HIST (
+					  MAPNG_ID, BGNTMSTMP, ENDTMSTMP, OBJECT_ID, OBJECT_NO, OBJECT_NM, OBJECT_LEVEL, OBJECT_KND_CD_ID, UPPER_OBJECT_ID, UPPER_MAPNG_ID, CMPNY_CD_ID
+					, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					  list.MEGA_ID, #{bgntmstmp}, '99991231235959999999', list.MEGA_ID, list.MEGA_NO, list.MEGA_NM, 1, 'CTW_001_001', NULL, NULL, #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 시스템 반영'
+				);		
+				
+		/** 03. 프로세스 입력/수정 */
+			MERGE INTO TB_CW_ELC_RCM_PROCS T1
+			USING (VALUES (1)) AS Source (Number) 
+			ON ( T1.PROCS_ID = list.MEGA_ID  ) 
+			WHEN MATCHED THEN
+				UPDATE SET
+					  PROCS_NO 		  = list.MEGA_NO				
+					, PROCS_NM  	  = list.MEGA_NM
+					, PROCS_KND_CD_ID = 'CTW_001_001'
+					, UPD_DT 		  = GETDATE()
+					, UPD_USER_ID 	  = #{suserId} 
+			WHEN NOT MATCHED THEN 
+				INSERT (
+					  PROCS_ID, PROCS_NO, PROCS_NM, PROCS_KND_CD_ID, CMPNY_CD_ID
+					, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+				) VALUES (
+					  list.MEGA_ID, list.MEGA_NO, list.MEGA_NM, 'CTW_001_001', #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+				);
+				
+		/** 04. 프로세스 이력 종료/시작 */    
+	    	UPDATE TB_CW_ELC_RCM_PROCS_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			      ,UPD_DT = GETDATE()
+			      ,UPD_USER_ID = #{suserId} 
+			 WHERE PROCS_ID = list.MEGA_ID
+			   AND ENDTMSTMP = '99991231235959999999';
+	    
+			INSERT INTO TB_CW_ELC_RCM_PROCS_HIST (
+					  PROCS_ID, BGNTMSTMP, ENDTMSTMP, PROCS_NO, PROCS_NM, PROCS_KND_CD_ID, CMPNY_CD_ID
+					, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					  list.MEGA_ID, #{bgntmstmp}, '99991231235959999999', list.MEGA_NO, list.MEGA_NM, 'CTW_001_001', #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 시스템 반영'
+				);		
+		END LOOP;	
+	END; 
+	]]>
+	</insert>
+	
+	
+<!-- 메이저 적용 -->
+	<insert id="mjrReflct">
+	<![CDATA[
+	BEGIN
+		FOR list IN (
+			SELECT 
+			    DISTINCT MEGA_ID, MJR_ID, MJR_NO, MJR_NM
+			FROM TB_CW_ELC_RCM_ORGINL
+			WHERE MJR_ID IS NOT NULL
+				AND ISNULL(ID_ERROR_AT, 'N') !='Y' AND ISNULL(MEGA_ERROR_AT, 'N') != 'Y' 
+				AND ISNULL(MJR_ERROR_AT, 'N') != 'Y'
+				AND UNITY_ID = #{unityId}
+			ORDER BY MJR_ID ASC	
+		) LOOP
+		
+		/** 01. 맵핑 입력/수정 */
+			MERGE INTO TB_CW_ELC_RCM_MAPNG T1
+			USING (VALUES (1)) AS Source (Number) 
+			ON ( T1.MAPNG_ID = ( list.MJR_ID+'_'+list.MEGA_ID )  )
+			WHEN MATCHED THEN
+				UPDATE SET
+					  OBJECT_ID			= list.MJR_ID
+					, OBJECT_NO 		= list.MJR_NO
+					, OBJECT_NM  		= list.MJR_NM
+					, OBJECT_LEVEL  	= 2
+					, OBJECT_KND_CD_ID 	= 'CTW_001_002'
+					, UPPER_OBJECT_ID  	= list.MEGA_ID
+					, UPPER_MAPNG_ID   	= list.MEGA_ID
+					, UPD_DT 			= GETDATE()
+					, UPD_USER_ID 		= #{suserId} 
+			WHEN NOT MATCHED THEN 
+				INSERT (
+					  MAPNG_ID, OBJECT_ID, OBJECT_NO, OBJECT_NM, OBJECT_LEVEL, OBJECT_KND_CD_ID, UPPER_OBJECT_ID, UPPER_MAPNG_ID, CMPNY_CD_ID
+					, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+				) VALUES (
+					  ( list.MJR_ID+'_'+list.MEGA_ID ), list.MJR_ID, list.MJR_NO, list.MJR_NM, 2, 'CTW_001_002', list.MEGA_ID, list.MEGA_ID, #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+				);
+				
+		/** 02. 맵핑 이력 종료/시작 */    
+	    	UPDATE TB_CW_ELC_RCM_MAPNG_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			      ,UPD_DT = GETDATE()
+			      ,UPD_USER_ID = #{suserId} 
+			 WHERE MAPNG_ID = ( list.MJR_ID+'_'+list.MEGA_ID )
+			   AND ENDTMSTMP = '99991231235959999999';
+	    
+			INSERT INTO TB_CW_ELC_RCM_MAPNG_HIST (
+					  MAPNG_ID, BGNTMSTMP, ENDTMSTMP, OBJECT_ID, OBJECT_NO, OBJECT_NM, OBJECT_LEVEL, OBJECT_KND_CD_ID, UPPER_OBJECT_ID, UPPER_MAPNG_ID, CMPNY_CD_ID
+					, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					  ( list.MJR_ID+'_'+list.MEGA_ID ), #{bgntmstmp}, '99991231235959999999', list.MJR_ID, list.MJR_NO, list.MJR_NM, 2, 'CTW_001_002', list.MEGA_ID, list.MEGA_ID, #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 시스템 반영'
+				);
+				     
+		/** 03. 프로세스 입력/수정 */
+			MERGE INTO TB_CW_ELC_RCM_PROCS T1
+			USING (VALUES (1)) AS Source (Number) 
+			ON ( T1.PROCS_ID = list.MJR_ID  ) 
+			WHEN MATCHED THEN
+				UPDATE SET
+					  PROCS_NO 		  = list.MJR_NO				
+					, PROCS_NM  	  = list.MJR_NM
+					, PROCS_KND_CD_ID = 'CTW_001_002'
+					, UPD_DT 		  = GETDATE()
+					, UPD_USER_ID 	  = #{suserId} 
+			WHEN NOT MATCHED THEN 
+				INSERT (
+					  PROCS_ID, PROCS_NO, PROCS_NM, PROCS_KND_CD_ID, CMPNY_CD_ID
+					, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+				) VALUES (
+					  list.MJR_ID, list.MJR_NO, list.MJR_NM, 'CTW_001_002', #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+				);	
+				
+		/** 04. 프로세스 이력 종료/시작 */    
+	    	UPDATE TB_CW_ELC_RCM_PROCS_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			      ,UPD_DT = GETDATE()
+			      ,UPD_USER_ID = #{suserId} 
+			 WHERE PROCS_ID = list.MJR_ID
+			   AND ENDTMSTMP = '99991231235959999999';
+	    
+			INSERT INTO TB_CW_ELC_RCM_PROCS_HIST (
+					  PROCS_ID, BGNTMSTMP, ENDTMSTMP, PROCS_NO, PROCS_NM, PROCS_KND_CD_ID, CMPNY_CD_ID
+					, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					  list.MJR_ID, #{bgntmstmp}, '99991231235959999999', list.MJR_NO, list.MJR_NM, 'CTW_001_002', #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 시스템 반영'
+				);
+		END LOOP;	
+	END;
+	]]>
+	</insert>
+	
+<!-- 서브 적용 -->
+	<insert id="subReflct">
+	<![CDATA[
+	BEGIN
+		FOR list IN (
+			SELECT 
+			    DISTINCT MEGA_ID, MJR_ID, SUB_ID, SUB_NO, SUB_NM
+			FROM TB_CW_ELC_RCM_ORGINL
+			WHERE SUB_ID IS NOT NULL
+				AND ISNULL(ID_ERROR_AT, 'N') !='Y' AND ISNULL(MEGA_ERROR_AT, 'N') != 'Y' 
+				AND ISNULL(MJR_ERROR_AT, 'N') != 'Y' AND ISNULL(SUB_ERROR_AT, 'N') != 'Y'
+				AND UNITY_ID = #{unityId}
+			ORDER BY SUB_ID ASC	
+		) LOOP
+		
+		/** 01. 맵핑 입력/수정 */
+			MERGE INTO TB_CW_ELC_RCM_MAPNG T1
+			USING (VALUES (1)) AS Source (Number) 
+			ON ( T1.MAPNG_ID = ( list.SUB_ID+'_'+list.MJR_ID )  )			
+			WHEN MATCHED THEN
+				UPDATE SET
+					  OBJECT_ID			= list.SUB_ID
+					, OBJECT_NO 		= list.SUB_NO
+					, OBJECT_NM  		= list.SUB_NM
+					, OBJECT_LEVEL  	= 3
+					, OBJECT_KND_CD_ID 	= 'CTW_001_003'
+					, UPPER_OBJECT_ID  	= list.MJR_ID
+					, UPPER_MAPNG_ID   	= ( list.MJR_ID+'_'+list.MEGA_ID )
+					, UPD_DT 			= GETDATE()
+					, UPD_USER_ID 		= #{suserId} 
+			WHEN NOT MATCHED THEN 
+				INSERT (
+					  MAPNG_ID, OBJECT_ID, OBJECT_NO, OBJECT_NM, OBJECT_LEVEL, OBJECT_KND_CD_ID, UPPER_OBJECT_ID, UPPER_MAPNG_ID, CMPNY_CD_ID
+					, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+				) VALUES (
+					  ( list.SUB_ID+'_'+list.MJR_ID ), list.SUB_ID, list.SUB_NO, list.SUB_NM, 3, 'CTW_001_003', list.MJR_ID, ( list.MJR_ID+'_'+list.MEGA_ID ), #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+				);
+				
+		/** 02. 맵핑 이력 종료/시작 */    
+	    	UPDATE TB_CW_ELC_RCM_MAPNG_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			      ,UPD_DT = GETDATE()
+			      ,UPD_USER_ID = #{suserId} 
+			 WHERE MAPNG_ID = ( list.SUB_ID+'_'+list.MJR_ID )
+			   AND ENDTMSTMP = '99991231235959999999';
+	    
+			INSERT INTO TB_CW_ELC_RCM_MAPNG_HIST (
+					  MAPNG_ID, BGNTMSTMP, ENDTMSTMP, OBJECT_ID, OBJECT_NO, OBJECT_NM, OBJECT_LEVEL, OBJECT_KND_CD_ID, UPPER_OBJECT_ID, UPPER_MAPNG_ID, CMPNY_CD_ID
+					, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					  ( list.SUB_ID+'_'+list.MJR_ID ), #{bgntmstmp}, '99991231235959999999', list.SUB_ID, list.SUB_NO, list.SUB_NM, 3, 'CTW_001_003', list.MJR_ID, ( list.MJR_ID+'_'+list.MEGA_ID ), #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 시스템 반영'
+				);
+				
+		/** 03. 프로세스 입력/수정 */
+			MERGE INTO TB_CW_ELC_RCM_PROCS T1
+			USING (VALUES (1)) AS Source (Number) 
+			ON ( T1.PROCS_ID = list.SUB_ID  ) 
+			WHEN MATCHED THEN
+				UPDATE SET
+					  PROCS_NO 		  = list.SUB_NO				
+					, PROCS_NM  	  = list.SUB_NM
+					, PROCS_KND_CD_ID = 'CTW_001_003'
+					, UPD_DT 		  = GETDATE()
+					, UPD_USER_ID 	  = #{suserId} 
+			WHEN NOT MATCHED THEN 
+				INSERT (
+					  PROCS_ID, PROCS_NO, PROCS_NM, PROCS_KND_CD_ID, CMPNY_CD_ID
+					, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+				) VALUES (
+					  list.SUB_ID, list.SUB_NO, list.SUB_NM, 'CTW_001_003', #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+				);
+					
+		/** 04. 프로세스 이력 종료/시작 */    
+	    	UPDATE TB_CW_ELC_RCM_PROCS_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			      ,UPD_DT = GETDATE()
+			      ,UPD_USER_ID = #{suserId} 
+			 WHERE PROCS_ID = list.SUB_ID
+ 			   AND ENDTMSTMP = '99991231235959999999';
+	    
+			INSERT INTO TB_CW_ELC_RCM_PROCS_HIST (
+					  PROCS_ID, BGNTMSTMP, ENDTMSTMP, PROCS_NO, PROCS_NM, PROCS_KND_CD_ID, CMPNY_CD_ID
+					, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					  list.SUB_ID, #{bgntmstmp}, '99991231235959999999', list.SUB_NO, list.SUB_NM, 'CTW_001_003', #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 시스템 반영'
+				);			
+		END LOOP;	
+	END;
+	]]>
+	</insert>
+	
+<!-- 리스크 적용 -->
+	<insert id="riskReflct">
+	<![CDATA[
+	BEGIN
+		FOR list IN (
+			SELECT 
+			    DISTINCT MEGA_ID, MJR_ID, SUB_ID
+			    , RISK_ID, RISK_NO, RISK_NM, RISK_CN
+			    , WCGW, FNLTT_DSTOR_RISK, RISK_EVL_RESULT, RISK_EVL_REASON
+			FROM TB_CW_ELC_RCM_ORGINL
+			WHERE RISK_ID IS NOT NULL
+				AND ISNULL(ID_ERROR_AT, 'N') !='Y' AND ISNULL(MEGA_ERROR_AT, 'N') != 'Y' 
+				AND ISNULL(MJR_ERROR_AT, 'N') != 'Y' AND ISNULL(SUB_ERROR_AT, 'N') != 'Y'
+				AND ISNULL(RISK_ERROR_AT, 'N') != 'Y'
+				AND UNITY_ID = #{unityId}
+			ORDER BY RISK_ID ASC	
+		) LOOP
+		
+		/** 01. 맵핑 입력/수정 */
+			MERGE INTO TB_CW_ELC_RCM_MAPNG T1
+			USING (VALUES (1)) AS Source (Number) 
+			ON ( T1.MAPNG_ID = ( list.RISK_ID+'_'+ISNULL(list.SUB_ID, list.MJR_ID) )  ) 
+			WHEN MATCHED THEN
+				UPDATE SET
+					  OBJECT_ID			= list.RISK_ID
+					, OBJECT_NO 		= list.RISK_NO
+					, OBJECT_NM  		= list.RISK_NM
+					, OBJECT_LEVEL  	= (CASE WHEN list.SUB_ID IS NULL THEN 3 ELSE 4 END)
+					, OBJECT_KND_CD_ID 	= 'CTW_001_004'
+					, UPPER_OBJECT_ID  	= ISNULL(list.SUB_ID, list.MJR_ID)
+					, UPPER_MAPNG_ID   	= (CASE WHEN list.SUB_ID IS NULL THEN (list.MJR_ID+'_'+list.MEGA_ID) ELSE (list.SUB_ID+'_'+list.MJR_ID) END)
+					, UPD_DT 			= GETDATE()
+					, UPD_USER_ID 		= #{suserId} 
+			WHEN NOT MATCHED THEN
+				INSERT (
+					  MAPNG_ID, OBJECT_ID, OBJECT_NO, OBJECT_NM, OBJECT_LEVEL, OBJECT_KND_CD_ID, UPPER_OBJECT_ID, UPPER_MAPNG_ID, CMPNY_CD_ID
+                	, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+				) VALUES (
+					  ( list.RISK_ID+'_'+ISNULL(list.SUB_ID, list.MJR_ID) )
+				  	, list.RISK_ID
+				  	, list.RISK_NO
+				  	, list.RISK_NM
+				  	, (CASE WHEN list.SUB_ID IS NULL THEN 3 ELSE 4 END)
+				  	, 'CTW_001_004'
+				  	, ISNULL(list.SUB_ID, list.MJR_ID)
+				  	, (CASE WHEN list.SUB_ID IS NULL THEN (list.MJR_ID+'_'+list.MEGA_ID) ELSE (list.SUB_ID+'_'+list.MJR_ID) END)
+				  	, #{cmpnyCdId}
+				  	, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+				);
+				
+	    /** 02. 맵핑 이력 종료/시작 */    
+	    	UPDATE TB_CW_ELC_RCM_MAPNG_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			      ,UPD_DT = GETDATE()
+			      ,UPD_USER_ID = #{suserId} 
+			 WHERE MAPNG_ID = ( list.RISK_ID+'_'+ISNULL(list.SUB_ID, list.MJR_ID) )
+			   AND ENDTMSTMP = '99991231235959999999';
+	    
+			INSERT INTO TB_CW_ELC_RCM_MAPNG_HIST (
+					  MAPNG_ID, BGNTMSTMP, ENDTMSTMP, OBJECT_ID, OBJECT_NO, OBJECT_NM, OBJECT_LEVEL, OBJECT_KND_CD_ID, UPPER_OBJECT_ID, UPPER_MAPNG_ID, CMPNY_CD_ID
+                	, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					  ( list.RISK_ID+'_'+ISNULL(list.SUB_ID, list.MJR_ID) )
+					, #{bgntmstmp}
+					, '99991231235959999999'  
+				  	, list.RISK_ID
+				  	, list.RISK_NO
+				  	, list.RISK_NM
+				  	, (CASE WHEN list.SUB_ID IS NULL THEN 3 ELSE 4 END)
+				  	, 'CTW_001_004'
+				  	, ISNULL(list.SUB_ID, list.MJR_ID)
+				  	, (CASE WHEN list.SUB_ID IS NULL THEN (list.MJR_ID+'_'+list.MEGA_ID) ELSE (list.SUB_ID+'_'+list.MJR_ID) END)
+				  	, #{cmpnyCdId}
+				  	, GETDATE(), #{suserId}, GETDATE()
+				  	, #{suserId}
+				  	, 'RCM 시스템 반영'
+				);		
+				
+		/** 03. 리스크 입력/수정 */
+			MERGE INTO TB_CW_ELC_RCM_RISK T1
+			USING (VALUES (1)) AS Source (Number) 
+			ON ( T1.RISK_ID = list.RISK_ID  ) 
+			WHEN MATCHED THEN
+				UPDATE SET
+					  RISK_NO 			= list.RISK_NO
+					, RISK_NM 			= list.RISK_NM
+					, RISK_CN 			= list.RISK_CN
+					, WCGW    			= list.WCGW
+					, FNLTT_DSTOR_RISK  = list.FNLTT_DSTOR_RISK
+					, RISK_EVL_RESULT   = list.RISK_EVL_RESULT
+					, RISK_EVL_REASON   = list.RISK_EVL_REASON
+					, UPD_DT 	  = GETDATE()
+					, UPD_USER_ID = #{suserId}
+			WHEN NOT MATCHED THEN 
+				INSERT (
+					    RISK_ID, RISK_NO, RISK_NM, RISK_CN
+			   		  , WCGW, FNLTT_DSTOR_RISK, RISK_EVL_RESULT, RISK_EVL_REASON
+					  , CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+				) VALUES (
+					  list.RISK_ID, list.RISK_NO, list.RISK_NM, list.RISK_CN
+			   		, list.WCGW, list.FNLTT_DSTOR_RISK, list.RISK_EVL_RESULT, list.RISK_EVL_REASON
+					, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+				);
+				
+		/** 04. 리스크 이력 종료/시작 */    
+	    	UPDATE TB_CW_ELC_RCM_RISK_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			      ,UPD_DT = GETDATE()
+			      ,UPD_USER_ID = #{suserId} 
+			 WHERE RISK_ID = list.RISK_ID
+			   AND ENDTMSTMP = '99991231235959999999';
+	    
+			INSERT INTO TB_CW_ELC_RCM_RISK_HIST (
+					  RISK_ID, BGNTMSTMP, ENDTMSTMP, RISK_NO, RISK_NM, RISK_CN
+			   		  , WCGW, FNLTT_DSTOR_RISK, RISK_EVL_RESULT, RISK_EVL_REASON
+					  , CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					  list.RISK_ID, #{bgntmstmp}, '99991231235959999999', list.RISK_NO, list.RISK_NM, list.RISK_CN
+			   		, list.WCGW, list.FNLTT_DSTOR_RISK, list.RISK_EVL_RESULT, list.RISK_EVL_REASON
+					, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 시스템 반영'
+				);			
+		END LOOP;	
+	END;
+	]]>
+	</insert>
+
+<!-- 통제 적용 -->
+	<insert id="cnrlReflct">
+	<![CDATA[
+	BEGIN
+		FOR list IN (
+			SELECT
+			    DISTINCT MEGA_ID, MJR_ID, SUB_ID, RISK_ID
+			  , CNRL_ID, CNRL_NO, CNRL_NM, CNRL_CN
+			  , KEY_CNRL, REFRN_NO, CNRL_RELATE_REF
+			  , CNRL_EXC_UPPER_DEPT, CNRL_EXC_DEPT, CNRL_EXCBER
+			  , CNRL_RSPNSBL_UPPER_DEPT, CNRL_RSPNSBL_DEPT, CNRL_RSPNBER
+			  , CNRL_REG_NM, CNRL_RELATE_DOC, CNRL_RELATE_SYS, CNRL_RM
+			  , CNRL_PURPS, CNRL_PURPS_CHOISE, CNRL_PURPS_RELIABILITY_FIN, CNRL_PURPS_ASSET_PROTECTION, CNRL_PURPS_FRAUD_PREVENTION
+			  , CNRL_TY, CNRL_TY_CECK01, CNRL_TY_CECK02, CNRL_TY_CECK03, CNRL_TY_CECK04, CNRL_TY_CECK05, CNRL_TY_CECK06, CNRL_TY_CECK07, CNRL_TY_CECK08, CNRL_TY_CECK09
+			  , CNRL_TY01, CNRL_TY02, CNRL_TY03, CNRL_TY03_AUTO, CNRL_TY03_MANUAL, CNRL_TY03_AUTOMANUAL
+			  , DELNG_TY, CNRL_CTGRY, CNRL_CYCLE
+			  , CNRL_CYCLE01, CNRL_CYCLE02, CNRL_CYCLE03, CNRL_CYCLE04, CNRL_CYCLE05, CNRL_CYCLE06, CNRL_CYCLE07, CNRL_CYCLE08, CNRL_CYCLE09
+			  , OFFICE_TY, DSGN_EFCT, OPER_EFCT, CNRL_UPRPD_NO
+			  , MRC_CNRL, MRC_CTGRY, MRC_NO
+			  , IPE_CNRL, IPE_CTGRY, IPE_NO, IPE_NM, IPE_TEST_PROCSS
+			  , COSO_NO
+			  , TEST_CYCLE
+			  , TEST_CYCLE01, TEST_CYCLE02, TEST_CYCLE03, TEST_CYCLE04, TEST_CYCLE05, TEST_CYCLE06, TEST_CYCLE07, TEST_CYCLE08, TEST_CYCLE09
+			  , TEST_RELATION_DOC, TEST_TRGET, SAMPLE_SIZE, TEST_PROCSS, EXCP_CNT
+			  , TEST_MTH, TEST_MTH_QUESTION, TEST_MTH_OBSERVE, TEST_MTH_VERIFICATION, TEST_MTH_RE_RUN, TEST_MTH_TRACKING
+			  , ATMC_SAMPLE, TEST_SANCTN, CNRL_ANT_CTGR_CODE, CNRL_ACNTCTGR, RELATE_ACNTCTGR_PBLNTF, CNRL_REMARK
+			  , ASSE_C, ASSE_E, ASSE_R, ASSE_V, ASSE_P, ASSE_S, ASSE_O, ASSE_A, ASSE_PF
+			  , TREXAMIN_PROCSS, TREXAMIN_PRUF, TREXAMIN_CNCLSN
+			  , RISK_RESIDUAL_LIKEHOOD, RISK_RESIDUAL_IMPACT, RISK_RESIDUAL_RATING
+			  , CNRL_RESIDUAL_LIKEHOOD, CNRL_RESIDUAL_IMPACT, CNRL_RESIDUAL_RATING, CNRL_IMPRVM_NM, CNRL_IMPRVM_CN			    
+			  , FNREP_RISKEVL_CSFCTR01, FNREP_RISKEVL_CSFCTR02, FNREP_RISKEVL_CSFCTR03
+              , FNREP_RISKEVL_CSFCTR04, FNREP_RISKEVL_CSFCTR05, FNREP_RISKEVL_CSFCTR06
+              , FNREP_RISKEVL_CSFCTR07, FNREP_RISKEVL_CSFCTR08, FNREP_RISKEVL_CSFCTR09, FNREP_RISKEVL_CSFCTR10
+              , FNREP_CNRL_RISK_CNCLSN, FNREP_ACNT_RISK_CNCLSN, FNREP_PROCS_RISK_CNCLSN, FNREP_GNRLZ_EVL_CNCLSN
+			FROM TB_CW_ELC_RCM_ORGINL
+			WHERE CNRL_ID IS NOT NULL
+				AND ISNULL(ID_ERROR_AT, 'N') !='Y' AND ISNULL(MEGA_ERROR_AT, 'N') != 'Y' 
+				AND ISNULL(MJR_ERROR_AT, 'N') != 'Y' AND ISNULL(SUB_ERROR_AT, 'N') != 'Y'
+				AND ISNULL(RISK_ERROR_AT, 'N') != 'Y' AND ISNULL(CNRL_ERROR_AT, 'N') != 'Y'
+				AND UNITY_ID = #{unityId}
+			ORDER BY CNRL_ID ASC	
+		) LOOP
+		
+		/** 01. 맵핑 입력/수정 */
+			MERGE INTO TB_CW_ELC_RCM_MAPNG T1
+			USING (VALUES (1)) AS Source (Number) 			
+			ON ( T1.MAPNG_ID = ( list.CNRL_ID+'_'+list.RISK_ID )  ) 
+			WHEN MATCHED THEN
+				UPDATE SET
+					  OBJECT_ID			= list.CNRL_ID
+					, OBJECT_NO 		= list.CNRL_NO
+					, OBJECT_NM  		= list.CNRL_NM
+					, OBJECT_LEVEL  	= (CASE WHEN list.SUB_ID IS NULL THEN 4 ELSE 5 END)
+					, OBJECT_KND_CD_ID 	= 'CTW_001_005'
+					, UPPER_OBJECT_ID  	= list.RISK_ID
+					, UPPER_MAPNG_ID   	= ( list.RISK_ID+'_'+ISNULL(list.SUB_ID, list.MJR_ID) )
+					, UPD_DT 			= GETDATE()
+					, UPD_USER_ID 		= #{suserId} 
+			WHEN NOT MATCHED THEN
+				INSERT (
+					  MAPNG_ID, OBJECT_ID, OBJECT_NO, OBJECT_NM, OBJECT_LEVEL, OBJECT_KND_CD_ID, UPPER_OBJECT_ID, UPPER_MAPNG_ID, CMPNY_CD_ID
+                	, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+				) VALUES (
+					  ( list.CNRL_ID+'_'+list.RISK_ID )
+					, list.CNRL_ID
+				  	, list.CNRL_NO
+				  	, list.CNRL_NM
+				  	, (CASE WHEN list.SUB_ID IS NULL THEN 4 ELSE 5 END)
+				  	, 'CTW_001_005'
+				  	, list.RISK_ID
+				  	, ( list.RISK_ID+'_'+ISNULL(list.SUB_ID, list.MJR_ID) )
+				  	, #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+				);
+				
+		/** 02. 맵핑 이력 종료/시작 */    
+	    	UPDATE TB_CW_ELC_RCM_MAPNG_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			      ,UPD_DT = GETDATE()
+			      ,UPD_USER_ID = #{suserId} 
+			 WHERE MAPNG_ID = ( list.CNRL_ID+'_'+list.RISK_ID )
+			   AND ENDTMSTMP = '99991231235959999999';
+	        
+			INSERT INTO TB_CW_ELC_RCM_MAPNG_HIST (
+					  MAPNG_ID, BGNTMSTMP, ENDTMSTMP, OBJECT_ID, OBJECT_NO, OBJECT_NM, OBJECT_LEVEL, OBJECT_KND_CD_ID, UPPER_OBJECT_ID, UPPER_MAPNG_ID, CMPNY_CD_ID
+                	, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					  ( list.CNRL_ID+'_'+list.RISK_ID )
+					, #{bgntmstmp}
+					, '99991231235959999999'
+					, list.CNRL_ID
+				  	, list.CNRL_NO
+				  	, list.CNRL_NM
+				  	, (CASE WHEN list.SUB_ID IS NULL THEN 4 ELSE 5 END)
+				  	, 'CTW_001_005'
+				  	, list.RISK_ID
+				  	, ( list.RISK_ID+'_'+ISNULL(list.SUB_ID, list.MJR_ID) )
+				  	, #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+					, 'RCM 시스템 반영'
+				);
+				
+		/** 03. 통제 입력/수정 */
+			MERGE INTO TB_CW_ELC_RCM_CNRL T1
+			USING (VALUES (1)) AS Source (Number) 
+			ON ( T1.CNRL_ID = list.CNRL_ID  ) 
+			WHEN MATCHED THEN
+				UPDATE SET            
+					  CNRL_NO        	 			= list.CNRL_NO        
+					, CNRL_NM         				= list.CNRL_NM        
+					, CNRL_CN         				= list.CNRL_CN  
+					, KEY_CNRL_AT  					= (CASE WHEN list.KEY_CNRL = '예' OR UPPER(SUBSTR(list.KEY_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, REFRN_NO  					= list.REFRN_NO
+					, CNRL_RELATE_REF  				= list.CNRL_RELATE_REF
+					, CNRL_EXC_UPPER_DEPT  			= list.CNRL_EXC_UPPER_DEPT
+					, CNRL_EXC_DEPT  				= list.CNRL_EXC_DEPT
+					, CNRL_EXCBER  					= list.CNRL_EXCBER
+					, CNRL_RSPNSBL_UPPER_DEPT  		= list.CNRL_RSPNSBL_UPPER_DEPT
+					, CNRL_RSPNSBL_DEPT  			= list.CNRL_RSPNSBL_DEPT
+					, CNRL_RSPNBER  				= list.CNRL_RSPNBER
+					, RELATE_REGLTN_NM  			= list.CNRL_REG_NM
+					, CNRL_RELATE_DOC  				= list.CNRL_RELATE_DOC
+					, CNRL_RELATE_SYS  				= list.CNRL_RELATE_SYS
+					, CNRL_RM  						= list.CNRL_RM
+					, CNRL_PURPS  					= list.CNRL_PURPS
+					, CNRL_PURPS_CD_ID  			= (CASE WHEN list.CNRL_PURPS_CHOISE = 'F/S왜곡방지' OR list.CNRL_PURPS_CHOISE = '재무보고 신뢰성' OR list.CNRL_PURPS_CHOISE = '재무보고신뢰성' 	THEN 'CTW_119_001' 
+															WHEN list.CNRL_PURPS_CHOISE = '자산보호' 		THEN 'CTW_119_002'
+														    WHEN list.CNRL_PURPS_CHOISE = '부정방지' 		THEN 'CTW_119_003'
+													    	ELSE '' END)
+					, CNRL_PURPS_FNNR_RLABLTY  		= (CASE WHEN list.CNRL_PURPS_RELIABILITY_FIN IS NOT NULL AND list.CNRL_PURPS_RELIABILITY_FIN = 'N'  THEN ''
+					                                        WHEN list.CNRL_PURPS_RELIABILITY_FIN IS NOT NULL  											THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_PURPS_ASSET_PRTC  		= (CASE WHEN list.CNRL_PURPS_ASSET_PROTECTION IS NOT NULL AND list.CNRL_PURPS_ASSET_PROTECTION = 'N'  THEN ''
+					                                        WHEN list.CNRL_PURPS_ASSET_PROTECTION IS NOT NULL  											  THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_PURPS_INSTC_PRVN  		= (CASE WHEN list.CNRL_PURPS_FRAUD_PREVENTION IS NOT NULL AND list.CNRL_PURPS_FRAUD_PREVENTION = 'N'  THEN ''
+					                                        WHEN list.CNRL_PURPS_FRAUD_PREVENTION IS NOT NULL											  THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CD_ID  				= (CASE WHEN REPLACE(list.CNRL_TY, ' ', '') = '검토및대사'		THEN 'CTW_120_001' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '승인'			THEN 'CTW_120_002' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '업무분장'		THEN 'CTW_120_003' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '물리적보안'		THEN 'CTW_120_004' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '시스템설정'		THEN 'CTW_120_005' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '시스템접근통제'	THEN 'CTW_120_006' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '인터페이스'		THEN 'CTW_120_007' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '예외사항보고'	THEN 'CTW_120_008' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '규정관리'		THEN 'CTW_120_009' 
+													    	ELSE '' END)
+					, CNRL_TY_CECK01  				= (CASE WHEN list.CNRL_TY_CECK01 IS NOT NULL AND list.CNRL_TY_CECK01 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK01 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK02  				= (CASE WHEN list.CNRL_TY_CECK02 IS NOT NULL AND list.CNRL_TY_CECK02 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK02 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK03  				= (CASE WHEN list.CNRL_TY_CECK03 IS NOT NULL AND list.CNRL_TY_CECK03 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK03 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK04  				= (CASE WHEN list.CNRL_TY_CECK04 IS NOT NULL AND list.CNRL_TY_CECK04 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK04 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK05  				= (CASE WHEN list.CNRL_TY_CECK05 IS NOT NULL AND list.CNRL_TY_CECK05 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK05 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK06  				= (CASE WHEN list.CNRL_TY_CECK06 IS NOT NULL AND list.CNRL_TY_CECK06 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK06 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK07  				= (CASE WHEN list.CNRL_TY_CECK07 IS NOT NULL AND list.CNRL_TY_CECK07 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK07 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK08  				= (CASE WHEN list.CNRL_TY_CECK08 IS NOT NULL AND list.CNRL_TY_CECK08 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK08 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK09  				= (CASE WHEN list.CNRL_TY_CECK09 IS NOT NULL AND list.CNRL_TY_CECK09 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK09 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY01_CD_ID  				= (CASE WHEN list.CNRL_TY01 = '예방' OR UPPER(SUBSTR(list.CNRL_TY01,0,1)) = 'P' THEN 'CTW_002_001' WHEN  list.CNRL_TY01 = '적발' OR UPPER(SUBSTR(list.CNRL_TY01,0,1)) = 'D' THEN 'CTW_002_002' ELSE '' END)
+					, CNRL_TY02_CD_ID  				= (CASE WHEN list.CNRL_TY02 = '관리' OR UPPER(SUBSTR(list.CNRL_TY02,0,1)) = 'M' THEN 'CTW_003_001' WHEN  list.CNRL_TY02 = '거래' OR UPPER(SUBSTR(list.CNRL_TY02,0,1)) = 'D' THEN 'CTW_003_002' ELSE '' END)   
+					, CNRL_TY03_CD_ID  				= (CASE WHEN list.CNRL_TY03 = '반자동' OR UPPER(SUBSTR(list.CNRL_TY03,0,2)) = 'MA' OR UPPER(SUBSTR(list.CNRL_TY03,0,2)) = 'AM' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'W' OR list.CNRL_TY03 = '자동/수동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = '수동/자동' THEN 'CTW_004_003'
+												    		WHEN list.CNRL_TY03 = '자동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'A' THEN 'CTW_004_001' 
+												    		WHEN list.CNRL_TY03 = '수동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'M' THEN 'CTW_004_002'
+												    		WHEN (list.CNRL_TY03_AUTO IS NOT NULL 		AND list.CNRL_TY03_AUTO != 'N') AND (list.CNRL_TY03_MANUAL IS NOT NULL AND list.CNRL_TY03_MANUAL != 'N') THEN 'CTW_004_003' 
+												    		WHEN list.CNRL_TY03_AUTOMANUAL IS NOT NULL 	AND list.CNRL_TY03_AUTOMANUAL != 'N' 	THEN 'CTW_004_003' 
+												    		WHEN list.CNRL_TY03_MANUAL IS NOT NULL 		AND list.CNRL_TY03_MANUAL != 'N' 		THEN 'CTW_004_002'  
+												    		WHEN list.CNRL_TY03_AUTO IS NOT NULL 		AND list.CNRL_TY03_AUTO != 'N' 			THEN 'CTW_004_001' 
+												    		ELSE '' END)
+					, DELNG_TY_CD_ID  				= (CASE WHEN REPLACE(list.DELNG_TY, ' ', '') = '일상적' 	THEN 'CTW_130_001' 
+															WHEN REPLACE(list.DELNG_TY, ' ', '') = '비일상적' 	THEN 'CTW_130_002'
+													  		WHEN REPLACE(list.DELNG_TY, ' ', '') = '추정' 	THEN 'CTW_130_003'
+													    	ELSE '' END)
+					, CNRL_CTGRY  					= list.CNRL_CTGRY
+					, CNRL_CYCLE_CD_ID  			= (CASE WHEN list.CNRL_CYCLE = '수시' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'A' THEN 'CTW_005_001' 
+															WHEN list.CNRL_CYCLE = '월별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'M' OR list.CNRL_CYCLE = '월간' OR list.CNRL_CYCLE = '월'   THEN 'CTW_005_002'
+													  		WHEN list.CNRL_CYCLE = '분기' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'Q' OR list.CNRL_CYCLE = '분기별' THEN 'CTW_005_003'
+														    WHEN list.CNRL_CYCLE = '반기' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'H' OR list.CNRL_CYCLE = '반기별' THEN 'CTW_005_004'
+													    	WHEN list.CNRL_CYCLE = '연별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'Y' OR list.CNRL_CYCLE = '연간' OR list.CNRL_CYCLE = '년간' THEN 'CTW_005_005' 
+														    WHEN list.CNRL_CYCLE = '주별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'W' THEN 'CTW_005_006' 
+														    WHEN list.CNRL_CYCLE = '일별수시' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,2)) = 'DA' THEN 'CTW_005_008' 
+													 	   	WHEN list.CNRL_CYCLE = '일별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'D' THEN 'CTW_005_007'
+					 	   									WHEN list.CNRL_CYCLE = '건별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'C' THEN 'CTW_005_009'  
+													    	ELSE '' END)
+					, CNRL_CYCLE01					= (CASE WHEN list.CNRL_CYCLE01 IS NOT NULL AND list.CNRL_CYCLE01 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE01 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE02					= (CASE WHEN list.CNRL_CYCLE02 IS NOT NULL AND list.CNRL_CYCLE02 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE02 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE03					= (CASE WHEN list.CNRL_CYCLE03 IS NOT NULL AND list.CNRL_CYCLE03 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE03 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE04					= (CASE WHEN list.CNRL_CYCLE04 IS NOT NULL AND list.CNRL_CYCLE04 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE04 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE05					= (CASE WHEN list.CNRL_CYCLE05 IS NOT NULL AND list.CNRL_CYCLE05 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE05 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE06					= (CASE WHEN list.CNRL_CYCLE06 IS NOT NULL AND list.CNRL_CYCLE06 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE06 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE07					= (CASE WHEN list.CNRL_CYCLE07 IS NOT NULL AND list.CNRL_CYCLE07 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE07 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE08					= (CASE WHEN list.CNRL_CYCLE08 IS NOT NULL AND list.CNRL_CYCLE08 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE08 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE09					= (CASE WHEN list.CNRL_CYCLE09 IS NOT NULL AND list.CNRL_CYCLE09 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE09 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, OFFICE_TY_CD_ID  				= (CASE WHEN list.OFFICE_TY = '본점' OR UPPER(SUBSTR(list.OFFICE_TY,0,1)) = 'H' THEN 'CTW_006_001' WHEN list.OFFICE_TY = '지점' OR UPPER(SUBSTR(list.OFFICE_TY,0,1)) = 'B' THEN 'CTW_006_002' ELSE '' END)
+					, DSGN_EFCT_AT  				= (CASE WHEN list.DSGN_EFCT = '예' OR UPPER(SUBSTR(list.DSGN_EFCT,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, OPER_EFCT_AT  				= (CASE WHEN list.OPER_EFCT = '예' OR UPPER(SUBSTR(list.OPER_EFCT,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, CNRL_UPRPD_NO  				= list.CNRL_UPRPD_NO
+					, MRC_CNRL_AT  					= (CASE WHEN list.MRC_CNRL = '예' OR UPPER(SUBSTR(list.MRC_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, MRC_CTGRY_CD_ID  				= list.MRC_CTGRY
+					, MRC_NO  						= list.MRC_NO
+					, IPE_CNRL_AT  					= (CASE WHEN list.IPE_CNRL = '예' OR UPPER(SUBSTR(list.IPE_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, IPE_CTGRY_CD_ID  				= list.IPE_CTGRY
+					, IPE_NO  						= list.IPE_NO
+					, IPE_NM  						= list.IPE_NM
+					, IPE_TEST_PROCSS  				= list.IPE_TEST_PROCSS
+					, COSO_NO  						= list.COSO_NO
+					, TEST_CYCLE_CD_ID  			= (CASE WHEN list.TEST_CYCLE = '수시' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'A' THEN 'CTW_005_001' 
+															WHEN list.TEST_CYCLE = '월별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'M' OR list.TEST_CYCLE = '월간' OR list.TEST_CYCLE = '월'   THEN 'CTW_005_002'
+													  		WHEN list.TEST_CYCLE = '분기' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'Q' OR list.TEST_CYCLE = '분기별' THEN 'CTW_005_003'
+														    WHEN list.TEST_CYCLE = '반기' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'H' OR list.TEST_CYCLE = '반기별' THEN 'CTW_005_004'
+													    	WHEN list.TEST_CYCLE = '연별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'Y' OR list.TEST_CYCLE = '연간' OR list.TEST_CYCLE = '년간' THEN 'CTW_005_005' 
+														    WHEN list.TEST_CYCLE = '주별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'W' THEN 'CTW_005_006' 
+														    WHEN list.TEST_CYCLE = '일별수시' OR UPPER(SUBSTR(list.TEST_CYCLE,0,2)) = 'DA' THEN 'CTW_005_008' 
+													 	   	WHEN list.TEST_CYCLE = '일별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'D' THEN 'CTW_005_007'
+					 	   									WHEN list.TEST_CYCLE = '건별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'C' THEN 'CTW_005_009'  
+													    	ELSE '' END)
+					, TEST_CYCLE01					= (CASE WHEN list.TEST_CYCLE01 IS NOT NULL AND list.TEST_CYCLE01 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE01 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE02					= (CASE WHEN list.TEST_CYCLE02 IS NOT NULL AND list.TEST_CYCLE02 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE02 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE03					= (CASE WHEN list.TEST_CYCLE03 IS NOT NULL AND list.TEST_CYCLE03 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE03 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE04					= (CASE WHEN list.TEST_CYCLE04 IS NOT NULL AND list.TEST_CYCLE04 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE04 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE05					= (CASE WHEN list.TEST_CYCLE05 IS NOT NULL AND list.TEST_CYCLE05 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE05 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE06					= (CASE WHEN list.TEST_CYCLE06 IS NOT NULL AND list.TEST_CYCLE06 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE06 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE07					= (CASE WHEN list.TEST_CYCLE07 IS NOT NULL AND list.TEST_CYCLE07 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE07 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE08					= (CASE WHEN list.TEST_CYCLE08 IS NOT NULL AND list.TEST_CYCLE08 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE08 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE09					= (CASE WHEN list.TEST_CYCLE09 IS NOT NULL AND list.TEST_CYCLE09 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE09 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_RELATE_DOC				= list.TEST_RELATION_DOC
+					, TEST_TRGET 					= list.TEST_TRGET
+					, SAMPLE_SIZE 					= list.SAMPLE_SIZE
+					, TEST_PROCSS 					= list.TEST_PROCSS
+					, EXCP_CNT 						= list.EXCP_CNT
+					, TEST_MTH 						= list.TEST_MTH
+					, TEST_MTH_QESTN 				= (CASE WHEN list.TEST_MTH_QUESTION IS NOT NULL AND list.TEST_MTH_QUESTION = 'N'  THEN ''
+					                                        WHEN list.TEST_MTH_QUESTION IS NOT NULL                                   THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_MTH_OBSERV 				= (CASE WHEN list.TEST_MTH_OBSERVE IS NOT NULL AND list.TEST_MTH_OBSERVE = 'N'  THEN ''
+					                                        WHEN list.TEST_MTH_OBSERVE IS NOT NULL                                  THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_MTH_VRIFY 				= (CASE WHEN list.TEST_MTH_VERIFICATION IS NOT NULL AND list.TEST_MTH_VERIFICATION = 'N'  THEN ''
+					                                        WHEN list.TEST_MTH_VERIFICATION IS NOT NULL								          THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_MTH_ECGN 				= (CASE WHEN list.TEST_MTH_RE_RUN IS NOT NULL AND list.TEST_MTH_RE_RUN = 'N'  THEN ''
+					                                        WHEN list.TEST_MTH_RE_RUN IS NOT NULL							      THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_MTH_SYS_TRACE 			= (CASE WHEN list.TEST_MTH_TRACKING IS NOT NULL AND list.TEST_MTH_TRACKING = 'N'  THEN ''
+					                                        WHEN list.TEST_MTH_TRACKING IS NOT NULL							 	      THEN 'Y' 
+					                                        ELSE '' END)
+					, ATMC_SAMPLE_AT 				= (CASE WHEN list.ATMC_SAMPLE = '예' OR list.ATMC_SAMPLE = '자동' OR UPPER(SUBSTR(list.ATMC_SAMPLE,0,1)) = 'Y' THEN 'Y' WHEN  list.ATMC_SAMPLE = '아니오' OR list.ATMC_SAMPLE = '수동' OR UPPER(SUBSTR(list.ATMC_SAMPLE,0,1)) = 'N' THEN 'N' ELSE '' END)
+					, TEST_SANCTN_AT 				= (CASE WHEN list.TEST_SANCTN = '예' OR UPPER(SUBSTR(list.TEST_SANCTN,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, ACNT_CD 						= list.CNRL_ANT_CTGR_CODE
+					, CNRL_ACNTCTGR 				= list.CNRL_ACNTCTGR
+					, RELATE_ACNTCTGR_PBLNTF	 	= list.RELATE_ACNTCTGR_PBLNTF
+					, CNRL_CM_IEM 					= list.CNRL_REMARK
+					, ASSE_C_AT 					= (CASE WHEN list.ASSE_C IS NOT NULL AND list.ASSE_C = 'N'  THEN ''
+					                                        WHEN list.ASSE_C IS NOT NULL 				   	    THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_E_AT 					= (CASE WHEN list.ASSE_E IS NOT NULL AND list.ASSE_E = 'N'  THEN ''
+					                                        WHEN list.ASSE_E IS NOT NULL 						THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_R_AT 					= (CASE WHEN list.ASSE_R IS NOT NULL AND list.ASSE_R = 'N'  THEN ''
+					                                        WHEN list.ASSE_R IS NOT NULL 						THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_V_AT 					= (CASE WHEN list.ASSE_V IS NOT NULL AND list.ASSE_V = 'N'  THEN ''
+					                                        WHEN list.ASSE_V IS NOT NULL					    THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_P_AT 					= (CASE WHEN list.ASSE_P IS NOT NULL AND list.ASSE_P = 'N'  THEN ''
+					                                        WHEN list.ASSE_P IS NOT NULL						THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_S_AT  					= (CASE WHEN list.ASSE_S IS NOT NULL AND list.ASSE_S = 'N'  THEN ''
+					                                        WHEN list.ASSE_S IS NOT NULL						THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_O_AT 					= (CASE WHEN list.ASSE_O IS NOT NULL AND list.ASSE_O = 'N'  THEN ''
+					                                        WHEN list.ASSE_O IS NOT NULL						THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_A_AT 					= (CASE WHEN list.ASSE_A IS NOT NULL AND list.ASSE_A = 'N'  THEN ''
+					                                        WHEN list.ASSE_A IS NOT NULL 						THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_PF_AT					= (CASE WHEN list.ASSE_PF IS NOT NULL AND list.ASSE_PF = 'N'  THEN ''
+					                                        WHEN list.ASSE_PF IS NOT NULL 						  THEN 'Y' 
+					                                        ELSE '' END)
+					, TREXAMIN_PROCSS 				= list.TREXAMIN_PROCSS
+					, TREXAMIN_PRUF 				= list.TREXAMIN_PRUF
+					, TREXAMIN_CNCLSN 				= list.TREXAMIN_CNCLSN
+					, RISK_RESIDUAL_LIKEHOOD 		= list.RISK_RESIDUAL_LIKEHOOD
+					, RISK_RESIDUAL_IMPACT 			= list.RISK_RESIDUAL_IMPACT
+					, RISK_RESIDUAL_RATIONG 		= list.RISK_RESIDUAL_RATING
+					, AFTER_RISK_RESIDUAL_LIKEHOOD 	= list.CNRL_RESIDUAL_LIKEHOOD
+					, AFTER_RISK_RESIDUAL_IMPACT 	= list.CNRL_RESIDUAL_IMPACT
+					, AFTER_RISK_RESIDUAL_RATIONG 	= list.CNRL_RESIDUAL_RATING
+					, CNRL_IMPRVM_NM 				= list.CNRL_IMPRVM_NM
+					, CNRL_IMPRVM_DC 				= list.CNRL_IMPRVM_CN
+					, FNREP_RISKEVL_CSFCTR01 = list.FNREP_RISKEVL_CSFCTR01
+                    , FNREP_RISKEVL_CSFCTR02 = list.FNREP_RISKEVL_CSFCTR02
+                    , FNREP_RISKEVL_CSFCTR03 = list.FNREP_RISKEVL_CSFCTR03
+                    , FNREP_RISKEVL_CSFCTR04 = list.FNREP_RISKEVL_CSFCTR04
+                    , FNREP_RISKEVL_CSFCTR05 = list.FNREP_RISKEVL_CSFCTR05
+                    , FNREP_RISKEVL_CSFCTR06 = list.FNREP_RISKEVL_CSFCTR06
+                    , FNREP_RISKEVL_CSFCTR07 = list.FNREP_RISKEVL_CSFCTR07
+                    , FNREP_RISKEVL_CSFCTR08 = list.FNREP_RISKEVL_CSFCTR08
+                    , FNREP_RISKEVL_CSFCTR09 = list.FNREP_RISKEVL_CSFCTR09
+                    , FNREP_RISKEVL_CSFCTR10 = list.FNREP_RISKEVL_CSFCTR10
+                    , FNREP_CNRL_RISK_CNCLSN = list.FNREP_CNRL_RISK_CNCLSN
+                    , FNREP_ACNT_RISK_CNCLSN = list.FNREP_ACNT_RISK_CNCLSN
+                    , FNREP_PROCS_RISK_CNCLSN = list.FNREP_PROCS_RISK_CNCLSN
+                    , FNREP_GNRLZ_EVL_CNCLSN = list.FNREP_GNRLZ_EVL_CNCLSN
+					, UPD_DT 		  				= GETDATE()
+					, UPD_USER_ID 	  				= #{suserId}
+			WHEN NOT MATCHED THEN 
+				INSERT (
+					      CNRL_ID, CNRL_NO, CNRL_NM, CNRL_CN
+ 					, KEY_CNRL_AT
+ 					, REFRN_NO, CNRL_RELATE_REF
+					, CNRL_EXC_UPPER_DEPT, CNRL_EXC_DEPT, CNRL_EXCBER, CNRL_RSPNSBL_UPPER_DEPT, CNRL_RSPNSBL_DEPT, CNRL_RSPNBER
+					, RELATE_REGLTN_NM, CNRL_RELATE_DOC, CNRL_RELATE_SYS, CNRL_RM
+					, CNRL_PURPS, CNRL_PURPS_CD_ID
+					, CNRL_PURPS_FNNR_RLABLTY
+					, CNRL_PURPS_ASSET_PRTC
+					, CNRL_PURPS_INSTC_PRVN
+					, CNRL_TY_CD_ID
+					, CNRL_TY_CECK01
+					, CNRL_TY_CECK02
+					, CNRL_TY_CECK03
+					, CNRL_TY_CECK04
+					, CNRL_TY_CECK05
+					, CNRL_TY_CECK06
+					, CNRL_TY_CECK07
+					, CNRL_TY_CECK08
+					, CNRL_TY_CECK09
+					, CNRL_TY01_CD_ID
+					, CNRL_TY02_CD_ID
+					, CNRL_TY03_CD_ID
+					, DELNG_TY_CD_ID
+					, CNRL_CTGRY, CNRL_CYCLE_CD_ID
+					, CNRL_CYCLE01, CNRL_CYCLE02, CNRL_CYCLE03, CNRL_CYCLE04, CNRL_CYCLE05, CNRL_CYCLE06, CNRL_CYCLE07, CNRL_CYCLE08, CNRL_CYCLE09 
+					, OFFICE_TY_CD_ID
+					, DSGN_EFCT_AT
+					, OPER_EFCT_AT
+					, CNRL_UPRPD_NO
+					, MRC_CNRL_AT
+					, MRC_CTGRY_CD_ID, MRC_NO
+					, IPE_CNRL_AT
+					, IPE_CTGRY_CD_ID, IPE_NO, IPE_NM, IPE_TEST_PROCSS
+					, COSO_NO
+			 		, TEST_CYCLE_CD_ID
+			 		, TEST_CYCLE01, TEST_CYCLE02, TEST_CYCLE03, TEST_CYCLE04, TEST_CYCLE05, TEST_CYCLE06, TEST_CYCLE07, TEST_CYCLE08, TEST_CYCLE09
+			 		, TEST_RELATE_DOC, TEST_TRGET, SAMPLE_SIZE, TEST_PROCSS, EXCP_CNT
+					, TEST_MTH
+					, TEST_MTH_QESTN
+					, TEST_MTH_OBSERV
+					, TEST_MTH_VRIFY
+					, TEST_MTH_ECGN
+					, TEST_MTH_SYS_TRACE
+					, ATMC_SAMPLE_AT
+					, TEST_SANCTN_AT
+					, ACNT_CD, CNRL_ACNTCTGR, RELATE_ACNTCTGR_PBLNTF, CNRL_CM_IEM
+					, ASSE_C_AT
+					, ASSE_E_AT
+					, ASSE_R_AT
+					, ASSE_V_AT
+					, ASSE_P_AT
+					, ASSE_S_AT
+					, ASSE_O_AT
+					, ASSE_A_AT
+					, ASSE_PF_AT
+					, TREXAMIN_PROCSS, TREXAMIN_PRUF, TREXAMIN_CNCLSN
+					, RISK_RESIDUAL_LIKEHOOD, RISK_RESIDUAL_IMPACT, RISK_RESIDUAL_RATIONG
+					, AFTER_RISK_RESIDUAL_LIKEHOOD, AFTER_RISK_RESIDUAL_IMPACT, AFTER_RISK_RESIDUAL_RATIONG, CNRL_IMPRVM_NM, CNRL_IMPRVM_DC
+                    , FNREP_RISKEVL_CSFCTR01, FNREP_RISKEVL_CSFCTR02, FNREP_RISKEVL_CSFCTR03
+                    , FNREP_RISKEVL_CSFCTR04, FNREP_RISKEVL_CSFCTR05, FNREP_RISKEVL_CSFCTR06
+                    , FNREP_RISKEVL_CSFCTR07, FNREP_RISKEVL_CSFCTR08, FNREP_RISKEVL_CSFCTR09, FNREP_RISKEVL_CSFCTR10
+                    , FNREP_CNRL_RISK_CNCLSN, FNREP_ACNT_RISK_CNCLSN, FNREP_PROCS_RISK_CNCLSN, FNREP_GNRLZ_EVL_CNCLSN
+					, CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+				) VALUES (
+					  list.CNRL_ID, list.CNRL_NO, list.CNRL_NM, list.CNRL_CN
+					, (CASE WHEN list.KEY_CNRL = '예' OR UPPER(SUBSTR(list.KEY_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.REFRN_NO, list.CNRL_RELATE_REF
+					, list.CNRL_EXC_UPPER_DEPT, list.CNRL_EXC_DEPT, list.CNRL_EXCBER, list.CNRL_RSPNSBL_UPPER_DEPT, list.CNRL_RSPNSBL_DEPT, list.CNRL_RSPNBER
+					, list.CNRL_REG_NM, list.CNRL_RELATE_DOC, list.CNRL_RELATE_SYS, list.CNRL_RM
+					, list.CNRL_PURPS
+					, (CASE WHEN list.CNRL_PURPS_CHOISE = 'F/S왜곡방지' OR list.CNRL_PURPS_CHOISE = '재무보고 신뢰성' OR list.CNRL_PURPS_CHOISE = '재무보고신뢰성' 	THEN 'CTW_119_001' 
+							WHEN list.CNRL_PURPS_CHOISE = '자산보호' 		THEN 'CTW_119_002'
+						    WHEN list.CNRL_PURPS_CHOISE = '부정방지' 		THEN 'CTW_119_003'ELSE '' END)
+					, (CASE WHEN list.CNRL_PURPS_RELIABILITY_FIN IS NOT NULL AND list.CNRL_PURPS_RELIABILITY_FIN = 'N'  THEN ''
+					        WHEN list.CNRL_PURPS_RELIABILITY_FIN IS NOT NULL  											THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_PURPS_ASSET_PROTECTION IS NOT NULL AND list.CNRL_PURPS_ASSET_PROTECTION = 'N'  THEN ''
+					        WHEN list.CNRL_PURPS_ASSET_PROTECTION IS NOT NULL  											  THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_PURPS_FRAUD_PREVENTION IS NOT NULL AND list.CNRL_PURPS_FRAUD_PREVENTION = 'N'  THEN ''
+					        WHEN list.CNRL_PURPS_FRAUD_PREVENTION IS NOT NULL											  THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN REPLACE(list.CNRL_TY, ' ', '') = '검토및대사'		THEN 'CTW_120_001' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '승인'			THEN 'CTW_120_002' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '업무분장'		THEN 'CTW_120_003' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '물리적보안'		THEN 'CTW_120_004' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '시스템설정'		THEN 'CTW_120_005' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '시스템접근통제'	THEN 'CTW_120_006' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '인터페이스'		THEN 'CTW_120_007' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '예외사항보고'	THEN 'CTW_120_008' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '규정관리'		THEN 'CTW_120_009' 
+					    	ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK01 IS NOT NULL AND list.CNRL_TY_CECK01 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK01 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK02 IS NOT NULL AND list.CNRL_TY_CECK02 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK02 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK03 IS NOT NULL AND list.CNRL_TY_CECK03 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK03 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK04 IS NOT NULL AND list.CNRL_TY_CECK04 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK04 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK05 IS NOT NULL AND list.CNRL_TY_CECK05 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK05 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK06 IS NOT NULL AND list.CNRL_TY_CECK06 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK06 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK07 IS NOT NULL AND list.CNRL_TY_CECK07 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK07 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK08 IS NOT NULL AND list.CNRL_TY_CECK08 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK08 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK09 IS NOT NULL AND list.CNRL_TY_CECK09 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK09 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY01 = '예방' OR UPPER(SUBSTR(list.CNRL_TY01,0,1)) = 'P' THEN 'CTW_002_001' WHEN  list.CNRL_TY01 = '적발' OR UPPER(SUBSTR(list.CNRL_TY01,0,1)) = 'D' THEN 'CTW_002_002' ELSE '' END)
+					, (CASE WHEN list.CNRL_TY02 = '관리' OR UPPER(SUBSTR(list.CNRL_TY02,0,1)) = 'M' THEN 'CTW_003_001' WHEN  list.CNRL_TY02 = '거래' OR UPPER(SUBSTR(list.CNRL_TY02,0,1)) = 'D' THEN 'CTW_003_002' ELSE '' END)   
+				    , (CASE WHEN list.CNRL_TY03 = '반자동' OR UPPER(SUBSTR(list.CNRL_TY03,0,2)) = 'MA' OR UPPER(SUBSTR(list.CNRL_TY03,0,2)) = 'AM' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'W' OR list.CNRL_TY03 = '자동/수동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = '수동/자동' THEN 'CTW_004_003'
+				    		WHEN list.CNRL_TY03 = '자동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'A' THEN 'CTW_004_001' 
+				    		WHEN list.CNRL_TY03 = '수동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'M' THEN 'CTW_004_002'
+				    		WHEN (list.CNRL_TY03_AUTO IS NOT NULL 		AND list.CNRL_TY03_AUTO != 'N') AND (list.CNRL_TY03_MANUAL IS NOT NULL AND list.CNRL_TY03_MANUAL != 'N') THEN 'CTW_004_003' 
+				    		WHEN list.CNRL_TY03_AUTOMANUAL IS NOT NULL 	AND list.CNRL_TY03_AUTOMANUAL != 'N' 	THEN 'CTW_004_003' 
+				    		WHEN list.CNRL_TY03_MANUAL IS NOT NULL 		AND list.CNRL_TY03_MANUAL != 'N' 		THEN 'CTW_004_002'  
+				    		WHEN list.CNRL_TY03_AUTO IS NOT NULL 		AND list.CNRL_TY03_AUTO != 'N' 			THEN 'CTW_004_001' 
+				    		ELSE '' END)
+					, (CASE WHEN REPLACE(list.DELNG_TY, ' ', '') = '일상적' 	THEN 'CTW_130_001' 
+							WHEN REPLACE(list.DELNG_TY, ' ', '') = '비일상적' 	THEN 'CTW_130_002'
+					  		WHEN REPLACE(list.DELNG_TY, ' ', '') = '추정' 	THEN 'CTW_130_003'
+					    	ELSE '' END)
+					, list.CNRL_CTGRY
+					, (CASE WHEN list.CNRL_CYCLE = '수시' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'A' THEN 'CTW_005_001' 
+							WHEN list.CNRL_CYCLE = '월별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'M' OR list.CNRL_CYCLE = '월간' OR list.CNRL_CYCLE = '월'   THEN 'CTW_005_002'
+					  		WHEN list.CNRL_CYCLE = '분기' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'Q' OR list.CNRL_CYCLE = '분기별' THEN 'CTW_005_003'
+						    WHEN list.CNRL_CYCLE = '반기' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'H' OR list.CNRL_CYCLE = '반기별' THEN 'CTW_005_004'
+					    	WHEN list.CNRL_CYCLE = '연별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'Y' OR list.CNRL_CYCLE = '연간' OR list.CNRL_CYCLE = '년간' THEN 'CTW_005_005' 
+						    WHEN list.CNRL_CYCLE = '주별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'W' THEN 'CTW_005_006' 
+						    WHEN list.CNRL_CYCLE = '일별수시' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,2)) = 'DA' THEN 'CTW_005_008' 
+					 	   	WHEN list.CNRL_CYCLE = '일별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'D' THEN 'CTW_005_007'
+					 	   	WHEN list.CNRL_CYCLE = '건별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'C' THEN 'CTW_005_009'  
+					    	ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE01 IS NOT NULL AND list.CNRL_CYCLE01 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE01 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE02 IS NOT NULL AND list.CNRL_CYCLE02 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE02 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE03 IS NOT NULL AND list.CNRL_CYCLE03 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE03 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE04 IS NOT NULL AND list.CNRL_CYCLE04 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE04 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE05 IS NOT NULL AND list.CNRL_CYCLE05 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE05 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE06 IS NOT NULL AND list.CNRL_CYCLE06 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE06 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE07 IS NOT NULL AND list.CNRL_CYCLE07 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE07 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE08 IS NOT NULL AND list.CNRL_CYCLE08 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE08 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE09 IS NOT NULL AND list.CNRL_CYCLE09 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE09 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.OFFICE_TY = '본점' OR UPPER(SUBSTR(list.OFFICE_TY,0,1)) = 'H' THEN 'CTW_006_001' WHEN list.OFFICE_TY = '지점' OR UPPER(SUBSTR(list.OFFICE_TY,0,1)) = 'B' THEN 'CTW_006_002' ELSE '' END)
+					, (CASE WHEN list.DSGN_EFCT = '예' OR UPPER(SUBSTR(list.DSGN_EFCT,0,1)) = 'Y' THEN 'Y' ELSE '' END)
+					, (CASE WHEN list.OPER_EFCT = '예' OR UPPER(SUBSTR(list.OPER_EFCT,0,1)) = 'Y' THEN 'Y' ELSE '' END)
+					, list.CNRL_UPRPD_NO
+					, (CASE WHEN list.MRC_CNRL = '예' OR UPPER(SUBSTR(list.MRC_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.MRC_CTGRY, list.MRC_NO
+					, (CASE WHEN list.IPE_CNRL = '예' OR UPPER(SUBSTR(list.IPE_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.IPE_CTGRY, list.IPE_NO, list.IPE_NM, list.IPE_TEST_PROCSS
+					, list.COSO_NO
+					, (CASE WHEN list.TEST_CYCLE = '수시' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'A' THEN 'CTW_005_001' 
+						  	WHEN list.TEST_CYCLE = '월별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'M' OR list.TEST_CYCLE = '월간' OR list.TEST_CYCLE = '월'   THEN 'CTW_005_002'
+						  	WHEN list.TEST_CYCLE = '분기' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'Q' OR list.TEST_CYCLE = '분기별' THEN 'CTW_005_003'
+						    WHEN list.TEST_CYCLE = '반기' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'H' OR list.TEST_CYCLE = '반기별' THEN 'CTW_005_004'
+						    WHEN list.TEST_CYCLE = '연별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'Y' OR list.TEST_CYCLE = '연간' OR list.TEST_CYCLE = '년간' THEN 'CTW_005_005' 
+						    WHEN list.TEST_CYCLE = '주별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'W' THEN 'CTW_005_006' 
+						    WHEN list.TEST_CYCLE = '일별수시' OR UPPER(SUBSTR(list.TEST_CYCLE,0,2)) = 'DA' THEN 'CTW_005_008' 
+						    WHEN list.TEST_CYCLE = '일별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'D' THEN 'CTW_005_007' 
+					 	   	WHEN list.TEST_CYCLE = '건별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'C' THEN 'CTW_005_009' 
+						    ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE01 IS NOT NULL AND list.TEST_CYCLE01 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE01 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE02 IS NOT NULL AND list.TEST_CYCLE02 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE02 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE03 IS NOT NULL AND list.TEST_CYCLE03 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE03 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE04 IS NOT NULL AND list.TEST_CYCLE04 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE04 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE05 IS NOT NULL AND list.TEST_CYCLE05 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE05 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE06 IS NOT NULL AND list.TEST_CYCLE06 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE06 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE07 IS NOT NULL AND list.TEST_CYCLE07 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE07 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE08 IS NOT NULL AND list.TEST_CYCLE08 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE08 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE09 IS NOT NULL AND list.TEST_CYCLE09 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE09 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, list.TEST_RELATION_DOC, list.TEST_TRGET, list.SAMPLE_SIZE, list.TEST_PROCSS, list.EXCP_CNT
+					, list.TEST_MTH
+					, (CASE WHEN list.TEST_MTH_QUESTION IS NOT NULL AND list.TEST_MTH_QUESTION = 'N'  THEN ''
+					        WHEN list.TEST_MTH_QUESTION IS NOT NULL                                   THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_OBSERVE IS NOT NULL AND list.TEST_MTH_OBSERVE = 'N'  THEN ''
+					        WHEN list.TEST_MTH_OBSERVE IS NOT NULL                                  THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_VERIFICATION IS NOT NULL AND list.TEST_MTH_VERIFICATION = 'N'  THEN ''
+					        WHEN list.TEST_MTH_VERIFICATION IS NOT NULL									      THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_RE_RUN IS NOT NULL AND list.TEST_MTH_RE_RUN = 'N'  THEN ''
+					        WHEN list.TEST_MTH_RE_RUN IS NOT NULL							      THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_TRACKING IS NOT NULL AND list.TEST_MTH_TRACKING = 'N'  THEN ''
+					        WHEN list.TEST_MTH_TRACKING IS NOT NULL								      THEN 'Y' 
+					        ELSE '' END)                                                       
+					, (CASE WHEN list.ATMC_SAMPLE = '예' OR list.ATMC_SAMPLE = '자동' OR UPPER(SUBSTR(list.ATMC_SAMPLE,0,1)) = 'Y' THEN 'Y' WHEN  list.ATMC_SAMPLE = '아니오' OR list.ATMC_SAMPLE = '수동' OR UPPER(SUBSTR(list.ATMC_SAMPLE,0,1)) = 'N' THEN 'N' ELSE '' END)
+					, (CASE WHEN list.TEST_SANCTN = '예' OR UPPER(SUBSTR(list.TEST_SANCTN,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.CNRL_ANT_CTGR_CODE, list.CNRL_ACNTCTGR, list.RELATE_ACNTCTGR_PBLNTF, list.CNRL_REMARK
+					, (CASE WHEN list.ASSE_C IS NOT NULL AND list.ASSE_C = 'N'  THEN ''
+					        WHEN list.ASSE_C IS NOT NULL 					    THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_E IS NOT NULL AND list.ASSE_E = 'N'  THEN ''
+					        WHEN list.ASSE_E IS NOT NULL 						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_R IS NOT NULL AND list.ASSE_R = 'N'  THEN ''
+					        WHEN list.ASSE_R IS NOT NULL 						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_V IS NOT NULL AND list.ASSE_V = 'N'  THEN ''
+					        WHEN list.ASSE_V IS NOT NULL					    THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_P IS NOT NULL AND list.ASSE_P = 'N'  THEN ''
+					        WHEN list.ASSE_P IS NOT NULL						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_S IS NOT NULL AND list.ASSE_S = 'N'  THEN ''
+					        WHEN list.ASSE_S IS NOT NULL						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_O IS NOT NULL AND list.ASSE_O = 'N'  THEN ''
+					        WHEN list.ASSE_O IS NOT NULL						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_A IS NOT NULL AND list.ASSE_A = 'N'  THEN ''
+					        WHEN list.ASSE_A IS NOT NULL 						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_PF IS NOT NULL AND list.ASSE_PF = 'N'  THEN ''
+					        WHEN list.ASSE_PF IS NOT NULL 						  THEN 'Y' 
+					        ELSE '' END)
+					, list.TREXAMIN_PROCSS, list.TREXAMIN_PRUF, list.TREXAMIN_CNCLSN
+					, list.RISK_RESIDUAL_LIKEHOOD, list.RISK_RESIDUAL_IMPACT, list.RISK_RESIDUAL_RATING
+					, list.CNRL_RESIDUAL_LIKEHOOD, list.CNRL_RESIDUAL_IMPACT, list.CNRL_RESIDUAL_RATING, list.CNRL_IMPRVM_NM, list.CNRL_IMPRVM_CN
+					, list.FNREP_RISKEVL_CSFCTR01, list.FNREP_RISKEVL_CSFCTR02, list.FNREP_RISKEVL_CSFCTR03
+                    , list.FNREP_RISKEVL_CSFCTR04, list.FNREP_RISKEVL_CSFCTR05, list.FNREP_RISKEVL_CSFCTR06
+                    , list.FNREP_RISKEVL_CSFCTR07, list.FNREP_RISKEVL_CSFCTR08, list.FNREP_RISKEVL_CSFCTR09, list.FNREP_RISKEVL_CSFCTR10
+                    , list.FNREP_CNRL_RISK_CNCLSN, list.FNREP_ACNT_RISK_CNCLSN, list.FNREP_PROCS_RISK_CNCLSN, list.FNREP_GNRLZ_EVL_CNCLSN
+					, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+				);
+				
+		/** 04. 통제 이력 종료/시작 */    
+	    	UPDATE TB_CW_ELC_RCM_CNRL_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			      ,UPD_DT = GETDATE()
+			      ,UPD_USER_ID = #{suserId} 
+			 WHERE CNRL_ID = list.CNRL_ID
+			   AND ENDTMSTMP = '99991231235959999999';
+	    
+			INSERT INTO TB_CW_ELC_RCM_CNRL_HIST (
+					  CNRL_ID, BGNTMSTMP, ENDTMSTMP, CNRL_NO, CNRL_NM, CNRL_CN
+ 					, KEY_CNRL_AT
+ 					, REFRN_NO, CNRL_RELATE_REF
+					, CNRL_EXC_UPPER_DEPT, CNRL_EXC_DEPT, CNRL_EXCBER, CNRL_RSPNSBL_UPPER_DEPT, CNRL_RSPNSBL_DEPT, CNRL_RSPNBER
+					, RELATE_REGLTN_NM, CNRL_RELATE_DOC, CNRL_RELATE_SYS, CNRL_RM
+					, CNRL_PURPS, CNRL_PURPS_CD_ID
+					, CNRL_PURPS_FNNR_RLABLTY
+					, CNRL_PURPS_ASSET_PRTC
+					, CNRL_PURPS_INSTC_PRVN
+					, CNRL_TY_CD_ID
+					, CNRL_TY_CECK01
+					, CNRL_TY_CECK02
+					, CNRL_TY_CECK03
+					, CNRL_TY_CECK04
+					, CNRL_TY_CECK05
+					, CNRL_TY_CECK06
+					, CNRL_TY_CECK07
+					, CNRL_TY_CECK08
+					, CNRL_TY_CECK09
+					, CNRL_TY01_CD_ID
+					, CNRL_TY02_CD_ID
+					, CNRL_TY03_CD_ID
+					, DELNG_TY_CD_ID
+					, CNRL_CTGRY, CNRL_CYCLE_CD_ID
+					, CNRL_CYCLE01, CNRL_CYCLE02, CNRL_CYCLE03, CNRL_CYCLE04, CNRL_CYCLE05, CNRL_CYCLE06, CNRL_CYCLE07, CNRL_CYCLE08, CNRL_CYCLE09
+					, OFFICE_TY_CD_ID
+					, DSGN_EFCT_AT
+					, OPER_EFCT_AT
+					, CNRL_UPRPD_NO
+					, MRC_CNRL_AT
+					, MRC_CTGRY_CD_ID, MRC_NO
+					, IPE_CNRL_AT
+					, IPE_CTGRY_CD_ID, IPE_NO, IPE_NM, IPE_TEST_PROCSS
+					, COSO_NO
+			 		, TEST_CYCLE_CD_ID
+			 		, TEST_CYCLE01, TEST_CYCLE02, TEST_CYCLE03, TEST_CYCLE04, TEST_CYCLE05, TEST_CYCLE06, TEST_CYCLE07, TEST_CYCLE08, TEST_CYCLE09
+			 		, TEST_RELATE_DOC, TEST_TRGET, SAMPLE_SIZE, TEST_PROCSS, EXCP_CNT
+					, TEST_MTH
+					, TEST_MTH_QESTN
+					, TEST_MTH_OBSERV
+					, TEST_MTH_VRIFY
+					, TEST_MTH_ECGN
+					, TEST_MTH_SYS_TRACE
+					, ATMC_SAMPLE_AT
+					, TEST_SANCTN_AT
+					, ACNT_CD, CNRL_ACNTCTGR, RELATE_ACNTCTGR_PBLNTF, CNRL_CM_IEM
+					, ASSE_C_AT
+					, ASSE_E_AT
+					, ASSE_R_AT
+					, ASSE_V_AT
+					, ASSE_P_AT
+					, ASSE_S_AT
+					, ASSE_O_AT
+					, ASSE_A_AT
+					, ASSE_PF_AT
+					, TREXAMIN_PROCSS, TREXAMIN_PRUF, TREXAMIN_CNCLSN
+					, RISK_RESIDUAL_LIKEHOOD, RISK_RESIDUAL_IMPACT, RISK_RESIDUAL_RATIONG
+					, AFTER_RISK_RESIDUAL_LIKEHOOD, AFTER_RISK_RESIDUAL_IMPACT, AFTER_RISK_RESIDUAL_RATIONG, CNRL_IMPRVM_NM, CNRL_IMPRVM_DC
+					, FNREP_RISKEVL_CSFCTR01, FNREP_RISKEVL_CSFCTR02, FNREP_RISKEVL_CSFCTR03
+                    , FNREP_RISKEVL_CSFCTR04, FNREP_RISKEVL_CSFCTR05, FNREP_RISKEVL_CSFCTR06
+                    , FNREP_RISKEVL_CSFCTR07, FNREP_RISKEVL_CSFCTR08, FNREP_RISKEVL_CSFCTR09, FNREP_RISKEVL_CSFCTR10
+                    , FNREP_CNRL_RISK_CNCLSN, FNREP_ACNT_RISK_CNCLSN, FNREP_PROCS_RISK_CNCLSN, FNREP_GNRLZ_EVL_CNCLSN
+					, CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					  list.CNRL_ID, #{bgntmstmp}, '99991231235959999999', list.CNRL_NO, list.CNRL_NM, list.CNRL_CN
+					, (CASE WHEN list.KEY_CNRL = '예' OR UPPER(SUBSTR(list.KEY_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.REFRN_NO, list.CNRL_RELATE_REF
+					, list.CNRL_EXC_UPPER_DEPT, list.CNRL_EXC_DEPT, list.CNRL_EXCBER, list.CNRL_RSPNSBL_UPPER_DEPT, list.CNRL_RSPNSBL_DEPT, list.CNRL_RSPNBER
+					, list.CNRL_REG_NM, list.CNRL_RELATE_DOC, list.CNRL_RELATE_SYS, list.CNRL_RM
+					, list.CNRL_PURPS
+					, (CASE WHEN list.CNRL_PURPS_CHOISE = 'F/S왜곡방지' OR list.CNRL_PURPS_CHOISE = '재무보고 신뢰성' OR list.CNRL_PURPS_CHOISE = '재무보고신뢰성' 	THEN 'CTW_119_001' 
+							WHEN list.CNRL_PURPS_CHOISE = '자산보호' 		THEN 'CTW_119_002'
+						    WHEN list.CNRL_PURPS_CHOISE = '부정방지' 		THEN 'CTW_119_003'ELSE '' END)
+					, (CASE WHEN list.CNRL_PURPS_RELIABILITY_FIN IS NOT NULL AND list.CNRL_PURPS_RELIABILITY_FIN = 'N'  THEN ''
+					        WHEN list.CNRL_PURPS_RELIABILITY_FIN IS NOT NULL  										    THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_PURPS_ASSET_PROTECTION IS NOT NULL AND list.CNRL_PURPS_ASSET_PROTECTION = 'N'  THEN ''
+					        WHEN list.CNRL_PURPS_ASSET_PROTECTION IS NOT NULL  										      THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_PURPS_FRAUD_PREVENTION IS NOT NULL AND list.CNRL_PURPS_FRAUD_PREVENTION = 'N'  THEN ''
+					        WHEN list.CNRL_PURPS_FRAUD_PREVENTION IS NOT NULL										      THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN REPLACE(list.CNRL_TY, ' ', '') = '검토및대사'		THEN 'CTW_120_001' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '승인'			THEN 'CTW_120_002' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '업무분장'		THEN 'CTW_120_003' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '물리적보안'		THEN 'CTW_120_004' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '시스템설정'		THEN 'CTW_120_005' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '시스템접근통제'	THEN 'CTW_120_006' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '인터페이스'		THEN 'CTW_120_007' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '예외사항보고'	THEN 'CTW_120_008' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '규정관리'		THEN 'CTW_120_009' 
+					    	ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK01 IS NOT NULL AND list.CNRL_TY_CECK01 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK01 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK02 IS NOT NULL AND list.CNRL_TY_CECK02 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK02 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK03 IS NOT NULL AND list.CNRL_TY_CECK03 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK03 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK04 IS NOT NULL AND list.CNRL_TY_CECK04 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK04 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK05 IS NOT NULL AND list.CNRL_TY_CECK05 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK05 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK06 IS NOT NULL AND list.CNRL_TY_CECK06 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK06 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK07 IS NOT NULL AND list.CNRL_TY_CECK07 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK07 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK08 IS NOT NULL AND list.CNRL_TY_CECK08 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK08 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK09 IS NOT NULL AND list.CNRL_TY_CECK09 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK09 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY01 = '예방' OR UPPER(SUBSTR(list.CNRL_TY01,0,1)) = 'P' THEN 'CTW_002_001' WHEN  list.CNRL_TY01 = '적발' OR UPPER(SUBSTR(list.CNRL_TY01,0,1)) = 'D' THEN 'CTW_002_002' ELSE '' END)
+					, (CASE WHEN list.CNRL_TY02 = '관리' OR UPPER(SUBSTR(list.CNRL_TY02,0,1)) = 'M' THEN 'CTW_003_001' WHEN  list.CNRL_TY02 = '거래' OR UPPER(SUBSTR(list.CNRL_TY02,0,1)) = 'D' THEN 'CTW_003_002' ELSE '' END)   
+				    , (CASE WHEN list.CNRL_TY03 = '반자동' OR UPPER(SUBSTR(list.CNRL_TY03,0,2)) = 'MA' OR UPPER(SUBSTR(list.CNRL_TY03,0,2)) = 'AM' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'W' OR list.CNRL_TY03 = '자동/수동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = '수동/자동' THEN 'CTW_004_003'
+				    		WHEN list.CNRL_TY03 = '자동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'A' THEN 'CTW_004_001' 
+				    		WHEN list.CNRL_TY03 = '수동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'M' THEN 'CTW_004_002'
+				    		WHEN (list.CNRL_TY03_AUTO IS NOT NULL 		AND list.CNRL_TY03_AUTO != 'N') AND (list.CNRL_TY03_MANUAL IS NOT NULL AND list.CNRL_TY03_MANUAL != 'N') THEN 'CTW_004_003' 
+				    		WHEN list.CNRL_TY03_AUTOMANUAL IS NOT NULL 	AND list.CNRL_TY03_AUTOMANUAL != 'N' 	THEN 'CTW_004_003' 
+				    		WHEN list.CNRL_TY03_MANUAL IS NOT NULL 		AND list.CNRL_TY03_MANUAL != 'N' 		THEN 'CTW_004_002'  
+				    		WHEN list.CNRL_TY03_AUTO IS NOT NULL 		AND list.CNRL_TY03_AUTO != 'N' 			THEN 'CTW_004_001' 
+				    		ELSE '' END)
+					, (CASE WHEN REPLACE(list.DELNG_TY, ' ', '') = '일상적' 	THEN 'CTW_130_001' 
+							WHEN REPLACE(list.DELNG_TY, ' ', '') = '비일상적' 	THEN 'CTW_130_002'
+					  		WHEN REPLACE(list.DELNG_TY, ' ', '') = '추정' 	THEN 'CTW_130_003'
+					    	ELSE '' END)
+					, list.CNRL_CTGRY
+					, (CASE WHEN list.CNRL_CYCLE = '수시' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'A' THEN 'CTW_005_001' 
+							WHEN list.CNRL_CYCLE = '월별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'M' OR list.CNRL_CYCLE = '월간' OR list.CNRL_CYCLE = '월'   THEN 'CTW_005_002'
+					  		WHEN list.CNRL_CYCLE = '분기' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'Q' OR list.CNRL_CYCLE = '분기별' THEN 'CTW_005_003'
+						    WHEN list.CNRL_CYCLE = '반기' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'H' OR list.CNRL_CYCLE = '반기별' THEN 'CTW_005_004'
+					    	WHEN list.CNRL_CYCLE = '연별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'Y' OR list.CNRL_CYCLE = '연간' OR list.CNRL_CYCLE = '년간' THEN 'CTW_005_005' 
+						    WHEN list.CNRL_CYCLE = '주별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'W' THEN 'CTW_005_006' 
+						    WHEN list.CNRL_CYCLE = '일별수시' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,2)) = 'DA' THEN 'CTW_005_008' 
+					 	   	WHEN list.CNRL_CYCLE = '일별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'D' THEN 'CTW_005_007' 
+					 	   	WHEN list.CNRL_CYCLE = '건별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'C' THEN 'CTW_005_009' 
+					    	ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE01 IS NOT NULL AND list.CNRL_CYCLE01 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE01 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE02 IS NOT NULL AND list.CNRL_CYCLE02 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE02 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE03 IS NOT NULL AND list.CNRL_CYCLE03 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE03 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE04 IS NOT NULL AND list.CNRL_CYCLE04 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE04 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE05 IS NOT NULL AND list.CNRL_CYCLE05 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE05 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE06 IS NOT NULL AND list.CNRL_CYCLE06 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE06 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE07 IS NOT NULL AND list.CNRL_CYCLE07 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE07 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE08 IS NOT NULL AND list.CNRL_CYCLE08 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE08 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE09 IS NOT NULL AND list.CNRL_CYCLE09 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE09 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.OFFICE_TY = '본점' OR UPPER(SUBSTR(list.OFFICE_TY,0,1)) = 'H' THEN 'CTW_006_001' WHEN list.OFFICE_TY = '지점' OR UPPER(SUBSTR(list.OFFICE_TY,0,1)) = 'B' THEN 'CTW_006_002' ELSE '' END)
+					, (CASE WHEN list.DSGN_EFCT = '예' OR UPPER(SUBSTR(list.DSGN_EFCT,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, (CASE WHEN list.OPER_EFCT = '예' OR UPPER(SUBSTR(list.OPER_EFCT,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.CNRL_UPRPD_NO
+					, (CASE WHEN list.MRC_CNRL = '예' OR UPPER(SUBSTR(list.MRC_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.MRC_CTGRY, list.MRC_NO
+					, (CASE WHEN list.IPE_CNRL = '예' OR UPPER(SUBSTR(list.IPE_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.IPE_CTGRY, list.IPE_NO, list.IPE_NM, list.IPE_TEST_PROCSS
+					, list.COSO_NO
+					, (CASE WHEN list.TEST_CYCLE = '수시' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'A' THEN 'CTW_005_001' 
+						  	WHEN list.TEST_CYCLE = '월별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'M' OR list.TEST_CYCLE = '월간' OR list.TEST_CYCLE = '월'   THEN 'CTW_005_002'
+						  	WHEN list.TEST_CYCLE = '분기' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'Q' OR list.TEST_CYCLE = '분기별' THEN 'CTW_005_003'
+						    WHEN list.TEST_CYCLE = '반기' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'H' OR list.TEST_CYCLE = '반기별' THEN 'CTW_005_004'
+						    WHEN list.TEST_CYCLE = '연별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'Y' OR list.TEST_CYCLE = '연간' OR list.TEST_CYCLE = '년간' THEN 'CTW_005_005' 
+						    WHEN list.TEST_CYCLE = '주별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'W' THEN 'CTW_005_006' 
+						    WHEN list.TEST_CYCLE = '일별수시' OR UPPER(SUBSTR(list.TEST_CYCLE,0,2)) = 'DA' THEN 'CTW_005_008' 
+						    WHEN list.TEST_CYCLE = '일별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'D' THEN 'CTW_005_007' 
+					 	   	WHEN list.TEST_CYCLE = '건별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'C' THEN 'CTW_005_009' 
+						    ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE01 IS NOT NULL AND list.TEST_CYCLE01 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE01 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE02 IS NOT NULL AND list.TEST_CYCLE02 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE02 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE03 IS NOT NULL AND list.TEST_CYCLE03 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE03 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE04 IS NOT NULL AND list.TEST_CYCLE04 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE04 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE05 IS NOT NULL AND list.TEST_CYCLE05 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE05 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE06 IS NOT NULL AND list.TEST_CYCLE06 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE06 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE07 IS NOT NULL AND list.TEST_CYCLE07 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE07 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE08 IS NOT NULL AND list.TEST_CYCLE08 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE08 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE09 IS NOT NULL AND list.TEST_CYCLE09 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE09 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, list.TEST_RELATION_DOC, list.TEST_TRGET, list.SAMPLE_SIZE, list.TEST_PROCSS, list.EXCP_CNT
+					, list.TEST_MTH
+					, (CASE WHEN list.TEST_MTH_QUESTION IS NOT NULL AND list.TEST_MTH_QUESTION = 'N'  THEN ''
+					        WHEN list.TEST_MTH_QUESTION IS NOT NULL                                   THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_OBSERVE IS NOT NULL AND list.TEST_MTH_OBSERVE = 'N'  THEN ''
+					        WHEN list.TEST_MTH_OBSERVE IS NOT NULL                                  THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_VERIFICATION IS NOT NULL AND list.TEST_MTH_VERIFICATION = 'N'  THEN ''
+					        WHEN list.TEST_MTH_VERIFICATION IS NOT NULL									      THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_RE_RUN IS NOT NULL AND list.TEST_MTH_RE_RUN = 'N'  THEN ''
+					        WHEN list.TEST_MTH_RE_RUN IS NOT NULL							      THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_TRACKING IS NOT NULL AND list.TEST_MTH_TRACKING = 'N'  THEN ''
+					        WHEN list.TEST_MTH_TRACKING IS NOT NULL								      THEN 'Y' 
+					        ELSE '' END)                                                            
+					, (CASE WHEN list.ATMC_SAMPLE = '예' OR list.ATMC_SAMPLE = '자동' OR UPPER(SUBSTR(list.ATMC_SAMPLE,0,1)) = 'Y' THEN 'Y' WHEN  list.ATMC_SAMPLE = '아니오' OR list.ATMC_SAMPLE = '수동' OR UPPER(SUBSTR(list.ATMC_SAMPLE,0,1)) = 'N' THEN 'N' ELSE '' END)
+					, (CASE WHEN list.TEST_SANCTN = '예' OR UPPER(SUBSTR(list.TEST_SANCTN,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.CNRL_ANT_CTGR_CODE, list.CNRL_ACNTCTGR, list.RELATE_ACNTCTGR_PBLNTF, list.CNRL_REMARK
+					, (CASE WHEN list.ASSE_C IS NOT NULL AND list.ASSE_C = 'N'  THEN ''
+					        WHEN list.ASSE_C IS NOT NULL 				  	    THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_E IS NOT NULL AND list.ASSE_E = 'N'  THEN ''
+					        WHEN list.ASSE_E IS NOT NULL 					    THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_R IS NOT NULL AND list.ASSE_R = 'N'  THEN ''
+					        WHEN list.ASSE_R IS NOT NULL 						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_V IS NOT NULL AND list.ASSE_V = 'N'  THEN ''
+					        WHEN list.ASSE_V IS NOT NULL					    THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_P IS NOT NULL AND list.ASSE_P = 'N'  THEN ''
+					        WHEN list.ASSE_P IS NOT NULL						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_S IS NOT NULL AND list.ASSE_S = 'N'  THEN ''
+					        WHEN list.ASSE_S IS NOT NULL						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_O IS NOT NULL AND list.ASSE_O = 'N'  THEN ''
+					        WHEN list.ASSE_O IS NOT NULL						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_A IS NOT NULL AND list.ASSE_A = 'N'  THEN ''
+					        WHEN list.ASSE_A IS NOT NULL 						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_PF IS NOT NULL AND list.ASSE_PF = 'N'  THEN ''
+					        WHEN list.ASSE_PF IS NOT NULL 						  THEN 'Y' 
+					        ELSE '' END)
+					, list.TREXAMIN_PROCSS, list.TREXAMIN_PRUF, list.TREXAMIN_CNCLSN
+					, list.RISK_RESIDUAL_LIKEHOOD, list.RISK_RESIDUAL_IMPACT, list.RISK_RESIDUAL_RATING
+					, list.CNRL_RESIDUAL_LIKEHOOD, list.CNRL_RESIDUAL_IMPACT, list.CNRL_RESIDUAL_RATING, list.CNRL_IMPRVM_NM, list.CNRL_IMPRVM_CN
+					, list.FNREP_RISKEVL_CSFCTR01, list.FNREP_RISKEVL_CSFCTR02, list.FNREP_RISKEVL_CSFCTR03
+                    , list.FNREP_RISKEVL_CSFCTR04, list.FNREP_RISKEVL_CSFCTR05, list.FNREP_RISKEVL_CSFCTR06
+                    , list.FNREP_RISKEVL_CSFCTR07, list.FNREP_RISKEVL_CSFCTR08, list.FNREP_RISKEVL_CSFCTR09, list.FNREP_RISKEVL_CSFCTR10
+                    , list.FNREP_CNRL_RISK_CNCLSN, list.FNREP_ACNT_RISK_CNCLSN, list.FNREP_PROCS_RISK_CNCLSN, list.FNREP_GNRLZ_EVL_CNCLSN
+					, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 시스템 반영'
+				);
+		END LOOP;	
+	END; 
+	]]>
+	</insert>		
+	
+<!-- 통제 적용 : RISK가 없을 경우 -->
+	<insert id="cnrlReflctNoRisk">
+	<![CDATA[
+	BEGIN
+		FOR list IN (
+			SELECT 
+			    DISTINCT MEGA_ID, MJR_ID, SUB_ID, RISK_ID
+			  , CNRL_ID, CNRL_NO, CNRL_NM, CNRL_CN
+			  , KEY_CNRL, REFRN_NO, CNRL_RELATE_REF
+			  , CNRL_EXC_UPPER_DEPT, CNRL_EXC_DEPT, CNRL_EXCBER
+			  , CNRL_RSPNSBL_UPPER_DEPT, CNRL_RSPNSBL_DEPT, CNRL_RSPNBER
+			  , CNRL_REG_NM, CNRL_RELATE_DOC, CNRL_RELATE_SYS, CNRL_RM
+			  , CNRL_PURPS, CNRL_PURPS_CHOISE, CNRL_PURPS_RELIABILITY_FIN, CNRL_PURPS_ASSET_PROTECTION, CNRL_PURPS_FRAUD_PREVENTION
+			  , CNRL_TY, CNRL_TY_CECK01, CNRL_TY_CECK02, CNRL_TY_CECK03, CNRL_TY_CECK04, CNRL_TY_CECK05, CNRL_TY_CECK06, CNRL_TY_CECK07, CNRL_TY_CECK08, CNRL_TY_CECK09
+			  , CNRL_TY01, CNRL_TY02, CNRL_TY03, CNRL_TY03_AUTO, CNRL_TY03_MANUAL, CNRL_TY03_AUTOMANUAL
+			  , DELNG_TY, CNRL_CTGRY, CNRL_CYCLE
+			  , CNRL_CYCLE01, CNRL_CYCLE02, CNRL_CYCLE03, CNRL_CYCLE04, CNRL_CYCLE05, CNRL_CYCLE06, CNRL_CYCLE07, CNRL_CYCLE08, CNRL_CYCLE09, OFFICE_TY, DSGN_EFCT, OPER_EFCT, CNRL_UPRPD_NO
+			  , MRC_CNRL, MRC_CTGRY, MRC_NO
+			  , IPE_CNRL, IPE_CTGRY, IPE_NO, IPE_NM, IPE_TEST_PROCSS
+			  , COSO_NO
+			  , TEST_CYCLE
+			  , TEST_CYCLE01, TEST_CYCLE02, TEST_CYCLE03, TEST_CYCLE04, TEST_CYCLE05, TEST_CYCLE06, TEST_CYCLE07, TEST_CYCLE08, TEST_CYCLE09
+			  , TEST_RELATION_DOC, TEST_TRGET, SAMPLE_SIZE, TEST_PROCSS, EXCP_CNT
+			  , TEST_MTH, TEST_MTH_QUESTION, TEST_MTH_OBSERVE, TEST_MTH_VERIFICATION, TEST_MTH_RE_RUN, TEST_MTH_TRACKING
+			  , ATMC_SAMPLE, TEST_SANCTN, CNRL_ANT_CTGR_CODE, CNRL_ACNTCTGR, RELATE_ACNTCTGR_PBLNTF, CNRL_REMARK
+			  , ASSE_C, ASSE_E, ASSE_R, ASSE_V, ASSE_P, ASSE_S, ASSE_O, ASSE_A, ASSE_PF
+			  , TREXAMIN_PROCSS, TREXAMIN_PRUF, TREXAMIN_CNCLSN
+			  , RISK_RESIDUAL_LIKEHOOD, RISK_RESIDUAL_IMPACT, RISK_RESIDUAL_RATING
+			  , CNRL_RESIDUAL_LIKEHOOD, CNRL_RESIDUAL_IMPACT, CNRL_RESIDUAL_RATING, CNRL_IMPRVM_NM, CNRL_IMPRVM_CN
+			  , FNREP_RISKEVL_CSFCTR01, FNREP_RISKEVL_CSFCTR02, FNREP_RISKEVL_CSFCTR03
+              , FNREP_RISKEVL_CSFCTR04, FNREP_RISKEVL_CSFCTR05, FNREP_RISKEVL_CSFCTR06
+              , FNREP_RISKEVL_CSFCTR07, FNREP_RISKEVL_CSFCTR08, FNREP_RISKEVL_CSFCTR09, FNREP_RISKEVL_CSFCTR10
+              , FNREP_CNRL_RISK_CNCLSN, FNREP_ACNT_RISK_CNCLSN, FNREP_PROCS_RISK_CNCLSN, FNREP_GNRLZ_EVL_CNCLSN
+			FROM TB_CW_ELC_RCM_ORGINL
+			WHERE CNRL_ID IS NOT NULL
+				AND ISNULL(ID_ERROR_AT, 'N') !='Y' AND ISNULL(MEGA_ERROR_AT, 'N') != 'Y' 
+				AND ISNULL(MJR_ERROR_AT, 'N') != 'Y' AND ISNULL(SUB_ERROR_AT, 'N') != 'Y'
+				AND ISNULL(RISK_ERROR_AT, 'N') != 'Y' AND ISNULL(CNRL_ERROR_AT, 'N') != 'Y'
+				AND UNITY_ID = #{unityId}
+			ORDER BY CNRL_ID ASC	
+		) LOOP
+		
+		/** 01. 맵핑 입력/수정 */
+			MERGE INTO TB_CW_ELC_RCM_MAPNG T1
+			USING (VALUES (1)) AS Source (Number) 			
+			ON ( T1.MAPNG_ID = ( list.CNRL_ID+'_'+ISNULL(list.SUB_ID, list.MJR_ID) ) ) 
+			WHEN MATCHED THEN
+				UPDATE SET
+					  OBJECT_ID			= list.CNRL_ID
+					, OBJECT_NO 		= list.CNRL_NO
+					, OBJECT_NM  		= list.CNRL_NM
+					, OBJECT_LEVEL  	= (CASE WHEN list.SUB_ID IS NULL THEN 4 ELSE 5 END)
+					, OBJECT_KND_CD_ID 	= 'CTW_001_005'
+					, UPPER_OBJECT_ID  	= ISNULL(list.SUB_ID, list.MJR_ID)
+					, UPPER_MAPNG_ID   	= (CASE WHEN list.SUB_ID IS NULL THEN list.MJR_ID+'_'+list.MEGA_ID 
+												ELSE list.SUB_ID+'_'+list.MJR_ID END)
+					, UPD_DT 			= GETDATE()
+					, UPD_USER_ID 		= #{suserId} 
+			WHEN NOT MATCHED THEN
+				INSERT (
+					  MAPNG_ID, OBJECT_ID, OBJECT_NO, OBJECT_NM, OBJECT_LEVEL, OBJECT_KND_CD_ID, UPPER_OBJECT_ID, UPPER_MAPNG_ID, CMPNY_CD_ID
+                	, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+				) VALUES (
+					  ( list.CNRL_ID+'_'+ISNULL(list.SUB_ID, list.MJR_ID) )
+					, list.CNRL_ID
+				  	, list.CNRL_NO
+				  	, list.CNRL_NM
+				  	, (CASE WHEN list.SUB_ID IS NULL THEN 4 ELSE 5 END)
+				  	, 'CTW_001_005'
+				  	, ISNULL(list.SUB_ID, list.MJR_ID)
+				  	, (CASE WHEN list.SUB_ID IS NULL THEN list.MJR_ID+'_'+list.MEGA_ID 
+							ELSE list.SUB_ID+'_'+list.MJR_ID END)
+				  	, #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+				);
+				
+		/** 02. 맵핑 이력 종료/시작 */    
+	    	UPDATE TB_CW_ELC_RCM_MAPNG_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			      ,UPD_DT = GETDATE()
+			      ,UPD_USER_ID = #{suserId} 
+			 WHERE MAPNG_ID = ( list.CNRL_ID+'_'+ISNULL(list.SUB_ID, list.MJR_ID) )
+			   AND ENDTMSTMP = '99991231235959999999';
+	        
+			INSERT INTO TB_CW_ELC_RCM_MAPNG_HIST (
+					  MAPNG_ID, BGNTMSTMP, ENDTMSTMP, OBJECT_ID, OBJECT_NO, OBJECT_NM, OBJECT_LEVEL, OBJECT_KND_CD_ID, UPPER_OBJECT_ID, UPPER_MAPNG_ID, CMPNY_CD_ID
+                	, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					  ( list.CNRL_ID+'_'+ISNULL(list.SUB_ID, list.MJR_ID) )
+					, #{bgntmstmp}
+					, '99991231235959999999'
+					, list.CNRL_ID
+				  	, list.CNRL_NO
+				  	, list.CNRL_NM
+				  	, (CASE WHEN list.SUB_ID IS NULL THEN 4 ELSE 5 END)
+				  	, 'CTW_001_005'
+				  	, ISNULL(list.SUB_ID, list.MJR_ID)
+				  	, (CASE WHEN list.SUB_ID IS NULL THEN list.MJR_ID+'_'+list.MEGA_ID 
+							ELSE list.SUB_ID+'_'+list.MJR_ID END)
+				  	, #{cmpnyCdId}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+					, 'RCM 시스템 반영'
+				);
+				
+		/** 03. 통제 입력/수정 */
+			MERGE INTO TB_CW_ELC_RCM_CNRL T1
+			USING (VALUES (1)) AS Source (Number) 
+			ON ( T1.CNRL_ID = list.CNRL_ID  ) 
+			WHEN MATCHED THEN
+				UPDATE SET       
+					  CNRL_NO        	 			= list.CNRL_NO        
+					, CNRL_NM         				= list.CNRL_NM        
+					, CNRL_CN         				= list.CNRL_CN  
+					, KEY_CNRL_AT  					= (CASE WHEN list.KEY_CNRL = '예' OR UPPER(SUBSTR(list.KEY_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, REFRN_NO  					= list.REFRN_NO
+					, CNRL_RELATE_REF  				= list.CNRL_RELATE_REF
+					, CNRL_EXC_UPPER_DEPT  			= list.CNRL_EXC_UPPER_DEPT
+					, CNRL_EXC_DEPT  				= list.CNRL_EXC_DEPT
+					, CNRL_EXCBER  					= list.CNRL_EXCBER
+					, CNRL_RSPNSBL_UPPER_DEPT  		= list.CNRL_RSPNSBL_UPPER_DEPT
+					, CNRL_RSPNSBL_DEPT  			= list.CNRL_RSPNSBL_DEPT
+					, CNRL_RSPNBER  				= list.CNRL_RSPNBER
+					, RELATE_REGLTN_NM  			= list.CNRL_REG_NM
+					, CNRL_RELATE_DOC  				= list.CNRL_RELATE_DOC
+					, CNRL_RELATE_SYS  				= list.CNRL_RELATE_SYS
+					, CNRL_RM  						= list.CNRL_RM
+					, CNRL_PURPS  					= list.CNRL_PURPS
+					, CNRL_PURPS_CD_ID  			= (CASE WHEN list.CNRL_PURPS_CHOISE = 'F/S왜곡방지' OR list.CNRL_PURPS_CHOISE = '재무보고 신뢰성' OR list.CNRL_PURPS_CHOISE = '재무보고신뢰성' 	THEN 'CTW_119_001' 
+															WHEN list.CNRL_PURPS_CHOISE = '자산보호' 		THEN 'CTW_119_002'
+														    WHEN list.CNRL_PURPS_CHOISE = '부정방지' 		THEN 'CTW_119_003'
+													    	ELSE '' END)
+					, CNRL_PURPS_FNNR_RLABLTY  		= (CASE WHEN list.CNRL_PURPS_RELIABILITY_FIN IS NOT NULL AND list.CNRL_PURPS_RELIABILITY_FIN = 'N'  THEN ''
+					                                        WHEN list.CNRL_PURPS_RELIABILITY_FIN IS NOT NULL  											THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_PURPS_ASSET_PRTC  		= (CASE WHEN list.CNRL_PURPS_ASSET_PROTECTION IS NOT NULL AND list.CNRL_PURPS_ASSET_PROTECTION = 'N'  THEN ''
+					                                        WHEN list.CNRL_PURPS_ASSET_PROTECTION IS NOT NULL  											  THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_PURPS_INSTC_PRVN  		= (CASE WHEN list.CNRL_PURPS_FRAUD_PREVENTION IS NOT NULL AND list.CNRL_PURPS_FRAUD_PREVENTION = 'N'  THEN ''
+					                                        WHEN list.CNRL_PURPS_FRAUD_PREVENTION IS NOT NULL											  THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CD_ID  				= (CASE WHEN REPLACE(list.CNRL_TY, ' ', '') = '검토및대사'		THEN 'CTW_120_001' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '승인'			THEN 'CTW_120_002' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '업무분장'		THEN 'CTW_120_003' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '물리적보안'		THEN 'CTW_120_004' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '시스템설정'		THEN 'CTW_120_005' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '시스템접근통제'	THEN 'CTW_120_006' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '인터페이스'		THEN 'CTW_120_007' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '예외사항보고'	THEN 'CTW_120_008' 
+															WHEN REPLACE(list.CNRL_TY, ' ', '') = '규정관리'		THEN 'CTW_120_009' 
+													    	ELSE '' END)
+					, CNRL_TY_CECK01  				= (CASE WHEN list.CNRL_TY_CECK01 IS NOT NULL AND list.CNRL_TY_CECK01 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK01 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK02  				= (CASE WHEN list.CNRL_TY_CECK02 IS NOT NULL AND list.CNRL_TY_CECK02 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK02 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK03  				= (CASE WHEN list.CNRL_TY_CECK03 IS NOT NULL AND list.CNRL_TY_CECK03 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK03 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK04  				= (CASE WHEN list.CNRL_TY_CECK04 IS NOT NULL AND list.CNRL_TY_CECK04 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK04 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK05  				= (CASE WHEN list.CNRL_TY_CECK05 IS NOT NULL AND list.CNRL_TY_CECK05 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK05 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK06  				= (CASE WHEN list.CNRL_TY_CECK06 IS NOT NULL AND list.CNRL_TY_CECK06 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK06 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK07  				= (CASE WHEN list.CNRL_TY_CECK07 IS NOT NULL AND list.CNRL_TY_CECK07 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK07 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK08  				= (CASE WHEN list.CNRL_TY_CECK08 IS NOT NULL AND list.CNRL_TY_CECK08 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK08 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY_CECK09  				= (CASE WHEN list.CNRL_TY_CECK09 IS NOT NULL AND list.CNRL_TY_CECK09 = 'N'  THEN ''
+					                                        WHEN list.CNRL_TY_CECK09 IS NOT NULL                                THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_TY01_CD_ID  				= (CASE WHEN list.CNRL_TY01 = '예방' OR UPPER(SUBSTR(list.CNRL_TY01,0,1)) = 'P' THEN 'CTW_002_001' WHEN  list.CNRL_TY01 = '적발' OR UPPER(SUBSTR(list.CNRL_TY01,0,1)) = 'D' THEN 'CTW_002_002' ELSE '' END)
+					, CNRL_TY02_CD_ID  				= (CASE WHEN list.CNRL_TY02 = '관리' OR UPPER(SUBSTR(list.CNRL_TY02,0,1)) = 'M' THEN 'CTW_003_001' WHEN  list.CNRL_TY02 = '거래' OR UPPER(SUBSTR(list.CNRL_TY02,0,1)) = 'D' THEN 'CTW_003_002' ELSE '' END)   
+					, CNRL_TY03_CD_ID  				= (CASE WHEN list.CNRL_TY03 = '반자동' OR UPPER(SUBSTR(list.CNRL_TY03,0,2)) = 'MA' OR UPPER(SUBSTR(list.CNRL_TY03,0,2)) = 'AM' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'W' OR list.CNRL_TY03 = '자동/수동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = '수동/자동' THEN 'CTW_004_003'
+												    		WHEN list.CNRL_TY03 = '자동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'A' THEN 'CTW_004_001' 
+												    		WHEN list.CNRL_TY03 = '수동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'M' THEN 'CTW_004_002'
+												    		WHEN (list.CNRL_TY03_AUTO IS NOT NULL 		AND list.CNRL_TY03_AUTO != 'N') AND (list.CNRL_TY03_MANUAL IS NOT NULL AND list.CNRL_TY03_MANUAL != 'N') THEN 'CTW_004_003' 
+												    		WHEN list.CNRL_TY03_AUTOMANUAL IS NOT NULL 	AND list.CNRL_TY03_AUTOMANUAL != 'N' 	THEN 'CTW_004_003' 
+												    		WHEN list.CNRL_TY03_MANUAL IS NOT NULL 		AND list.CNRL_TY03_MANUAL != 'N' 		THEN 'CTW_004_002'  
+												    		WHEN list.CNRL_TY03_AUTO IS NOT NULL 		AND list.CNRL_TY03_AUTO != 'N' 			THEN 'CTW_004_001' 
+															ELSE '' END)
+					, DELNG_TY_CD_ID  				= (CASE WHEN REPLACE(list.DELNG_TY, ' ', '') = '일상적' 	THEN 'CTW_130_001' 
+															WHEN REPLACE(list.DELNG_TY, ' ', '') = '비일상적' 	THEN 'CTW_130_002'
+													  		WHEN REPLACE(list.DELNG_TY, ' ', '') = '추정' 	THEN 'CTW_130_003'
+													    	ELSE '' END)
+					, CNRL_CTGRY  					= list.CNRL_CTGRY
+					, CNRL_CYCLE_CD_ID  			= (CASE WHEN list.CNRL_CYCLE = '수시' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'A' THEN 'CTW_005_001' 
+															WHEN list.CNRL_CYCLE = '월별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'M' OR list.CNRL_CYCLE = '월간' OR list.CNRL_CYCLE = '월'   THEN 'CTW_005_002'
+													  		WHEN list.CNRL_CYCLE = '분기' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'Q' OR list.CNRL_CYCLE = '분기별' THEN 'CTW_005_003'
+														    WHEN list.CNRL_CYCLE = '반기' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'H' OR list.CNRL_CYCLE = '반기별' THEN 'CTW_005_004'
+													    	WHEN list.CNRL_CYCLE = '연별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'Y' OR list.CNRL_CYCLE = '연간' OR list.CNRL_CYCLE = '년간' THEN 'CTW_005_005' 
+														    WHEN list.CNRL_CYCLE = '주별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'W' THEN 'CTW_005_006' 
+														    WHEN list.CNRL_CYCLE = '일별수시' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,2)) = 'DA' THEN 'CTW_005_008' 
+													 	   	WHEN list.CNRL_CYCLE = '일별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'D' THEN 'CTW_005_007'
+					 	   									WHEN list.CNRL_CYCLE = '건별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'C' THEN 'CTW_005_009'  
+													    	ELSE '' END)
+					, CNRL_CYCLE01					= (CASE WHEN list.CNRL_CYCLE01 IS NOT NULL AND list.CNRL_CYCLE01 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE01 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE02					= (CASE WHEN list.CNRL_CYCLE02 IS NOT NULL AND list.CNRL_CYCLE02 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE02 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE03					= (CASE WHEN list.CNRL_CYCLE03 IS NOT NULL AND list.CNRL_CYCLE03 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE03 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE04					= (CASE WHEN list.CNRL_CYCLE04 IS NOT NULL AND list.CNRL_CYCLE04 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE04 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE05					= (CASE WHEN list.CNRL_CYCLE05 IS NOT NULL AND list.CNRL_CYCLE05 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE05 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE06					= (CASE WHEN list.CNRL_CYCLE06 IS NOT NULL AND list.CNRL_CYCLE06 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE06 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE07					= (CASE WHEN list.CNRL_CYCLE07 IS NOT NULL AND list.CNRL_CYCLE07 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE07 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE08					= (CASE WHEN list.CNRL_CYCLE08 IS NOT NULL AND list.CNRL_CYCLE08 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE08 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, CNRL_CYCLE09					= (CASE WHEN list.CNRL_CYCLE09 IS NOT NULL AND list.CNRL_CYCLE09 = 'N'	THEN ''
+					                                        WHEN list.CNRL_CYCLE09 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, OFFICE_TY_CD_ID  				= (CASE WHEN list.OFFICE_TY = '본점' OR UPPER(SUBSTR(list.OFFICE_TY,0,1)) = 'H' THEN 'CTW_006_001' WHEN list.OFFICE_TY = '지점' OR UPPER(SUBSTR(list.OFFICE_TY,0,1)) = 'B' THEN 'CTW_006_002' ELSE '' END)
+					, DSGN_EFCT_AT  				= (CASE WHEN list.DSGN_EFCT = '예' OR UPPER(SUBSTR(list.DSGN_EFCT,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, OPER_EFCT_AT  				= (CASE WHEN list.OPER_EFCT = '예' OR UPPER(SUBSTR(list.OPER_EFCT,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, CNRL_UPRPD_NO  				= list.CNRL_UPRPD_NO
+					, MRC_CNRL_AT  					= (CASE WHEN list.MRC_CNRL = '예' OR UPPER(SUBSTR(list.MRC_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, MRC_CTGRY_CD_ID  				= list.MRC_CTGRY
+					, MRC_NO  						= list.MRC_NO
+					, IPE_CNRL_AT  					= (CASE WHEN list.IPE_CNRL = '예' OR UPPER(SUBSTR(list.IPE_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, IPE_CTGRY_CD_ID  				= list.IPE_CTGRY
+					, IPE_NO  						= list.IPE_NO
+					, IPE_NM  						= list.IPE_NM
+					, IPE_TEST_PROCSS  				= list.IPE_TEST_PROCSS
+					, COSO_NO  						= list.COSO_NO
+					, TEST_CYCLE_CD_ID  			= (CASE WHEN list.TEST_CYCLE = '수시' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'A' THEN 'CTW_005_001' 
+															WHEN list.TEST_CYCLE = '월별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'M' OR list.TEST_CYCLE = '월간' OR list.TEST_CYCLE = '월'   THEN 'CTW_005_002'
+													  		WHEN list.TEST_CYCLE = '분기' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'Q' OR list.TEST_CYCLE = '분기별' THEN 'CTW_005_003'
+														    WHEN list.TEST_CYCLE = '반기' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'H' OR list.TEST_CYCLE = '반기별' THEN 'CTW_005_004'
+													    	WHEN list.TEST_CYCLE = '연별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'Y' OR list.TEST_CYCLE = '연간' OR list.TEST_CYCLE = '년간' THEN 'CTW_005_005' 
+														    WHEN list.TEST_CYCLE = '주별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'W' THEN 'CTW_005_006' 
+														    WHEN list.TEST_CYCLE = '일별수시' OR UPPER(SUBSTR(list.TEST_CYCLE,0,2)) = 'DA' THEN 'CTW_005_008' 
+													 	   	WHEN list.TEST_CYCLE = '일별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'D' THEN 'CTW_005_007'
+					 	   									WHEN list.TEST_CYCLE = '건별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'C' THEN 'CTW_005_009'  
+													    	ELSE '' END)
+					, TEST_CYCLE01					= (CASE WHEN list.TEST_CYCLE01 IS NOT NULL AND list.TEST_CYCLE01 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE01 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE02					= (CASE WHEN list.TEST_CYCLE02 IS NOT NULL AND list.TEST_CYCLE02 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE02 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE03					= (CASE WHEN list.TEST_CYCLE03 IS NOT NULL AND list.TEST_CYCLE03 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE03 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE04					= (CASE WHEN list.TEST_CYCLE04 IS NOT NULL AND list.TEST_CYCLE04 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE04 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE05					= (CASE WHEN list.TEST_CYCLE05 IS NOT NULL AND list.TEST_CYCLE05 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE05 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE06					= (CASE WHEN list.TEST_CYCLE06 IS NOT NULL AND list.TEST_CYCLE06 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE06 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE07					= (CASE WHEN list.TEST_CYCLE07 IS NOT NULL AND list.TEST_CYCLE07 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE07 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE08					= (CASE WHEN list.TEST_CYCLE08 IS NOT NULL AND list.TEST_CYCLE08 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE08 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_CYCLE09					= (CASE WHEN list.TEST_CYCLE09 IS NOT NULL AND list.TEST_CYCLE09 = 'N'	THEN ''
+					                                        WHEN list.TEST_CYCLE09 IS NOT NULL 				   	    		THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_RELATE_DOC				= list.TEST_RELATION_DOC
+					, TEST_TRGET 					= list.TEST_TRGET
+					, SAMPLE_SIZE 					= list.SAMPLE_SIZE
+					, TEST_PROCSS 					= list.TEST_PROCSS
+					, EXCP_CNT 						= list.EXCP_CNT
+					, TEST_MTH 						= list.TEST_MTH
+					, TEST_MTH_QESTN 				= (CASE WHEN list.TEST_MTH_QUESTION IS NOT NULL AND list.TEST_MTH_QUESTION = 'N'  THEN ''
+					                                        WHEN list.TEST_MTH_QUESTION IS NOT NULL                                   THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_MTH_OBSERV 				= (CASE WHEN list.TEST_MTH_OBSERVE IS NOT NULL AND list.TEST_MTH_OBSERVE = 'N'  THEN ''
+					                                        WHEN list.TEST_MTH_OBSERVE IS NOT NULL                                  THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_MTH_VRIFY 				= (CASE WHEN list.TEST_MTH_VERIFICATION IS NOT NULL AND list.TEST_MTH_VERIFICATION = 'N'  THEN ''
+					                                        WHEN list.TEST_MTH_VERIFICATION IS NOT NULL								          THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_MTH_ECGN 				= (CASE WHEN list.TEST_MTH_RE_RUN IS NOT NULL AND list.TEST_MTH_RE_RUN = 'N'  THEN ''
+					                                        WHEN list.TEST_MTH_RE_RUN IS NOT NULL							      THEN 'Y' 
+					                                        ELSE '' END)
+					, TEST_MTH_SYS_TRACE 			= (CASE WHEN list.TEST_MTH_TRACKING IS NOT NULL AND list.TEST_MTH_TRACKING = 'N'  THEN ''
+					                                        WHEN list.TEST_MTH_TRACKING IS NOT NULL							 	      THEN 'Y' 
+					                                        ELSE '' END)
+					, ATMC_SAMPLE_AT 				= (CASE WHEN list.ATMC_SAMPLE = '예' OR list.ATMC_SAMPLE = '자동' OR UPPER(SUBSTR(list.ATMC_SAMPLE,0,1)) = 'Y' THEN 'Y' WHEN  list.ATMC_SAMPLE = '아니오' OR list.ATMC_SAMPLE = '수동' OR UPPER(SUBSTR(list.ATMC_SAMPLE,0,1)) = 'N' THEN 'N' ELSE '' END)
+					, TEST_SANCTN_AT 				= (CASE WHEN list.TEST_SANCTN = '예' OR UPPER(SUBSTR(list.TEST_SANCTN,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, ACNT_CD 						= list.CNRL_ANT_CTGR_CODE
+					, CNRL_ACNTCTGR 				= list.CNRL_ACNTCTGR
+					, RELATE_ACNTCTGR_PBLNTF	 	= list.RELATE_ACNTCTGR_PBLNTF
+					, CNRL_CM_IEM 					= list.CNRL_REMARK
+					, ASSE_C_AT 					= (CASE WHEN list.ASSE_C IS NOT NULL AND list.ASSE_C = 'N'  THEN ''
+					                                        WHEN list.ASSE_C IS NOT NULL 				   	    THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_E_AT 					= (CASE WHEN list.ASSE_E IS NOT NULL AND list.ASSE_E = 'N'  THEN ''
+					                                        WHEN list.ASSE_E IS NOT NULL 						THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_R_AT 					= (CASE WHEN list.ASSE_R IS NOT NULL AND list.ASSE_R = 'N'  THEN ''
+					                                        WHEN list.ASSE_R IS NOT NULL 						THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_V_AT 					= (CASE WHEN list.ASSE_V IS NOT NULL AND list.ASSE_V = 'N'  THEN ''
+					                                        WHEN list.ASSE_V IS NOT NULL					    THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_P_AT 					= (CASE WHEN list.ASSE_P IS NOT NULL AND list.ASSE_P = 'N'  THEN ''
+					                                        WHEN list.ASSE_P IS NOT NULL						THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_S_AT  					= (CASE WHEN list.ASSE_S IS NOT NULL AND list.ASSE_S = 'N'  THEN ''
+					                                        WHEN list.ASSE_S IS NOT NULL						THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_O_AT 					= (CASE WHEN list.ASSE_O IS NOT NULL AND list.ASSE_O = 'N'  THEN ''
+					                                        WHEN list.ASSE_O IS NOT NULL						THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_A_AT 					= (CASE WHEN list.ASSE_A IS NOT NULL AND list.ASSE_A = 'N'  THEN ''
+					                                        WHEN list.ASSE_A IS NOT NULL 						THEN 'Y' 
+					                                        ELSE '' END)
+					, ASSE_PF_AT					= (CASE WHEN list.ASSE_PF IS NOT NULL AND list.ASSE_PF = 'N'  THEN ''
+					                                        WHEN list.ASSE_PF IS NOT NULL 						  THEN 'Y' 
+					                                        ELSE '' END)
+					, TREXAMIN_PROCSS 				= list.TREXAMIN_PROCSS
+					, TREXAMIN_PRUF 				= list.TREXAMIN_PRUF
+					, TREXAMIN_CNCLSN 				= list.TREXAMIN_CNCLSN
+					, RISK_RESIDUAL_LIKEHOOD 		= list.RISK_RESIDUAL_LIKEHOOD
+					, RISK_RESIDUAL_IMPACT 			= list.RISK_RESIDUAL_IMPACT
+					, RISK_RESIDUAL_RATIONG 		= list.RISK_RESIDUAL_RATING
+					, AFTER_RISK_RESIDUAL_LIKEHOOD 	= list.CNRL_RESIDUAL_LIKEHOOD
+					, AFTER_RISK_RESIDUAL_IMPACT 	= list.CNRL_RESIDUAL_IMPACT
+					, AFTER_RISK_RESIDUAL_RATIONG 	= list.CNRL_RESIDUAL_RATING
+					, CNRL_IMPRVM_NM 				= list.CNRL_IMPRVM_NM
+					, CNRL_IMPRVM_DC 				= list.CNRL_IMPRVM_CN
+					, FNREP_RISKEVL_CSFCTR01 = list.FNREP_RISKEVL_CSFCTR01
+                    , FNREP_RISKEVL_CSFCTR02 = list.FNREP_RISKEVL_CSFCTR02
+                    , FNREP_RISKEVL_CSFCTR03 = list.FNREP_RISKEVL_CSFCTR03
+                    , FNREP_RISKEVL_CSFCTR04 = list.FNREP_RISKEVL_CSFCTR04
+                    , FNREP_RISKEVL_CSFCTR05 = list.FNREP_RISKEVL_CSFCTR05
+                    , FNREP_RISKEVL_CSFCTR06 = list.FNREP_RISKEVL_CSFCTR06
+                    , FNREP_RISKEVL_CSFCTR07 = list.FNREP_RISKEVL_CSFCTR07
+                    , FNREP_RISKEVL_CSFCTR08 = list.FNREP_RISKEVL_CSFCTR08
+                    , FNREP_RISKEVL_CSFCTR09 = list.FNREP_RISKEVL_CSFCTR09
+                    , FNREP_RISKEVL_CSFCTR10 = list.FNREP_RISKEVL_CSFCTR10
+                    , FNREP_CNRL_RISK_CNCLSN = list.FNREP_CNRL_RISK_CNCLSN
+                    , FNREP_ACNT_RISK_CNCLSN = list.FNREP_ACNT_RISK_CNCLSN
+                    , FNREP_PROCS_RISK_CNCLSN = list.FNREP_PROCS_RISK_CNCLSN
+                    , FNREP_GNRLZ_EVL_CNCLSN = list.FNREP_GNRLZ_EVL_CNCLSN
+					, UPD_DT 		 			 	= GETDATE()
+					, UPD_USER_ID 	  				= #{suserId}
+			WHEN NOT MATCHED THEN 
+				INSERT (
+					  CNRL_ID, CNRL_NO, CNRL_NM, CNRL_CN
+ 					, KEY_CNRL_AT
+ 					, REFRN_NO, CNRL_RELATE_REF
+					, CNRL_EXC_UPPER_DEPT, CNRL_EXC_DEPT, CNRL_EXCBER, CNRL_RSPNSBL_UPPER_DEPT, CNRL_RSPNSBL_DEPT, CNRL_RSPNBER
+					, RELATE_REGLTN_NM, CNRL_RELATE_DOC, CNRL_RELATE_SYS, CNRL_RM
+					, CNRL_PURPS, CNRL_PURPS_CD_ID
+					, CNRL_PURPS_FNNR_RLABLTY
+					, CNRL_PURPS_ASSET_PRTC
+					, CNRL_PURPS_INSTC_PRVN
+					, CNRL_TY_CD_ID
+					, CNRL_TY_CECK01
+					, CNRL_TY_CECK02
+					, CNRL_TY_CECK03
+					, CNRL_TY_CECK04
+					, CNRL_TY_CECK05
+					, CNRL_TY_CECK06
+					, CNRL_TY_CECK07
+					, CNRL_TY_CECK08
+					, CNRL_TY_CECK09
+					, CNRL_TY01_CD_ID
+					, CNRL_TY02_CD_ID
+					, CNRL_TY03_CD_ID
+					, DELNG_TY_CD_ID
+					, CNRL_CTGRY, CNRL_CYCLE_CD_ID
+					, CNRL_CYCLE01, CNRL_CYCLE02, CNRL_CYCLE03, CNRL_CYCLE04, CNRL_CYCLE05, CNRL_CYCLE06, CNRL_CYCLE07, CNRL_CYCLE08, CNRL_CYCLE09
+					, OFFICE_TY_CD_ID
+					, DSGN_EFCT_AT
+					, OPER_EFCT_AT
+					, CNRL_UPRPD_NO
+					, MRC_CNRL_AT
+					, MRC_CTGRY_CD_ID, MRC_NO
+					, IPE_CNRL_AT
+					, IPE_CTGRY_CD_ID, IPE_NO, IPE_NM, IPE_TEST_PROCSS
+					, COSO_NO
+			 		, TEST_CYCLE_CD_ID
+			 		, TEST_CYCLE01, TEST_CYCLE02, TEST_CYCLE03, TEST_CYCLE04, TEST_CYCLE05, TEST_CYCLE06, TEST_CYCLE07, TEST_CYCLE08, TEST_CYCLE09
+			 		, TEST_RELATE_DOC, TEST_TRGET, SAMPLE_SIZE, TEST_PROCSS, EXCP_CNT
+					, TEST_MTH
+					, TEST_MTH_QESTN
+					, TEST_MTH_OBSERV
+					, TEST_MTH_VRIFY
+					, TEST_MTH_ECGN
+					, TEST_MTH_SYS_TRACE
+					, ATMC_SAMPLE_AT
+					, TEST_SANCTN_AT
+					, ACNT_CD, CNRL_ACNTCTGR, RELATE_ACNTCTGR_PBLNTF, CNRL_CM_IEM
+					, ASSE_C_AT
+					, ASSE_E_AT
+					, ASSE_R_AT
+					, ASSE_V_AT
+					, ASSE_P_AT
+					, ASSE_S_AT
+					, ASSE_O_AT
+					, ASSE_A_AT
+					, ASSE_PF_AT
+					, TREXAMIN_PROCSS, TREXAMIN_PRUF, TREXAMIN_CNCLSN
+					, RISK_RESIDUAL_LIKEHOOD, RISK_RESIDUAL_IMPACT, RISK_RESIDUAL_RATIONG
+					, AFTER_RISK_RESIDUAL_LIKEHOOD, AFTER_RISK_RESIDUAL_IMPACT, AFTER_RISK_RESIDUAL_RATIONG, CNRL_IMPRVM_NM, CNRL_IMPRVM_DC
+					, FNREP_RISKEVL_CSFCTR01, FNREP_RISKEVL_CSFCTR02, FNREP_RISKEVL_CSFCTR03
+                    , FNREP_RISKEVL_CSFCTR04, FNREP_RISKEVL_CSFCTR05, FNREP_RISKEVL_CSFCTR06
+                    , FNREP_RISKEVL_CSFCTR07, FNREP_RISKEVL_CSFCTR08, FNREP_RISKEVL_CSFCTR09, FNREP_RISKEVL_CSFCTR10
+                    , FNREP_CNRL_RISK_CNCLSN, FNREP_ACNT_RISK_CNCLSN, FNREP_PROCS_RISK_CNCLSN, FNREP_GNRLZ_EVL_CNCLSN
+					, CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+				) VALUES (
+					  list.CNRL_ID, list.CNRL_NO, list.CNRL_NM, list.CNRL_CN
+					, (CASE WHEN list.KEY_CNRL = '예' OR UPPER(SUBSTR(list.KEY_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.REFRN_NO, list.CNRL_RELATE_REF
+					, list.CNRL_EXC_UPPER_DEPT, list.CNRL_EXC_DEPT, list.CNRL_EXCBER, list.CNRL_RSPNSBL_UPPER_DEPT, list.CNRL_RSPNSBL_DEPT, list.CNRL_RSPNBER
+					, list.CNRL_REG_NM, list.CNRL_RELATE_DOC, list.CNRL_RELATE_SYS, list.CNRL_RM
+					, list.CNRL_PURPS
+					, (CASE WHEN list.CNRL_PURPS_CHOISE = 'F/S왜곡방지' OR list.CNRL_PURPS_CHOISE = '재무보고 신뢰성' OR list.CNRL_PURPS_CHOISE = '재무보고신뢰성' 	THEN 'CTW_119_001' 
+							WHEN list.CNRL_PURPS_CHOISE = '자산보호' 		THEN 'CTW_119_002'
+						    WHEN list.CNRL_PURPS_CHOISE = '부정방지' 		THEN 'CTW_119_003'ELSE '' END)
+					, (CASE WHEN list.CNRL_PURPS_RELIABILITY_FIN IS NOT NULL AND list.CNRL_PURPS_RELIABILITY_FIN = 'N'  THEN ''
+					        WHEN list.CNRL_PURPS_RELIABILITY_FIN IS NOT NULL  											THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_PURPS_ASSET_PROTECTION IS NOT NULL AND list.CNRL_PURPS_ASSET_PROTECTION = 'N'  THEN ''
+					        WHEN list.CNRL_PURPS_ASSET_PROTECTION IS NOT NULL  											  THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_PURPS_FRAUD_PREVENTION IS NOT NULL AND list.CNRL_PURPS_FRAUD_PREVENTION = 'N'  THEN ''
+					        WHEN list.CNRL_PURPS_FRAUD_PREVENTION IS NOT NULL											  THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN REPLACE(list.CNRL_TY, ' ', '') = '검토및대사'		THEN 'CTW_120_001' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '승인'			THEN 'CTW_120_002' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '업무분장'		THEN 'CTW_120_003' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '물리적보안'		THEN 'CTW_120_004' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '시스템설정'		THEN 'CTW_120_005' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '시스템접근통제'	THEN 'CTW_120_006' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '인터페이스'		THEN 'CTW_120_007' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '예외사항보고'	THEN 'CTW_120_008' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '규정관리'		THEN 'CTW_120_009' 
+					    	ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK01 IS NOT NULL AND list.CNRL_TY_CECK01 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK01 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK02 IS NOT NULL AND list.CNRL_TY_CECK02 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK02 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK03 IS NOT NULL AND list.CNRL_TY_CECK03 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK03 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK04 IS NOT NULL AND list.CNRL_TY_CECK04 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK04 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK05 IS NOT NULL AND list.CNRL_TY_CECK05 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK05 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK06 IS NOT NULL AND list.CNRL_TY_CECK06 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK06 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK07 IS NOT NULL AND list.CNRL_TY_CECK07 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK07 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK08 IS NOT NULL AND list.CNRL_TY_CECK08 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK08 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK09 IS NOT NULL AND list.CNRL_TY_CECK09 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK09 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY01 = '예방' OR UPPER(SUBSTR(list.CNRL_TY01,0,1)) = 'P' THEN 'CTW_002_001' WHEN  list.CNRL_TY01 = '적발' OR UPPER(SUBSTR(list.CNRL_TY01,0,1)) = 'D' THEN 'CTW_002_002' ELSE '' END)
+					, (CASE WHEN list.CNRL_TY02 = '관리' OR UPPER(SUBSTR(list.CNRL_TY02,0,1)) = 'M' THEN 'CTW_003_001' WHEN  list.CNRL_TY02 = '거래' OR UPPER(SUBSTR(list.CNRL_TY02,0,1)) = 'D' THEN 'CTW_003_002' ELSE '' END)   
+				    , (CASE WHEN list.CNRL_TY03 = '반자동' OR UPPER(SUBSTR(list.CNRL_TY03,0,2)) = 'MA' OR UPPER(SUBSTR(list.CNRL_TY03,0,2)) = 'AM' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'W' OR list.CNRL_TY03 = '자동/수동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = '수동/자동' THEN 'CTW_004_003'
+				    		WHEN list.CNRL_TY03 = '자동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'A' THEN 'CTW_004_001' 
+				    		WHEN list.CNRL_TY03 = '수동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'M' THEN 'CTW_004_002'
+				    		WHEN (list.CNRL_TY03_AUTO IS NOT NULL 		AND list.CNRL_TY03_AUTO != 'N') AND (list.CNRL_TY03_MANUAL IS NOT NULL AND list.CNRL_TY03_MANUAL != 'N') THEN 'CTW_004_003' 
+				    		WHEN list.CNRL_TY03_AUTOMANUAL IS NOT NULL 	AND list.CNRL_TY03_AUTOMANUAL != 'N' 	THEN 'CTW_004_003' 
+				    		WHEN list.CNRL_TY03_MANUAL IS NOT NULL 		AND list.CNRL_TY03_MANUAL != 'N' 		THEN 'CTW_004_002'  
+				    		WHEN list.CNRL_TY03_AUTO IS NOT NULL 		AND list.CNRL_TY03_AUTO != 'N' 			THEN 'CTW_004_001'  
+				    		ELSE '' END)
+					, (CASE WHEN REPLACE(list.DELNG_TY, ' ', '') = '일상적' 	THEN 'CTW_130_001' 
+							WHEN REPLACE(list.DELNG_TY, ' ', '') = '비일상적' 	THEN 'CTW_130_002'
+					  		WHEN REPLACE(list.DELNG_TY, ' ', '') = '추정' 	THEN 'CTW_130_003'
+					    	ELSE '' END)
+					, list.CNRL_CTGRY
+					, (CASE WHEN list.CNRL_CYCLE = '수시' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'A' THEN 'CTW_005_001' 
+							WHEN list.CNRL_CYCLE = '월별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'M' OR list.CNRL_CYCLE = '월간' OR list.CNRL_CYCLE = '월'   THEN 'CTW_005_002'
+					  		WHEN list.CNRL_CYCLE = '분기' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'Q' OR list.CNRL_CYCLE = '분기별' THEN 'CTW_005_003'
+						    WHEN list.CNRL_CYCLE = '반기' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'H' OR list.CNRL_CYCLE = '반기별' THEN 'CTW_005_004'
+					    	WHEN list.CNRL_CYCLE = '연별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'Y' OR list.CNRL_CYCLE = '연간' OR list.CNRL_CYCLE = '년간' THEN 'CTW_005_005' 
+						    WHEN list.CNRL_CYCLE = '주별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'W' THEN 'CTW_005_006' 
+						    WHEN list.CNRL_CYCLE = '일별수시' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,2)) = 'DA' THEN 'CTW_005_008' 
+					 	   	WHEN list.CNRL_CYCLE = '일별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'D' THEN 'CTW_005_007'
+					 	   	WHEN list.CNRL_CYCLE = '건별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'C' THEN 'CTW_005_009'  
+					    	ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE01 IS NOT NULL AND list.CNRL_CYCLE01 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE01 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE02 IS NOT NULL AND list.CNRL_CYCLE02 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE02 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE03 IS NOT NULL AND list.CNRL_CYCLE03 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE03 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE04 IS NOT NULL AND list.CNRL_CYCLE04 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE04 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE05 IS NOT NULL AND list.CNRL_CYCLE05 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE05 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE06 IS NOT NULL AND list.CNRL_CYCLE06 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE06 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE07 IS NOT NULL AND list.CNRL_CYCLE07 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE07 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE08 IS NOT NULL AND list.CNRL_CYCLE08 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE08 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE09 IS NOT NULL AND list.CNRL_CYCLE09 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE09 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.OFFICE_TY = '본점' OR UPPER(SUBSTR(list.OFFICE_TY,0,1)) = 'H' THEN 'CTW_006_001' WHEN list.OFFICE_TY = '지점' OR UPPER(SUBSTR(list.OFFICE_TY,0,1)) = 'B' THEN 'CTW_006_002' ELSE '' END)
+					, (CASE WHEN list.DSGN_EFCT = '예' OR UPPER(SUBSTR(list.DSGN_EFCT,0,1)) = 'Y' THEN 'Y' ELSE '' END)
+					, (CASE WHEN list.OPER_EFCT = '예' OR UPPER(SUBSTR(list.OPER_EFCT,0,1)) = 'Y' THEN 'Y' ELSE '' END)
+					, list.CNRL_UPRPD_NO
+					, (CASE WHEN list.MRC_CNRL = '예' OR UPPER(SUBSTR(list.MRC_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.MRC_CTGRY, list.MRC_NO
+					, (CASE WHEN list.IPE_CNRL = '예' OR UPPER(SUBSTR(list.IPE_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.IPE_CTGRY, list.IPE_NO, list.IPE_NM, list.IPE_TEST_PROCSS
+					, list.COSO_NO
+					, (CASE WHEN list.TEST_CYCLE = '수시' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'A' THEN 'CTW_005_001' 
+						  	WHEN list.TEST_CYCLE = '월별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'M' OR list.TEST_CYCLE = '월간' OR list.TEST_CYCLE = '월'   THEN 'CTW_005_002'
+						  	WHEN list.TEST_CYCLE = '분기' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'Q' OR list.TEST_CYCLE = '분기별' THEN 'CTW_005_003'
+						    WHEN list.TEST_CYCLE = '반기' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'H' OR list.TEST_CYCLE = '반기별' THEN 'CTW_005_004'
+						    WHEN list.TEST_CYCLE = '연별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'Y' OR list.TEST_CYCLE = '연간' OR list.TEST_CYCLE = '년간' THEN 'CTW_005_005' 
+						    WHEN list.TEST_CYCLE = '주별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'W' THEN 'CTW_005_006' 
+						    WHEN list.TEST_CYCLE = '일별수시' OR UPPER(SUBSTR(list.TEST_CYCLE,0,2)) = 'DA' THEN 'CTW_005_008' 
+						    WHEN list.TEST_CYCLE = '일별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'D' THEN 'CTW_005_007' 
+					 	   	WHEN list.TEST_CYCLE = '건별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'C' THEN 'CTW_005_009' 
+						    ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE01 IS NOT NULL AND list.TEST_CYCLE01 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE01 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE02 IS NOT NULL AND list.TEST_CYCLE02 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE02 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE03 IS NOT NULL AND list.TEST_CYCLE03 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE03 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE04 IS NOT NULL AND list.TEST_CYCLE04 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE04 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE05 IS NOT NULL AND list.TEST_CYCLE05 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE05 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE06 IS NOT NULL AND list.TEST_CYCLE06 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE06 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE07 IS NOT NULL AND list.TEST_CYCLE07 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE07 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE08 IS NOT NULL AND list.TEST_CYCLE08 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE08 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE09 IS NOT NULL AND list.TEST_CYCLE09 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE09 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, list.TEST_RELATION_DOC, list.TEST_TRGET, list.SAMPLE_SIZE, list.TEST_PROCSS, list.EXCP_CNT
+					, list.TEST_MTH
+					, (CASE WHEN list.TEST_MTH_QUESTION IS NOT NULL AND list.TEST_MTH_QUESTION = 'N'  THEN ''
+					        WHEN list.TEST_MTH_QUESTION IS NOT NULL                                   THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_OBSERVE IS NOT NULL AND list.TEST_MTH_OBSERVE = 'N'  THEN ''
+					        WHEN list.TEST_MTH_OBSERVE IS NOT NULL                                  THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_VERIFICATION IS NOT NULL AND list.TEST_MTH_VERIFICATION = 'N'  THEN ''
+					        WHEN list.TEST_MTH_VERIFICATION IS NOT NULL									      THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_RE_RUN IS NOT NULL AND list.TEST_MTH_RE_RUN = 'N'  THEN ''
+					        WHEN list.TEST_MTH_RE_RUN IS NOT NULL							      THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_TRACKING IS NOT NULL AND list.TEST_MTH_TRACKING = 'N'  THEN ''
+					        WHEN list.TEST_MTH_TRACKING IS NOT NULL								      THEN 'Y' 
+					        ELSE '' END)                                                       
+					, (CASE WHEN list.ATMC_SAMPLE = '예' OR list.ATMC_SAMPLE = '자동' OR UPPER(SUBSTR(list.ATMC_SAMPLE,0,1)) = 'Y' THEN 'Y' WHEN  list.ATMC_SAMPLE = '아니오' OR list.ATMC_SAMPLE = '수동' OR UPPER(SUBSTR(list.ATMC_SAMPLE,0,1)) = 'N' THEN 'N' ELSE '' END)
+					, (CASE WHEN list.TEST_SANCTN = '예' OR UPPER(SUBSTR(list.TEST_SANCTN,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.CNRL_ANT_CTGR_CODE, list.CNRL_ACNTCTGR, list.RELATE_ACNTCTGR_PBLNTF, list.CNRL_REMARK
+					, (CASE WHEN list.ASSE_C IS NOT NULL AND list.ASSE_C = 'N'  THEN ''
+					        WHEN list.ASSE_C IS NOT NULL 					    THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_E IS NOT NULL AND list.ASSE_E = 'N'  THEN ''
+					        WHEN list.ASSE_E IS NOT NULL 						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_R IS NOT NULL AND list.ASSE_R = 'N'  THEN ''
+					        WHEN list.ASSE_R IS NOT NULL 						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_V IS NOT NULL AND list.ASSE_V = 'N'  THEN ''
+					        WHEN list.ASSE_V IS NOT NULL					    THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_P IS NOT NULL AND list.ASSE_P = 'N'  THEN ''
+					        WHEN list.ASSE_P IS NOT NULL						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_S IS NOT NULL AND list.ASSE_S = 'N'  THEN ''
+					        WHEN list.ASSE_S IS NOT NULL						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_O IS NOT NULL AND list.ASSE_O = 'N'  THEN ''
+					        WHEN list.ASSE_O IS NOT NULL						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_A IS NOT NULL AND list.ASSE_A = 'N'  THEN ''
+					        WHEN list.ASSE_A IS NOT NULL 						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_PF IS NOT NULL AND list.ASSE_PF = 'N'  THEN ''
+					        WHEN list.ASSE_PF IS NOT NULL 						  THEN 'Y' 
+					        ELSE '' END)
+					, list.TREXAMIN_PROCSS, list.TREXAMIN_PRUF, list.TREXAMIN_CNCLSN
+					, list.RISK_RESIDUAL_LIKEHOOD, list.RISK_RESIDUAL_IMPACT, list.RISK_RESIDUAL_RATING
+					, list.CNRL_RESIDUAL_LIKEHOOD, list.CNRL_RESIDUAL_IMPACT, list.CNRL_RESIDUAL_RATING, list.CNRL_IMPRVM_NM, list.CNRL_IMPRVM_CN
+					, list.FNREP_RISKEVL_CSFCTR01, list.FNREP_RISKEVL_CSFCTR02, list.FNREP_RISKEVL_CSFCTR03
+                    , list.FNREP_RISKEVL_CSFCTR04, list.FNREP_RISKEVL_CSFCTR05, list.FNREP_RISKEVL_CSFCTR06
+                    , list.FNREP_RISKEVL_CSFCTR07, list.FNREP_RISKEVL_CSFCTR08, list.FNREP_RISKEVL_CSFCTR09, list.FNREP_RISKEVL_CSFCTR10
+                    , list.FNREP_CNRL_RISK_CNCLSN, list.FNREP_ACNT_RISK_CNCLSN, list.FNREP_PROCS_RISK_CNCLSN, list.FNREP_GNRLZ_EVL_CNCLSN
+					, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+				);
+				
+		/** 04. 통제 이력 종료/시작 */    
+	    	UPDATE TB_CW_ELC_RCM_CNRL_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			      ,UPD_DT = GETDATE()
+			      ,UPD_USER_ID = #{suserId} 
+			 WHERE CNRL_ID = list.CNRL_ID
+			   AND ENDTMSTMP = '99991231235959999999';
+	    
+			INSERT INTO TB_CW_ELC_RCM_CNRL_HIST (
+					  CNRL_ID, BGNTMSTMP, ENDTMSTMP, CNRL_NO, CNRL_NM, CNRL_CN
+ 					, KEY_CNRL_AT
+ 					, REFRN_NO, CNRL_RELATE_REF
+					, CNRL_EXC_UPPER_DEPT, CNRL_EXC_DEPT, CNRL_EXCBER, CNRL_RSPNSBL_UPPER_DEPT, CNRL_RSPNSBL_DEPT, CNRL_RSPNBER
+					, RELATE_REGLTN_NM, CNRL_RELATE_DOC, CNRL_RELATE_SYS, CNRL_RM
+					, CNRL_PURPS, CNRL_PURPS_CD_ID
+					, CNRL_PURPS_FNNR_RLABLTY
+					, CNRL_PURPS_ASSET_PRTC
+					, CNRL_PURPS_INSTC_PRVN
+					, CNRL_TY_CD_ID
+					, CNRL_TY_CECK01
+					, CNRL_TY_CECK02
+					, CNRL_TY_CECK03
+					, CNRL_TY_CECK04
+					, CNRL_TY_CECK05
+					, CNRL_TY_CECK06
+					, CNRL_TY_CECK07
+					, CNRL_TY_CECK08
+					, CNRL_TY_CECK09
+					, CNRL_TY01_CD_ID
+					, CNRL_TY02_CD_ID
+					, CNRL_TY03_CD_ID
+					, DELNG_TY_CD_ID
+					, CNRL_CTGRY, CNRL_CYCLE_CD_ID
+					, CNRL_CYCLE01, CNRL_CYCLE02, CNRL_CYCLE03, CNRL_CYCLE04, CNRL_CYCLE05, CNRL_CYCLE06, CNRL_CYCLE07, CNRL_CYCLE08, CNRL_CYCLE09
+					, OFFICE_TY_CD_ID
+					, DSGN_EFCT_AT
+					, OPER_EFCT_AT
+					, CNRL_UPRPD_NO
+					, MRC_CNRL_AT
+					, MRC_CTGRY_CD_ID, MRC_NO
+					, IPE_CNRL_AT
+					, IPE_CTGRY_CD_ID, IPE_NO, IPE_NM, IPE_TEST_PROCSS
+					, COSO_NO
+			 		, TEST_CYCLE_CD_ID
+			 		, TEST_CYCLE01, TEST_CYCLE02, TEST_CYCLE03, TEST_CYCLE04, TEST_CYCLE05, TEST_CYCLE06, TEST_CYCLE07, TEST_CYCLE08, TEST_CYCLE09
+			 		, TEST_RELATE_DOC, TEST_TRGET, SAMPLE_SIZE, TEST_PROCSS, EXCP_CNT
+					, TEST_MTH
+					, TEST_MTH_QESTN
+					, TEST_MTH_OBSERV
+					, TEST_MTH_VRIFY
+					, TEST_MTH_ECGN
+					, TEST_MTH_SYS_TRACE
+					, ATMC_SAMPLE_AT
+					, TEST_SANCTN_AT
+					, ACNT_CD, CNRL_ACNTCTGR, RELATE_ACNTCTGR_PBLNTF, CNRL_CM_IEM
+					, ASSE_C_AT
+					, ASSE_E_AT
+					, ASSE_R_AT
+					, ASSE_V_AT
+					, ASSE_P_AT
+					, ASSE_S_AT
+					, ASSE_O_AT
+					, ASSE_A_AT
+					, ASSE_PF_AT
+					, TREXAMIN_PROCSS, TREXAMIN_PRUF, TREXAMIN_CNCLSN
+					, RISK_RESIDUAL_LIKEHOOD, RISK_RESIDUAL_IMPACT, RISK_RESIDUAL_RATIONG
+					, AFTER_RISK_RESIDUAL_LIKEHOOD, AFTER_RISK_RESIDUAL_IMPACT, AFTER_RISK_RESIDUAL_RATIONG, CNRL_IMPRVM_NM, CNRL_IMPRVM_DC
+					, FNREP_RISKEVL_CSFCTR01, FNREP_RISKEVL_CSFCTR02, FNREP_RISKEVL_CSFCTR03
+                    , FNREP_RISKEVL_CSFCTR04, FNREP_RISKEVL_CSFCTR05, FNREP_RISKEVL_CSFCTR06
+                    , FNREP_RISKEVL_CSFCTR07, FNREP_RISKEVL_CSFCTR08, FNREP_RISKEVL_CSFCTR09, FNREP_RISKEVL_CSFCTR10
+                    , FNREP_CNRL_RISK_CNCLSN, FNREP_ACNT_RISK_CNCLSN, FNREP_PROCS_RISK_CNCLSN, FNREP_GNRLZ_EVL_CNCLSN
+					, CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					  list.CNRL_ID, #{bgntmstmp}, '99991231235959999999', list.CNRL_NO, list.CNRL_NM, list.CNRL_CN
+					, (CASE WHEN list.KEY_CNRL = '예' OR UPPER(SUBSTR(list.KEY_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.REFRN_NO, list.CNRL_RELATE_REF
+					, list.CNRL_EXC_UPPER_DEPT, list.CNRL_EXC_DEPT, list.CNRL_EXCBER, list.CNRL_RSPNSBL_UPPER_DEPT, list.CNRL_RSPNSBL_DEPT, list.CNRL_RSPNBER
+					, list.CNRL_REG_NM, list.CNRL_RELATE_DOC, list.CNRL_RELATE_SYS, list.CNRL_RM
+					, list.CNRL_PURPS
+					, (CASE WHEN list.CNRL_PURPS_CHOISE = 'F/S왜곡방지' OR list.CNRL_PURPS_CHOISE = '재무보고 신뢰성' OR list.CNRL_PURPS_CHOISE = '재무보고신뢰성' 	THEN 'CTW_119_001' 
+							WHEN list.CNRL_PURPS_CHOISE = '자산보호' 		THEN 'CTW_119_002'
+						    WHEN list.CNRL_PURPS_CHOISE = '부정방지' 		THEN 'CTW_119_003'ELSE '' END)
+					, (CASE WHEN list.CNRL_PURPS_RELIABILITY_FIN IS NOT NULL AND list.CNRL_PURPS_RELIABILITY_FIN = 'N'  THEN ''
+					        WHEN list.CNRL_PURPS_RELIABILITY_FIN IS NOT NULL  										    THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_PURPS_ASSET_PROTECTION IS NOT NULL AND list.CNRL_PURPS_ASSET_PROTECTION = 'N'  THEN ''
+					        WHEN list.CNRL_PURPS_ASSET_PROTECTION IS NOT NULL  										      THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_PURPS_FRAUD_PREVENTION IS NOT NULL AND list.CNRL_PURPS_FRAUD_PREVENTION = 'N'  THEN ''
+					        WHEN list.CNRL_PURPS_FRAUD_PREVENTION IS NOT NULL										      THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN REPLACE(list.CNRL_TY, ' ', '') = '검토및대사'		THEN 'CTW_120_001' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '승인'			THEN 'CTW_120_002' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '업무분장'		THEN 'CTW_120_003' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '물리적보안'		THEN 'CTW_120_004' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '시스템설정'		THEN 'CTW_120_005' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '시스템접근통제'	THEN 'CTW_120_006' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '인터페이스'		THEN 'CTW_120_007' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '예외사항보고'	THEN 'CTW_120_008' 
+							WHEN REPLACE(list.CNRL_TY, ' ', '') = '규정관리'		THEN 'CTW_120_009' 
+					    	ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK01 IS NOT NULL AND list.CNRL_TY_CECK01 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK01 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK02 IS NOT NULL AND list.CNRL_TY_CECK02 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK02 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK03 IS NOT NULL AND list.CNRL_TY_CECK03 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK03 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK04 IS NOT NULL AND list.CNRL_TY_CECK04 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK04 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK05 IS NOT NULL AND list.CNRL_TY_CECK05 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK05 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK06 IS NOT NULL AND list.CNRL_TY_CECK06 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK06 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK07 IS NOT NULL AND list.CNRL_TY_CECK07 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK07 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK08 IS NOT NULL AND list.CNRL_TY_CECK08 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK08 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY_CECK09 IS NOT NULL AND list.CNRL_TY_CECK09 = 'N'  THEN ''
+					        WHEN list.CNRL_TY_CECK09 IS NOT NULL                                THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.CNRL_TY01 = '예방' OR UPPER(SUBSTR(list.CNRL_TY01,0,1)) = 'P' THEN 'CTW_002_001' WHEN  list.CNRL_TY01 = '적발' OR UPPER(SUBSTR(list.CNRL_TY01,0,1)) = 'D' THEN 'CTW_002_002' ELSE '' END)
+					, (CASE WHEN list.CNRL_TY02 = '관리' OR UPPER(SUBSTR(list.CNRL_TY02,0,1)) = 'M' THEN 'CTW_003_001' WHEN  list.CNRL_TY02 = '거래' OR UPPER(SUBSTR(list.CNRL_TY02,0,1)) = 'D' THEN 'CTW_003_002' ELSE '' END)   
+				    , (CASE WHEN list.CNRL_TY03 = '반자동' OR UPPER(SUBSTR(list.CNRL_TY03,0,2)) = 'MA' OR UPPER(SUBSTR(list.CNRL_TY03,0,2)) = 'AM' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'W' OR list.CNRL_TY03 = '자동/수동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = '수동/자동' THEN 'CTW_004_003'
+				    		WHEN list.CNRL_TY03 = '자동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'A' THEN 'CTW_004_001' 
+				    		WHEN list.CNRL_TY03 = '수동' OR UPPER(SUBSTR(list.CNRL_TY03,0,1)) = 'M' THEN 'CTW_004_002'
+				    		WHEN (list.CNRL_TY03_AUTO IS NOT NULL 		AND list.CNRL_TY03_AUTO != 'N') AND (list.CNRL_TY03_MANUAL IS NOT NULL AND list.CNRL_TY03_MANUAL != 'N') THEN 'CTW_004_003' 
+				    		WHEN list.CNRL_TY03_AUTOMANUAL IS NOT NULL 	AND list.CNRL_TY03_AUTOMANUAL != 'N' 	THEN 'CTW_004_003' 
+				    		WHEN list.CNRL_TY03_MANUAL IS NOT NULL 		AND list.CNRL_TY03_MANUAL != 'N' 		THEN 'CTW_004_002'  
+				    		WHEN list.CNRL_TY03_AUTO IS NOT NULL 		AND list.CNRL_TY03_AUTO != 'N' 			THEN 'CTW_004_001'  
+				    		ELSE '' END)
+					, (CASE WHEN REPLACE(list.DELNG_TY, ' ', '') = '일상적' 	THEN 'CTW_130_001' 
+							WHEN REPLACE(list.DELNG_TY, ' ', '') = '비일상적' 	THEN 'CTW_130_002'
+					  		WHEN REPLACE(list.DELNG_TY, ' ', '') = '추정' 	THEN 'CTW_130_003'
+					    	ELSE '' END)
+					, list.CNRL_CTGRY
+					, (CASE WHEN list.CNRL_CYCLE = '수시' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'A' THEN 'CTW_005_001' 
+							WHEN list.CNRL_CYCLE = '월별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'M' OR list.CNRL_CYCLE = '월간' OR list.CNRL_CYCLE = '월'   THEN 'CTW_005_002'
+					  		WHEN list.CNRL_CYCLE = '분기' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'Q' OR list.CNRL_CYCLE = '분기별' THEN 'CTW_005_003'
+						    WHEN list.CNRL_CYCLE = '반기' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'H' OR list.CNRL_CYCLE = '반기별' THEN 'CTW_005_004'
+					    	WHEN list.CNRL_CYCLE = '연별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'Y' OR list.CNRL_CYCLE = '연간' OR list.CNRL_CYCLE = '년간' THEN 'CTW_005_005' 
+						    WHEN list.CNRL_CYCLE = '주별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'W' THEN 'CTW_005_006' 
+						    WHEN list.CNRL_CYCLE = '일별수시' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,2)) = 'DA' THEN 'CTW_005_008' 
+					 	   	WHEN list.CNRL_CYCLE = '일별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'D' THEN 'CTW_005_007'
+					 	   	WHEN list.CNRL_CYCLE = '건별' OR UPPER(SUBSTR(list.CNRL_CYCLE,0,1)) = 'C' THEN 'CTW_005_009'  
+					    	ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE01 IS NOT NULL AND list.CNRL_CYCLE01 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE01 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE02 IS NOT NULL AND list.CNRL_CYCLE02 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE02 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE03 IS NOT NULL AND list.CNRL_CYCLE03 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE03 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE04 IS NOT NULL AND list.CNRL_CYCLE04 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE04 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE05 IS NOT NULL AND list.CNRL_CYCLE05 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE05 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE06 IS NOT NULL AND list.CNRL_CYCLE06 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE06 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE07 IS NOT NULL AND list.CNRL_CYCLE07 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE07 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE08 IS NOT NULL AND list.CNRL_CYCLE08 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE08 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.CNRL_CYCLE09 IS NOT NULL AND list.CNRL_CYCLE09 = 'N'	THEN ''
+                            WHEN list.CNRL_CYCLE09 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.OFFICE_TY = '본점' OR UPPER(SUBSTR(list.OFFICE_TY,0,1)) = 'H' THEN 'CTW_006_001' WHEN list.OFFICE_TY = '지점' OR UPPER(SUBSTR(list.OFFICE_TY,0,1)) = 'B' THEN 'CTW_006_002' ELSE '' END)
+					, (CASE WHEN list.DSGN_EFCT = '예' OR UPPER(SUBSTR(list.DSGN_EFCT,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, (CASE WHEN list.OPER_EFCT = '예' OR UPPER(SUBSTR(list.OPER_EFCT,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.CNRL_UPRPD_NO
+					, (CASE WHEN list.MRC_CNRL = '예' OR UPPER(SUBSTR(list.MRC_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.MRC_CTGRY, list.MRC_NO
+					, (CASE WHEN list.IPE_CNRL = '예' OR UPPER(SUBSTR(list.IPE_CNRL,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.IPE_CTGRY, list.IPE_NO, list.IPE_NM, list.IPE_TEST_PROCSS
+					, list.COSO_NO
+					, (CASE WHEN list.TEST_CYCLE = '수시' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'A' THEN 'CTW_005_001' 
+						  	WHEN list.TEST_CYCLE = '월별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'M' OR list.TEST_CYCLE = '월간' OR list.TEST_CYCLE = '월'   THEN 'CTW_005_002'
+						  	WHEN list.TEST_CYCLE = '분기' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'Q' OR list.TEST_CYCLE = '분기별' THEN 'CTW_005_003'
+						    WHEN list.TEST_CYCLE = '반기' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'H' OR list.TEST_CYCLE = '반기별' THEN 'CTW_005_004'
+						    WHEN list.TEST_CYCLE = '연별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'Y' OR list.TEST_CYCLE = '연간' OR list.TEST_CYCLE = '년간' THEN 'CTW_005_005' 
+						    WHEN list.TEST_CYCLE = '주별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'W' THEN 'CTW_005_006' 
+						    WHEN list.TEST_CYCLE = '일별수시' OR UPPER(SUBSTR(list.TEST_CYCLE,0,2)) = 'DA' THEN 'CTW_005_008' 
+						    WHEN list.TEST_CYCLE = '일별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'D' THEN 'CTW_005_007' 
+					 	   	WHEN list.TEST_CYCLE = '건별' OR UPPER(SUBSTR(list.TEST_CYCLE,0,1)) = 'C' THEN 'CTW_005_009' 
+						    ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE01 IS NOT NULL AND list.TEST_CYCLE01 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE01 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE02 IS NOT NULL AND list.TEST_CYCLE02 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE02 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE03 IS NOT NULL AND list.TEST_CYCLE03 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE03 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE04 IS NOT NULL AND list.TEST_CYCLE04 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE04 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE05 IS NOT NULL AND list.TEST_CYCLE05 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE05 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE06 IS NOT NULL AND list.TEST_CYCLE06 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE06 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE07 IS NOT NULL AND list.TEST_CYCLE07 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE07 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE08 IS NOT NULL AND list.TEST_CYCLE08 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE08 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, (CASE WHEN list.TEST_CYCLE09 IS NOT NULL AND list.TEST_CYCLE09 = 'N'	THEN ''
+                            WHEN list.TEST_CYCLE09 IS NOT NULL 				   	    		THEN 'Y' 
+                            ELSE '' END)
+					, list.TEST_RELATION_DOC, list.TEST_TRGET, list.SAMPLE_SIZE, list.TEST_PROCSS, list.EXCP_CNT
+					, list.TEST_MTH
+					, (CASE WHEN list.TEST_MTH_QUESTION IS NOT NULL AND list.TEST_MTH_QUESTION = 'N'  THEN ''
+					        WHEN list.TEST_MTH_QUESTION IS NOT NULL                                   THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_OBSERVE IS NOT NULL AND list.TEST_MTH_OBSERVE = 'N'  THEN ''
+					        WHEN list.TEST_MTH_OBSERVE IS NOT NULL                                  THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_VERIFICATION IS NOT NULL AND list.TEST_MTH_VERIFICATION = 'N'  THEN ''
+					        WHEN list.TEST_MTH_VERIFICATION IS NOT NULL									      THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_RE_RUN IS NOT NULL AND list.TEST_MTH_RE_RUN = 'N'  THEN ''
+					        WHEN list.TEST_MTH_RE_RUN IS NOT NULL							      THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.TEST_MTH_TRACKING IS NOT NULL AND list.TEST_MTH_TRACKING = 'N'  THEN ''
+					        WHEN list.TEST_MTH_TRACKING IS NOT NULL								      THEN 'Y' 
+					        ELSE '' END)                                                            
+					, (CASE WHEN list.ATMC_SAMPLE = '예' OR list.ATMC_SAMPLE = '자동' OR UPPER(SUBSTR(list.ATMC_SAMPLE,0,1)) = 'Y' THEN 'Y' WHEN  list.ATMC_SAMPLE = '아니오' OR list.ATMC_SAMPLE = '수동' OR UPPER(SUBSTR(list.ATMC_SAMPLE,0,1)) = 'N' THEN 'N' ELSE '' END)
+					, (CASE WHEN list.TEST_SANCTN = '예' OR UPPER(SUBSTR(list.TEST_SANCTN,0,1)) = 'Y' THEN 'Y' ELSE 'N' END)
+					, list.CNRL_ANT_CTGR_CODE, list.CNRL_ACNTCTGR, list.RELATE_ACNTCTGR_PBLNTF, list.CNRL_REMARK
+					, (CASE WHEN list.ASSE_C IS NOT NULL AND list.ASSE_C = 'N'  THEN ''
+					        WHEN list.ASSE_C IS NOT NULL 				  	    THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_E IS NOT NULL AND list.ASSE_E = 'N'  THEN ''
+					        WHEN list.ASSE_E IS NOT NULL 					    THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_R IS NOT NULL AND list.ASSE_R = 'N'  THEN ''
+					        WHEN list.ASSE_R IS NOT NULL 						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_V IS NOT NULL AND list.ASSE_V = 'N'  THEN ''
+					        WHEN list.ASSE_V IS NOT NULL					    THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_P IS NOT NULL AND list.ASSE_P = 'N'  THEN ''
+					        WHEN list.ASSE_P IS NOT NULL						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_S IS NOT NULL AND list.ASSE_S = 'N'  THEN ''
+					        WHEN list.ASSE_S IS NOT NULL						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_O IS NOT NULL AND list.ASSE_O = 'N'  THEN ''
+					        WHEN list.ASSE_O IS NOT NULL						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_A IS NOT NULL AND list.ASSE_A = 'N'  THEN ''
+					        WHEN list.ASSE_A IS NOT NULL 						THEN 'Y' 
+					        ELSE '' END)
+					, (CASE WHEN list.ASSE_PF IS NOT NULL AND list.ASSE_PF = 'N'  THEN ''
+					        WHEN list.ASSE_PF IS NOT NULL 						  THEN 'Y' 
+					        ELSE '' END)
+					, list.TREXAMIN_PROCSS, list.TREXAMIN_PRUF, list.TREXAMIN_CNCLSN
+					, list.RISK_RESIDUAL_LIKEHOOD, list.RISK_RESIDUAL_IMPACT, list.RISK_RESIDUAL_RATING
+					, list.CNRL_RESIDUAL_LIKEHOOD, list.CNRL_RESIDUAL_IMPACT, list.CNRL_RESIDUAL_RATING, list.CNRL_IMPRVM_NM, list.CNRL_IMPRVM_CN
+					, list.FNREP_RISKEVL_CSFCTR01, list.FNREP_RISKEVL_CSFCTR02, list.FNREP_RISKEVL_CSFCTR03
+                    , list.FNREP_RISKEVL_CSFCTR04, list.FNREP_RISKEVL_CSFCTR05, list.FNREP_RISKEVL_CSFCTR06
+                    , list.FNREP_RISKEVL_CSFCTR07, list.FNREP_RISKEVL_CSFCTR08, list.FNREP_RISKEVL_CSFCTR09, list.FNREP_RISKEVL_CSFCTR10
+                    , list.FNREP_CNRL_RISK_CNCLSN, list.FNREP_ACNT_RISK_CNCLSN, list.FNREP_PROCS_RISK_CNCLSN, list.FNREP_GNRLZ_EVL_CNCLSN
+					, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 시스템 반영'
+				);
+		END LOOP;	
+	END; 
+	]]>
+	</insert>	
+</mapper>

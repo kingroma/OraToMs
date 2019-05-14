@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.ce.stdr.serviceimpl.CwceStdrMapper">
+
+	<select id="list" resultType="EgovMap">
+		SELECT  A.EVL_STDR_ID
+		      , A.BGNTMSTMP
+		      , A.ENDTMSTMP
+		      , A.EVL_KND_CD_ID
+		      , C1.CODE_NM 			AS EVL_KND_CD_NM 
+		      , A.EVL_STDR_KND_CD_ID
+		      , C2.CODE_NM 			AS EVL_STDR_KND_CD_NM
+		      , A.EVL_STDR_SCORE
+		      , A.EVL_STDR_SCORE_SE_CD_ID
+		      , C3.CODE_NM 			AS EVL_STDR_SCORE_SE_CD_NM
+		      , A.EVL_COMPUT_MTH_CD_ID
+		      , C4.CODE_NM 			AS EVL_COMPUT_MTH_CD_NM
+		      , A.RGS_DT
+		      , CONVERT ( VARCHAR , A.UPD_DT , 23 )		AS RGS_DE
+		      , A.RGS_USER_ID
+		      , A.UPD_DT 
+		      , A.UPD_USER_ID
+		      , U.USER_NM			AS RGS_USER_NM
+		FROM TB_CW_EVL_STDR A
+        LEFT OUTER JOIN TB_CO_CODE C1
+            ON A.EVL_KND_CD_ID = C1.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE C2
+            ON A.EVL_STDR_KND_CD_ID = C2.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE C3
+            ON A.EVL_STDR_SCORE_SE_CD_ID = C3.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE C4
+            ON A.EVL_COMPUT_MTH_CD_ID = C4.CODE_ID
+        LEFT OUTER JOIN TB_CO_USER_HIST U
+        	ON A.UPD_USER_ID = U.USER_ID
+        	AND U.HIST_ENDDE = '99991231'
+        <trim prefix="WHERE" prefixOverrides="AND|OR ">
+        	AND A.ENDTMSTMP = '99991231235959999999'
+			<if test=' srchEvlKndCdId != null and srchEvlKndCdId != "" '>
+				AND A.EVL_KND_CD_ID = #{srchEvlKndCdId} 
+			</if>
+			<if test=' srchEvlStdrKndCdId != null and srchEvlStdrKndCdId != "" '>
+				AND A.EVL_STDR_KND_CD_ID = #{srchEvlStdrKndCdId} 
+			</if>
+		</trim>
+		ORDER BY A.EVL_KND_CD_ID ASC, A.EVL_STDR_KND_CD_ID ASC
+	</select>
+
+	<select id="view" resultType="CwceStdrVO">
+		SELECT  A.EVL_STDR_ID
+		      , A.BGNTMSTMP
+		      , A.ENDTMSTMP
+		      , A.EVL_KND_CD_ID
+		      , C1.CODE_NM 			AS EVL_KND_CD_NM 
+		      , A.EVL_STDR_KND_CD_ID
+		      , C2.CODE_NM 			AS EVL_STDR_KND_CD_NM
+		      , A.EVL_STDR_SCORE
+		      , A.EVL_STDR_SCORE_SE_CD_ID
+		      , C3.CODE_NM 			AS EVL_STDR_SCORE_SE_CD_NM
+		      , A.EVL_COMPUT_MTH_CD_ID
+		      , C4.CODE_NM 			AS EVL_COMPUT_MTH_CD_NM
+		FROM TB_CW_EVL_STDR A
+        LEFT OUTER JOIN TB_CO_CODE C1
+            ON A.EVL_KND_CD_ID = C1.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE C2
+            ON A.EVL_STDR_KND_CD_ID = C2.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE C3
+            ON A.EVL_STDR_SCORE_SE_CD_ID = C3.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE C4
+            ON A.EVL_COMPUT_MTH_CD_ID = C4.CODE_ID
+       	WHERE 	A.ENDTMSTMP = '99991231235959999999'
+        	AND A.EVL_STDR_ID = #{evlStdrId}
+	</select>
+	
+	<insert id="insert">
+		<selectKey keyProperty="bgntmstmp" resultType="String" order="BEFORE">
+			SELECT CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),14),':','') + '000' 
+		</selectKey>
+		INSERT INTO TB_CW_EVL_STDR (
+			  EVL_STDR_ID, BGNTMSTMP, ENDTMSTMP
+			, EVL_KND_CD_ID
+			, EVL_STDR_KND_CD_ID
+			, EVL_STDR_SCORE, EVL_STDR_SCORE_SE_CD_ID, EVL_COMPUT_MTH_CD_ID
+			, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES (
+			  #{evlStdrId}, #{bgntmstmp}, '99991231235959999999'
+			, ISNULL(#{evlKndCdId}, (SELECT EVL_KND_CD_ID FROM TB_CW_EVL_STDR WHERE EVL_STDR_ID = #{evlStdrId} AND ROWNUM=1))
+			, ISNULL(#{evlStdrKndCdId}, (SELECT EVL_STDR_KND_CD_ID FROM TB_CW_EVL_STDR WHERE EVL_STDR_ID = #{evlStdrId} AND ROWNUM=1))
+			, #{evlStdrScore}, #{evlStdrScoreSeCdId}, #{evlComputMthCdId}
+			, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		) 
+	</insert>
+
+	<update id="update">
+		UPDATE TB_CW_EVL_STDR 
+		SET   	ENDTMSTMP          = CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),14),':','') + '000'
+		WHERE	EVL_STDR_ID        = #{evlStdrId}
+			AND BGNTMSTMP          = #{bgntmstmp}
+	</update>
+</mapper>

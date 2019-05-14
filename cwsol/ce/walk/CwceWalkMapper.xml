@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.ce.walk.serviceimpl.CwceWalkMapper">
+
+    <!-- 목록조회 -->
+    <select id="list" resultType="EgovMap">
+        SELECT WCK.CHCK_IEM_ID
+             , WCK.CHCK_IEM_BGNTMSTMP
+             , WCK.CHCK_IEM_ENDTMSTMP
+             , WCK.CL_CD_ID
+             , WTC.CL_CD_NM
+             , WCK.FRSLEV_DTLCL_CD_ID
+             , WD1.DTLCL_CD_NM          AS FRSLEV_DTLCL_CD_NM
+             , WCK.SNDLEV_DTLCL_CD_ID
+             , WD2.DTLCL_CD_NM          AS SNDLEV_DTLCL_CD_NM
+             , WCK.THRLEV_DTLCL_CD_ID
+             , WD3.DTLCL_CD_NM          AS THRLEV_DTLCL_CD_NM
+             , WCK.CHCK_IEM_NO
+             , WCK.CHCK_IEM_NM
+             , WCK.SORT_SN
+             , WCK.USE_AT
+             , ( CASE
+                      WHEN WCK.USE_AT = 'Y' THEN '예'
+                      ELSE '아니오'
+                 END )                      AS USE_AT_NM
+             , CONVERT ( VARCHAR , WCK.UPD_DT , 23 ) AS UPD_DE 
+             , WCK.UPD_USER_ID
+             , COU.USER_NM              AS UPD_USER_NM
+          FROM TB_CW_WLKGTHRGH_CHCKLST WCK
+            LEFT OUTER JOIN TB_CW_WLKGTHRG_CL WTC
+              ON WCK.CL_CD_ID = WTC.CL_CD_ID
+             AND WTC.USE_AT = 'Y'
+             AND WTC.DEL_AT = 'N'
+            LEFT OUTER JOIN TB_CW_WLKGTHRG_DTLCL WD1
+              ON WCK.FRSLEV_DTLCL_CD_ID = WD1.DTLCL_CD_ID
+            LEFT OUTER JOIN TB_CW_WLKGTHRG_DTLCL WD2
+              ON WCK.SNDLEV_DTLCL_CD_ID = WD2.DTLCL_CD_ID
+            LEFT OUTER JOIN TB_CW_WLKGTHRG_DTLCL WD3
+              ON WCK.THRLEV_DTLCL_CD_ID = WD3.DTLCL_CD_ID
+            LEFT OUTER JOIN TB_CO_USER COU
+              ON WCK.UPD_USER_ID = COU.USER_ID
+         WHERE WCK.CHCK_IEM_ENDTMSTMP = '99991231235959999999'
+         <if test=' srchClCdId != null and srchClCdId != "" '>
+               AND WCK.CL_CD_ID = #{srchClCdId}
+         </if>
+         <if test=' srchFrslevDtlclCdId != null and srchFrslevDtlclCdId != "" '>
+               AND WCK.FRSLEV_DTLCL_CD_ID = #{srchFrslevDtlclCdId}
+         </if>
+         <if test=' srchSndlevDtlclCdId != null and srchSndlevDtlclCdId != "" '>
+               AND WCK.SNDLEV_DTLCL_CD_ID = #{srchSndlevDtlclCdId}
+         </if>
+         <if test=' srchThrlevDtlclCdId != null and srchThrlevDtlclCdId != "" '>
+               AND WCK.THRLEV_DTLCL_CD_ID = #{srchThrlevDtlclCdId}
+         </if>
+         <if test=' srchUseAt != null and srchUseAt != "" '>
+               AND WCK.USE_AT = #{srchUseAt}
+         </if>
+         <if test=' srchWrd != null and srchWrd != "" '>
+               AND UPPER(WCK.CHCK_IEM_NM) LIKE '%' + UPPER(#{srchWrd}) + '%'
+         </if>
+         ORDER BY WCK.CL_CD_ID, WCK.FRSLEV_DTLCL_CD_ID, WCK.SNDLEV_DTLCL_CD_ID, WCK.THRLEV_DTLCL_CD_ID, WCK.SORT_SN
+    </select>
+    
+    <!-- 상세조회 -->
+    <select id="view" resultType="CwceWalkVO">
+        SELECT WCK.CHCK_IEM_ID
+             , WCK.CHCK_IEM_BGNTMSTMP
+             , WCK.CHCK_IEM_ENDTMSTMP
+             , WCK.CL_CD_ID
+             , WTC.CL_CD_NM
+             , WCK.FRSLEV_DTLCL_CD_ID
+             , WD1.DTLCL_CD_NM          AS FRSLEV_DTLCL_CD_NM
+             , WCK.SNDLEV_DTLCL_CD_ID
+             , WD2.DTLCL_CD_NM          AS SNDLEV_DTLCL_CD_NM
+             , WCK.THRLEV_DTLCL_CD_ID
+             , WD3.DTLCL_CD_NM          AS THRLEV_DTLCL_CD_NM
+             , WCK.CHCK_IEM_NO
+             , WCK.CHCK_IEM_NM
+             , WCK.SORT_SN
+             , WCK.USE_AT
+             , ( CASE
+                      WHEN WCK.USE_AT = 'Y' THEN '예'
+                      ELSE '아니오'
+                 END )                      AS USE_AT_NM
+          FROM TB_CW_WLKGTHRGH_CHCKLST WCK
+            LEFT OUTER JOIN TB_CW_WLKGTHRG_CL WTC
+              ON WCK.CL_CD_ID = WTC.CL_CD_ID
+             AND WTC.USE_AT = 'Y'
+             AND WTC.DEL_AT = 'N'
+            LEFT OUTER JOIN TB_CW_WLKGTHRG_DTLCL WD1
+              ON WCK.FRSLEV_DTLCL_CD_ID = WD1.DTLCL_CD_ID
+            LEFT OUTER JOIN TB_CW_WLKGTHRG_DTLCL WD2
+              ON WCK.SNDLEV_DTLCL_CD_ID = WD2.DTLCL_CD_ID
+            LEFT OUTER JOIN TB_CW_WLKGTHRG_DTLCL WD3
+              ON WCK.THRLEV_DTLCL_CD_ID = WD3.DTLCL_CD_ID
+         WHERE WCK.CHCK_IEM_ID = #{chckIemId}
+           AND WCK.CHCK_IEM_ENDTMSTMP = '99991231235959999999'
+    </select>
+    
+    <!-- 등록 -->
+    <insert id="insert">
+        <selectKey keyProperty="chckIemId" resultType="String" order="BEFORE">
+            SELECT 'GA_CHK_'+(ISNULL(MAX(CONVERT ( NUMERIC , SUBSTR(CHCK_IEM_ID, 8))),0)+1) FROM TB_CW_WLKGTHRGH_CHCKLST
+        </selectKey>
+        
+        INSERT INTO TB_CW_WLKGTHRGH_CHCKLST(
+              CHCK_IEM_ID
+            , CHCK_IEM_BGNTMSTMP
+            , CHCK_IEM_ENDTMSTMP
+            , CL_CD_ID
+            , FRSLEV_DTLCL_CD_ID
+            , SNDLEV_DTLCL_CD_ID
+            , THRLEV_DTLCL_CD_ID
+            , CHCK_IEM_NO
+            , CHCK_IEM_NM
+            , USE_AT
+            , SORT_SN
+            , RGS_DT
+            , RGS_USER_ID
+            , UPD_DT
+            , UPD_USER_ID
+        ) VALUES (
+              #{chckIemId}
+            , CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),14),':','') + '000'
+            , '99991231235959999999'
+            , #{clCdId}
+            , #{frslevDtlclCdId}
+            , #{sndlevDtlclCdId}
+            , #{thrlevDtlclCdId}
+            , #{chckIemNo}
+            , #{chckIemNm}
+            , #{useAt}
+            , #{sortSn}
+            , GETDATE()
+            , #{suserId}
+            , GETDATE()
+            , #{suserId}
+        )
+    </insert>
+    
+    <!-- 수정 -->
+    <update id="update">
+       BEGIN
+
+            UPDATE TB_CW_WLKGTHRGH_CHCKLST
+               SET CHCK_IEM_ENDTMSTMP = CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),14),':','') + '000'
+             WHERE CHCK_IEM_ID = #{chckIemId}
+               AND CHCK_IEM_ENDTMSTMP = '99991231235959999999'
+            ;
+
+            INSERT INTO TB_CW_WLKGTHRGH_CHCKLST(
+                  CHCK_IEM_ID
+                , CHCK_IEM_BGNTMSTMP
+                , CHCK_IEM_ENDTMSTMP
+                , CL_CD_ID
+                , FRSLEV_DTLCL_CD_ID
+                , SNDLEV_DTLCL_CD_ID
+                , THRLEV_DTLCL_CD_ID
+                , CHCK_IEM_NO
+                , CHCK_IEM_NM
+                , USE_AT
+                , SORT_SN
+                , RGS_DT
+                , RGS_USER_ID
+                , UPD_DT
+                , UPD_USER_ID
+            ) VALUES (
+                  #{chckIemId}
+                , CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),14),':','') + '000'
+                , '99991231235959999999'
+                , #{clCdId}
+                , #{frslevDtlclCdId}
+                , #{sndlevDtlclCdId}
+                , #{thrlevDtlclCdId}
+                , #{chckIemNo}
+                , #{chckIemNm}
+                , #{useAt}
+                , #{sortSn}
+                , GETDATE()
+                , #{suserId}
+                , GETDATE()
+                , #{suserId}
+            )
+            ;
+
+        END;
+    </update>
+    
+    <!-- 삭제 -->
+    <update id="delete">
+        UPDATE TB_CW_WLKGTHRGH_CHCKLST
+           SET CHCK_IEM_ENDTMSTMP = CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),14),':','') + '000'
+         WHERE CHCK_IEM_ID = #{chckIemId}
+           AND CHCK_IEM_ENDTMSTMP = '99991231235959999999'
+    </update>
+    
+    <!-- Walkthrough 분류코드 목록 조회 -->
+    <select id="selectWalkClCdList" resultType="EgovMap">
+        SELECT CL_CD_ID
+             , CL_CD_NM
+          FROM TB_CW_WLKGTHRG_CL
+         WHERE USE_AT = 'Y'
+               AND DEL_AT = 'N'         
+         ORDER BY CL_CD_ID
+    </select>
+    
+    <!-- Walkthrough 상세분류코드 목록 조회 -->
+    <select id="selectWalkDtlClCdList" resultType="EgovMap">
+        SELECT DTLCL_CD_ID
+             , DTLCL_CD_NM
+          FROM TB_CW_WLKGTHRG_DTLCL
+         WHERE USE_AT = 'Y'
+               AND DEL_AT = 'N'
+            <choose>
+                <when test=' srchDtlclLevel != null and srchDtlclLevel == "1" '>
+                AND DTLCL_LEVEL = #{srchDtlclLevel}
+                </when>
+                <otherwise>
+                AND UPPER_DTLCL_ID = #{srchUpperDtlclId}
+                </otherwise>
+            </choose>
+         ORDER BY DTLCL_CD_ID, SORT_SN
+    </select>
+    
+    <!-- Walkthrough 분류 목록 조회 -->
+    <select id="selectWalkList" resultType="EgovMap">
+        SELECT WTC.CL_CD_ID
+             , WTC.CL_CD_NM
+             , WTC.USE_AT
+             , WTC.DEL_AT
+             , ( CASE 
+                      WHEN ( WTC.CL_CD_ID = 'GA_WAL_1' OR WTC.CL_CD_ID = 'GA_WAL_2' OR WTC.CL_CD_ID = 'GA_WAL_3'
+                      		OR WTC.CL_CD_ID = 'GA_WAL_4' OR WTC.CL_CD_ID = 'GA_WAL_5' OR WTC.CL_CD_ID = 'GA_WAL_6' ) THEN 'Y'
+                      WHEN ( SELECT COUNT(1) FROM TB_CW_WLKGTHRGH_CHCKLST WHERE CL_CD_ID = WTC.CL_CD_ID AND USE_AT = 'Y' AND CHCK_IEM_ENDTMSTMP = '99991231235959999999' ) > 0 THEN 'Y' 
+                      ELSE 'N'
+                 END ) AS CHKLIST_USE_AT
+          FROM TB_CW_WLKGTHRG_CL WTC
+         WHERE WTC.DEL_AT = 'N'         
+         ORDER BY WTC.CL_CD_ID
+    </select>
+    
+    <!-- Walkthrough 분류 등록 -->
+    <insert id="insertWalk">
+        <selectKey keyProperty="clCdId" resultType="String" order="BEFORE">
+            SELECT 'GA_WAL_'+(ISNULL(MAX(CONVERT ( NUMERIC , SUBSTR(CL_CD_ID, 8))),0)+1) FROM TB_CW_WLKGTHRG_CL
+        </selectKey>
+        
+        INSERT INTO TB_CW_WLKGTHRG_CL(
+              CL_CD_ID
+            , CL_CD_NM
+            , USE_AT
+            , DEL_AT
+            , RGS_DT
+            , RGS_USER_ID
+            , UPD_DT
+            , UPD_USER_ID
+        ) VALUES (
+              #{clCdId}
+            , #{clCdNm}
+            , #{useAt}
+            , 'N'
+            , GETDATE()
+            , #{suserId}
+            , GETDATE()
+            , #{suserId}
+        )
+    </insert>
+    
+    <!-- Walkthrough 분류 수정 -->
+    <update id="updateWalk">
+        UPDATE TB_CW_WLKGTHRG_CL
+           SET CL_CD_NM = #{clCdNm}
+             , USE_AT = #{useAt}
+         WHERE CL_CD_ID = #{clCdId}
+    </update>
+    
+    <!-- Walkthrough 분류 삭제 -->
+    <update id="deleteWalk">
+        UPDATE TB_CW_WLKGTHRG_CL
+           SET DEL_AT = 'Y'
+         WHERE CL_CD_ID = #{clCdId}
+    </update>    
+    
+    <!-- Walkthrough 상세분류 목록 조회 -->
+    <select id="selectWalkDtlList" resultType="EgovMap">
+        SELECT WTD.DTLCL_CD_ID
+             , WTD.DTLCL_CD_NM
+             , WTD.SORT_SN
+             , WTD.USE_AT
+             , WTD.DEL_AT
+             , ( CASE 
+                      WHEN ( SELECT COUNT(1) FROM TB_CW_WLKGTHRGH_CHCKLST WHERE FRSLEV_DTLCL_CD_ID = WTD.DTLCL_CD_ID AND USE_AT = 'Y' AND CHCK_IEM_ENDTMSTMP = '99991231235959999999' ) > 0 THEN 'Y' 
+                      WHEN ( SELECT COUNT(1) FROM TB_CW_WLKGTHRGH_CHCKLST WHERE SNDLEV_DTLCL_CD_ID = WTD.DTLCL_CD_ID AND USE_AT = 'Y' AND CHCK_IEM_ENDTMSTMP = '99991231235959999999' ) > 0 THEN 'Y' 
+                      WHEN ( SELECT COUNT(1) FROM TB_CW_WLKGTHRGH_CHCKLST WHERE THRLEV_DTLCL_CD_ID = WTD.DTLCL_CD_ID AND USE_AT = 'Y' AND CHCK_IEM_ENDTMSTMP = '99991231235959999999' ) > 0 THEN 'Y' 
+                      ELSE 'N'
+                 END ) AS CHKLIST_USE_AT
+          FROM TB_CW_WLKGTHRG_DTLCL WTD
+         WHERE WTD.DEL_AT = 'N' 
+           <choose>
+                <when test=' srchDtlclLevel != null and srchDtlclLevel == "1" '>
+                AND DTLCL_LEVEL = #{srchDtlclLevel}
+                </when>
+                <otherwise>
+                AND DTLCL_LEVEL = #{srchDtlclLevel}
+                AND UPPER_DTLCL_ID = #{srchUpperDtlclId}
+                </otherwise>
+            </choose>
+         ORDER BY WTD.SORT_SN
+    </select>
+    
+    <!-- Walkthrough 상세분류 등록 -->
+    <insert id="insertWalkDtl">
+        <selectKey keyProperty="dtlclCdId" resultType="String" order="BEFORE">
+            SELECT 'GA_WDL_'+(ISNULL(MAX(CONVERT ( NUMERIC , SUBSTR(DTLCL_CD_ID, 8))),0)+1) FROM TB_CW_WLKGTHRG_DTLCL
+        </selectKey>
+        
+        INSERT INTO TB_CW_WLKGTHRG_DTLCL(
+              DTLCL_CD_ID
+            , DTLCL_CD_NM
+            , DTLCL_LEVEL
+            , UPPER_DTLCL_ID
+            , SORT_SN
+            , USE_AT
+            , DEL_AT
+            , RGS_DT
+            , RGS_USER_ID
+            , UPD_DT
+            , UPD_USER_ID
+        ) VALUES (
+              #{dtlclCdId}
+            , #{dtlclCdNm}
+            , #{dtlclLevel}
+            , #{upperDtlclId}
+            , #{sortSn}
+            , #{useAt}
+            , 'N'
+            , GETDATE()
+            , #{suserId}
+            , GETDATE()
+            , #{suserId}
+        )
+    </insert>
+    
+    <!-- Walkthrough 상세분류 수정 -->
+    <update id="updateWalkDtl">
+        UPDATE TB_CW_WLKGTHRG_DTLCL
+           SET DTLCL_CD_NM = #{dtlclCdNm}
+             , UPPER_DTLCL_ID = #{upperDtlclId}
+             , SORT_SN = #{sortSn}
+             , USE_AT = #{useAt}
+         WHERE DTLCL_CD_ID = #{dtlclCdId}
+    </update>
+    
+    <!-- Walkthrough 상세분류 삭제 -->
+    <update id="deleteWalkDtl">
+        UPDATE TB_CW_WLKGTHRG_DTLCL
+           SET DEL_AT = 'Y'
+         WHERE DTLCL_CD_ID = #{dtlclCdId}
+    </update>
+    
+</mapper>

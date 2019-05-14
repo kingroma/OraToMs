@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.co.dashboard.serviceimpl.CwcoDashBoardDeptMapper">
+ 	
+    <!-- 평가별RCM사용현황 MAP  -->
+    <resultMap id="deptSttusMap" type="EgovMap" >
+        <result property="srchYy"          			column="SRCH_YY"          		/>
+        <result property="deptId"          			column="DEPT_ID"          		/>
+        <result property="deptBgnde"  				column="DEPT_BGNDE"  			/>
+        <result property="deptEndde"  				column="DEPT_ENDDE"  			/>
+        <result property="deptCd"          			column="DEPT_CD"          		/>
+        <result property="deptNm"          			column="DEPT_NM"          		/>
+        <result property="deptTyCdId"          		column="DEPT_TY_CD_ID"          />
+        <result property="deptTyCdNm"  				column="DEPT_TY_CD_NM"  		/>
+        <result property="upperDeptId"          	column="UPPER_DEPT_ID"          />
+        <result property="upperDeptCd"          	column="UPPER_DEPT_CD"          />
+        <result property="upperDeptNm"          	column="UPPER_DEPT_NM"          />
+        <result property="deptLevel"          		column="DEPT_LEVEL"          	/>
+        <result property="sortSn"          			column="SORT_SN"          		/>
+        <result property="sttusCdId"        		column="STTUS_CD_ID"        	/>
+        <result property="sttusCdNm"    			column="STTUS_CD_NM"    		/>
+        <result property="deptCreatDe"          	column="DEPT_CREAT_DE"          />
+        <result property="deptClsDe"          		column="DEPT_CLS_DE"          	/>
+        <result property="dprlrUserId"          	column="DPRLR_USER_ID"          />
+        <result property="dprlrUserCd"  			column="DPRLR_USER_CD"  		/>
+        <result property="dprlrUserNm"  			column="DPRLR_USER_NM"  		/>
+        <result property="chrgUserId"          		column="CHRG_USER_ID"          	/>
+        <result property="chrgUserCd"   			column="CHRG_USER_CD"   		/>
+        <result property="chrgUserNm"   			column="CHRG_USER_NM"   		/>
+        <collection property="typeList"         	column="{srchYy=SRCH_YY,srchTy=SRCH_Ty,deptId=DEPT_ID}" select="byDeptSttusCnt" />
+    </resultMap>
+    
+<!--DEPT TAB - 부서 트리 --> 
+ 	<select id="list" resultMap="deptSttusMap">
+ 		WITH V0 AS ( 
+	 		SELECT	DT.DEPT_ID
+	 			  , #{srchYy} 	AS SRCH_YY
+	 			  , #{srchTy} 	AS SRCH_TY
+				  , DT.DEPT_BGNDE
+				  , DT.DEPT_ENDDE
+				  , DT.DEPT_CD
+				  , DT.DEPT_NM
+				  , DT.DEPT_TY_CD_ID
+				  , DT.DEPT_TY_CD_NM
+				  , DT.UPPER_DEPT_ID
+				  , DT.UPPER_DEPT_CD
+				  , DT.UPPER_DEPT_NM
+				  , DT.DEPT_LEVEL
+				  , DT.SORT_SN
+				  , DT.STTUS_CD_ID
+				  , DT.STTUS_CD_NM
+				  , DT.DEPT_CREAT_DE
+				  , DT.DEPT_CLS_DE
+				  , DT.DPRLR_USER_ID
+				  , DT.DPRLR_USER_CD
+				  , DT.DPRLR_USER_NM
+				  , DT.CHRG_USER_ID
+				  , DT.CHRG_USER_CD
+				  , DT.CHRG_USER_NM
+				  , DT.DEPT_COUNT 
+	 		FROM ( SELECT T1.DEPT_ID
+						, T1.HIST_BGNDE DEPT_BGNDE
+						, T1.HIST_ENDDE DEPT_ENDDE
+						, T1.DEPT_CD
+						, T1.DEPT_NM
+						, T1.DEPT_TY_CD_ID
+						, T2.CODE_NM DEPT_TY_CD_NM
+						, T1.UPPER_DEPT_ID
+						, T1.UPPER_DEPT_CD
+						, T1.UPPER_DEPT_NM
+						, T1.DEPT_LEVEL
+						, T1.SORT_SN
+						, T1.STTUS_CD_ID
+						, T3.CODE_NM STTUS_CD_NM
+						, T1.DEPT_CREAT_DE
+						, T1.DEPT_CLS_DE
+						, T1.DPRLR_USER_ID
+						, T4.USER_CD DPRLR_USER_CD
+						, T4.USER_NM DPRLR_USER_NM
+						, T1.CHRG_USER_ID
+						, T5.USER_CD CHRG_USER_CD
+						, T5.USER_NM CHRG_USER_NM
+						, (SELECT COUNT(DEPT_ID) FROM TB_CO_DEPT WHERE UPPER_DEPT_ID = T1.DEPT_ID) DEPT_COUNT
+					FROM TB_CO_DEPT_HIST T1
+					LEFT OUTER JOIN TB_CO_CODE T2
+						ON T1.DEPT_TY_CD_ID = T2.CODE_ID
+					LEFT OUTER JOIN TB_CO_CODE T3
+						ON T1.STTUS_CD_ID = T3.CODE_ID
+					LEFT OUTER JOIN TB_CO_USER T4
+						ON T1.DPRLR_USER_ID = T4.USER_ID
+					LEFT OUTER JOIN TB_CO_USER T5
+						ON T1.CHRG_USER_ID = T5.USER_ID		
+					WHERE  T1.STTUS_CD_ID = 'COM_001_001'
+						<choose>
+							<when test=' findDeptTyCdId != null and findDeptTyCdId != "" '>
+								AND T1.DEPT_TY_CD_ID = #{findDeptTyCdId}
+							</when>
+							<otherwise>
+								AND T1.DEPT_TY_CD_ID = 'COM_002_001'
+							</otherwise>
+						</choose>	
+						<choose>
+							<when test='srchYy != null and srchYy != "" '>
+								AND #{srchYy}+'1231' BETWEEN T1.HIST_BGNDE AND T1.HIST_ENDDE 
+							</when>
+							<otherwise>
+								AND CONVERT ( VARCHAR , GETDATE() , 112 )  BETWEEN T1.HIST_BGNDE AND T1.HIST_ENDDE 
+							</otherwise>
+						</choose>	
+				) DT
+		),  V1 (
+		DEPT_ID , SRCH_YY ,  SRCH_TY ,  DEPT_BGNDE ,  DEPT_ENDDE ,  
+			DEPT_CD ,  DEPT_NM ,  DEPT_TY_CD_ID ,  DEPT_TY_CD_NM ,  UPPER_DEPT_ID ,  
+			UPPER_DEPT_CD ,  UPPER_DEPT_NM ,  DEPT_LEVEL ,  SORT_SN ,  STTUS_CD_ID ,  STTUS_CD_NM ,  
+			DEPT_CREAT_DE ,  DPRLR_USER_ID ,  DPRLR_USER_CD ,  DPRLR_USER_NM ,  CHRG_USER_ID ,  
+			CHRG_USER_CD ,  CHRG_USER_NM ,  DEPT_COUNT , ROWNUM2
+		) AS (
+			SELECT 
+			DEPT_ID , SRCH_YY ,  SRCH_TY ,  DEPT_BGNDE ,  DEPT_ENDDE ,  
+			DEPT_CD ,  DEPT_NM ,  DEPT_TY_CD_ID ,  DEPT_TY_CD_NM ,  UPPER_DEPT_ID ,  
+			UPPER_DEPT_CD ,  UPPER_DEPT_NM ,  DEPT_LEVEL ,  SORT_SN ,  STTUS_CD_ID ,  STTUS_CD_NM ,  
+			DEPT_CREAT_DE ,  DPRLR_USER_ID ,  DPRLR_USER_CD ,  DPRLR_USER_NM ,  CHRG_USER_ID ,  
+			CHRG_USER_CD ,  CHRG_USER_NM ,  DEPT_COUNT
+			, TO_CHAR(DEPT_LEVEL) +  REPLICATE('0',10 - LEN(DEPT_ID)) + CONVERT(VARCHAR, DEPT_ID ) + LPAD(TO_CHAR(SORT_SN), 4, '0')   AS ROWNUM2 
+			FROM V0
+			WHERE DEPT_LEVEL = 1 
+			
+			UNION ALL 
+			
+			SELECT 
+			D.DEPT_ID , D.SRCH_YY ,  D.SRCH_TY ,  D.DEPT_BGNDE ,  D.DEPT_ENDDE ,  
+			D.DEPT_CD ,  D.DEPT_NM ,  D.DEPT_TY_CD_ID ,  D.DEPT_TY_CD_NM ,  D.UPPER_DEPT_ID ,  
+			D.UPPER_DEPT_CD ,  D.UPPER_DEPT_NM ,  D.DEPT_LEVEL ,  D.SORT_SN ,  D.STTUS_CD_ID ,  D.STTUS_CD_NM ,  
+			D.DEPT_CREAT_DE ,  D.DPRLR_USER_ID ,  D.DPRLR_USER_CD ,  D.DPRLR_USER_NM ,  D.CHRG_USER_ID ,  
+			D.CHRG_USER_CD ,  D.CHRG_USER_NM ,  D.DEPT_COUNT
+			, ROOT.ROWNUM2 +  TO_CHAR(D.DEPT_LEVEL) +  REPLICATE('0',10 - LEN(D.DEPT_ID)) + CONVERT(VARCHAR, D.DEPT_ID ) + LPAD(TO_CHAR(D.SORT_SN),4,'0')   AS ROWNUM2 
+			FROM V0 D , V1 ROOT 
+			WHERE D.UPPER_DEPT_ID = ROOT.DEPT_ID 
+		) SELECT * FROM V1 ORDER BY ROWNUM2
+ 	</select>
+ 	
+	
+<!--DEPT TAB 부서별 현황 상세  count-->  	
+ 	<select id="byDeptSttusCnt" resultType="EgovMap">
+ 		SELECT 	
+ 			  E.EVL_ID
+ 			, E.EVL_KND_CD_ID
+ 			, C1.CODE_NM	AS EVL_KND_CD_NM
+ 			, E.EVL_SJ
+ 			, E.ACCNUT_YY
+ 			, E.ACCNUT_SE_CD_ID
+ 			, C2.CODE_NM 	AS ACCNUT_SE_CD_NM
+ 			, CONVERT ( VARCHAR , CONVERT ( DATE , E.EVL_BGNDE , 112 ) , 23 )	AS EVL_BGNDE
+ 			, CONVERT ( VARCHAR , CONVERT ( DATE , E.EVL_ENDDE , 112 ) , 23 ) AS EVL_ENDDE
+ 			-- RCM 할당 카운트
+			, SUM(( CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_001' THEN (CASE WHEN A.CHRG_USER_TY_CD_ID = 'CTW_105_001' THEN 1 ELSE 0 END) ELSE 0 END)) 	AS MEGA_CNT
+			, SUM(( CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_002' THEN (CASE WHEN A.CHRG_USER_TY_CD_ID = 'CTW_105_001' THEN 1 ELSE 0 END) ELSE 0 END)) 	AS MJR_CNT
+			, SUM(( CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_003' THEN (CASE WHEN A.CHRG_USER_TY_CD_ID = 'CTW_105_001' THEN 1 ELSE 0 END) ELSE 0 END)) 	AS SUB_CNT
+			, SUM(( CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_005' THEN (CASE WHEN A.CHRG_USER_TY_CD_ID = 'CTW_105_001' THEN 1 ELSE 0 END) ELSE 0 END)) 	AS CNRL_CNT
+			, SUM(( CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_005' THEN (CASE WHEN A.CHRG_USER_TY_CD_ID = 'CTW_105_002' THEN 1 ELSE 0 END) ELSE 0 END)) 	AS TEST_CNT  
+			-- 미수행 카운트
+			, SUM(( CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_001' THEN (CASE WHEN A.CHRG_USER_TY_CD_ID = 'CTW_105_001' THEN (CASE WHEN A.STTUS_CD_ID = 'CTW_106_005' THEN 0 ELSE (CASE WHEN A.STTUS_CD_ID = 'CTW_106_003' THEN 0 ELSE 1 END) END) ELSE 0 END) ELSE 0 END)) 	AS MEGA_DONOT_CNT
+			, SUM(( CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_002' THEN (CASE WHEN A.CHRG_USER_TY_CD_ID = 'CTW_105_001' THEN (CASE WHEN A.STTUS_CD_ID = 'CTW_106_005' THEN 0 ELSE (CASE WHEN A.STTUS_CD_ID = 'CTW_106_003' THEN 0 ELSE 1 END) END) ELSE 0 END) ELSE 0 END)) 	AS MJR_DONOT_CNT
+			, SUM(( CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_003' THEN (CASE WHEN A.CHRG_USER_TY_CD_ID = 'CTW_105_001' THEN (CASE WHEN A.STTUS_CD_ID = 'CTW_106_005' THEN 0 ELSE (CASE WHEN A.STTUS_CD_ID = 'CTW_106_003' THEN 0 ELSE 1 END) END) ELSE 0 END) ELSE 0 END)) 	AS SUB_DONOT_CNT
+			, SUM(( CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_005' THEN (CASE WHEN A.CHRG_USER_TY_CD_ID = 'CTW_105_001' THEN (CASE WHEN A.STTUS_CD_ID = 'CTW_106_005' THEN 0 ELSE (CASE WHEN A.STTUS_CD_ID = 'CTW_106_003' THEN 0 ELSE 1 END) END) ELSE 0 END) ELSE 0 END)) 	AS CNRL_DONOT_CNT
+			, SUM(( CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_005' THEN (CASE WHEN A.CHRG_USER_TY_CD_ID = 'CTW_105_002' THEN (CASE WHEN A.STTUS_CD_ID = 'CTW_106_005' THEN 0 ELSE (CASE WHEN A.STTUS_CD_ID = 'CTW_106_003' THEN 0 ELSE 1 END) END) ELSE 0 END) ELSE 0 END)) 	AS TEST_DONOT_CNT
+			-- 미비점 발생 카운트
+			, SUM((CASE WHEN UE.OBJECT_ID IS NULL THEN 0 ELSE 1 END)) 		AS UPRPD_CNT
+			-- 미비점 분류 카운트
+			, SUM((CASE WHEN UE.OBJECT_ID IS NULL THEN 0 ELSE (CASE WHEN U.UPRPD_CL_CD_ID = 'CTW_202_001' THEN 1 ELSE 0 END) END)) 		AS UPRPD1_CNT
+			, SUM((CASE WHEN UE.OBJECT_ID IS NULL THEN 0 ELSE (CASE WHEN U.UPRPD_CL_CD_ID = 'CTW_202_002' THEN 1 ELSE 0 END) END)) 		AS UPRPD2_CNT
+			, SUM((CASE WHEN UE.OBJECT_ID IS NULL THEN 0 ELSE (CASE WHEN U.UPRPD_CL_CD_ID = 'CTW_202_003' THEN 1 ELSE 0 END) END)) 		AS UPRPD3_CNT
+			-- 사후관리 발생 카운트
+			, SUM((CASE WHEN UP.OBJECT_ID IS NULL THEN 0 ELSE 1 END)) 	AS POSMANT_CNT
+			, SUM((CASE WHEN UP.OBJECT_ID IS NULL THEN 0 ELSE (CASE WHEN UP.STTUS_CD_ID = 'COM_021_005' THEN 0 ELSE 1 END) END)) 	AS POSMANT_DONOT_CNT
+		FROM TB_CW_EVL_EXC A
+		LEFT OUTER JOIN TB_CW_EVL E
+			ON A.EVL_ID = E.EVL_ID
+			--AND E.EVL_KND_CD_ID IN ('CTW_103_001', 'CTW_103_002')	/** PLC 만 조회 */
+		LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+			ON A.EVL_ID = M.EVL_ID
+			AND A.OBJECT_ID = M.OBJECT_ID
+		LEFT OUTER JOIN TB_CW_UPRPD_EXC UE
+			ON A.EVL_ID = UE.EVL_ID
+			AND A.OBJECT_ID = UE.OBJECT_ID
+		LEFT OUTER JOIN TB_CW_UPRPD U
+			ON UE.EVL_ID = U.EVL_ID
+			AND UE.OBJECT_ID = U.OBJECT_ID
+      		AND A.CHRG_USER_TY_CD_ID = 'CTW_105_001'
+		LEFT OUTER JOIN TB_CW_UPRPD_POSMANT UP
+			ON A.EVL_ID = UP.EVL_ID
+			AND A.OBJECT_ID = UP.OBJECT_ID
+			AND UP.LAST_AT = 'Y'
+      		AND A.CHRG_USER_TY_CD_ID = 'CTW_105_001'
+		LEFT OUTER JOIN TB_CO_CODE C1
+		 	ON E.EVL_KND_CD_ID = C1.CODE_ID
+		LEFT OUTER JOIN TB_CO_CODE C2
+		 	ON E.ACCNUT_SE_CD_ID = C2.CODE_ID
+        <trim prefix="WHERE" prefixOverrides="AND|OR ">	
+        	AND E.STTUS_CD_ID IN ('CTW_101_005', 'CTW_101_006')
+			<choose>
+				<when test='srchTy != null and srchTy == "PLC" '>
+					AND E.EVL_KND_CD_ID IN ('CTW_103_001', 'CTW_103_002')
+				</when>
+				<when test='srchTy != null and srchTy == "ELC" '>
+					AND E.EVL_KND_CD_ID IN ('CTW_103_003', 'CTW_103_004')
+				</when>
+			</choose>	
+			<choose>
+				<when test='srchYy != null and srchYy != "" '>
+					AND E.ACCNUT_YY = #{srchYy}
+				</when>
+				<otherwise>
+					AND E.ACCNUT_YY = CONVERT(VARCHAR(4),GETDATE(),112) 
+				</otherwise>
+			</choose>	
+			AND A.CHRG_DEPT_ID = #{deptId}
+		</trim>
+		GROUP BY E.EVL_ID, E.EVL_KND_CD_ID, E.EVL_SJ, E.ACCNUT_YY, E.ACCNUT_SE_CD_ID, E.EVL_BGNDE, E.EVL_ENDDE, C1.CODE_NM, C2.CODE_NM
+		ORDER BY E.EVL_KND_CD_ID ASC, E.ACCNUT_SE_CD_ID ASC
+ 	</select> 
+
+</mapper>

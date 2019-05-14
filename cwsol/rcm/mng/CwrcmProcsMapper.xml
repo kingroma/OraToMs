@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.rcm.mng.serviceimpl.CwrcmProcsMapper">
+
+	<!-- 서브의 마지막 여부를 체크 하기 위해 PROCS와 JOIN해줌 -->
+	<select id="list" resultType="EgovMap">
+		<!-- CONNECTBY 제거 -->
+		<choose>
+			<when test='srchWrd == null or srchWrd == ""'>
+				WITH V1 AS (
+					SELECT 
+			              A.MAPNG_ID, A.OBJECT_ID, A.OBJECT_NO, REPLACE(REPLACE(A.OBJECT_NM, CHAR(13), ' '), CHAR(10), ' ') AS OBJECT_NM, A.OBJECT_LEVEL, A.UPPER_OBJECT_ID, A.UPPER_MAPNG_ID
+			            , A.OBJECT_KND_CD_ID, B.CODE_NM AS OBJECT_KND_CD_NM
+			            , (SELECT COUNT(MAPNG_ID) FROM TB_CW_RCM_MAPNG WHERE UPPER_MAPNG_ID = A.MAPNG_ID) AS LWPRT_CNT
+			        	, U.CHRG_USER_ID
+	                    , UA.HIST_BGNDE AS CHRG_USER_BGNDE
+	                    , UA.USER_NM
+	                    , UA.DEPT_NM
+			        FROM TB_CW_RCM_MAPNG A
+			        INNER JOIN TB_CW_RCM_PROCS P
+			        	ON A.OBJECT_ID = P.PROCS_ID
+			        LEFT OUTER JOIN TB_CO_CODE B
+			            ON CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+	                		THEN 'CTW_001_003' 
+	                		ELSE A.OBJECT_KND_CD_ID END = B.CODE_ID
+			      	LEFT OUTER JOIN TB_CW_RCM_MAPNG_USER U
+	                    ON A.OBJECT_ID = U.OBJECT_ID
+	                    AND U.MAPNG_CHRG_SN = '1'
+	                LEFT OUTER JOIN TB_CO_USER_HIST UA
+	                    ON U.CHRG_USER_ID = UA.USER_ID
+			            AND UA.HIST_ENDDE = '99991231' 	/** 최신정보 */
+				)
+				SELECT 
+					V.*
+					,( CASE (SELECT COUNT(*) FROM V1 TEMP WHERE V.OBJECT_ID = TEMP.UPPER_OBJECT_ID ) WHEN 0 THEN 'Y'  ELSE 'N' END )  AS OBJECT_LAST_AT
+	
+				FROM V1 V 
+	          	ORDER BY OBJECT_ID 
+			</when>
+			<otherwise>
+				WITH V1 AS (
+					SELECT 	
+				    	DISTINCT A.MAPNG_ID, A.OBJECT_ID,  A.UPPER_OBJECT_ID, A.UPPER_MAPNG_ID , A.OBJECT_NM, A.OBJECT_LEVEL
+				    FROM TB_CW_RCM_MAPNG A
+				    INNER JOIN TB_CW_RCM_PROCS P
+				      	ON A.OBJECT_ID = P.PROCS_ID
+				    LEFT OUTER JOIN TB_CO_CODE B
+				        ON CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+			           		THEN 'CTW_001_003' 
+			           		ELSE A.OBJECT_KND_CD_ID END = B.CODE_ID 
+				) 
+				, V2 (MAPNG_ID , OBJECT_ID ,  OBJECT_NM , OBJECT_LEVEL  , UPPER_OBJECT_ID , UPPER_MAPNG_ID) AS (
+					SELECT MAPNG_ID , OBJECT_ID ,  OBJECT_NM , OBJECT_LEVEL  , UPPER_OBJECT_ID , UPPER_MAPNG_ID
+					FROM V1 
+					WHERE OBJECT_NM LIKE '%'+#{srchWrd}+'%'
+					
+					UNION ALL 	
+					
+					SELECT V.MAPNG_ID , V.OBJECT_ID ,  V.OBJECT_NM , V.OBJECT_LEVEL  , V.UPPER_OBJECT_ID , V.UPPER_MAPNG_ID 
+					FROM V1 V , V2 ROOT 
+					WHERE V.MAPNG_ID = ROOT.UPPER_MAPNG_ID 
+				)
+				SELECT 
+					T.*
+                    ,( CASE (SELECT COUNT(*) FROM V2 TEMP WHERE T.OBJECT_ID = TEMP.UPPER_OBJECT_ID ) WHEN 0 THEN 'Y'  ELSE 'N' END )  AS OBJECT_LAST_AT
+                    , (SELECT COUNT(MAPNG_ID) FROM TB_CW_RCM_MAPNG WHERE UPPER_MAPNG_ID = T.MAPNG_ID) AS LWPRT_CNT
+					, U.CHRG_USER_ID
+                    , UA.HIST_BGNDE AS CHRG_USER_BGNDE
+                    , UA.USER_NM
+                    , UA.DEPT_NM
+				FROM (
+				        SELECT 
+				              DISTINCT A.MAPNG_ID, A.OBJECT_ID, A.OBJECT_NO, REPLACE(REPLACE(A.OBJECT_NM, CHAR(13), ' '), CHAR(10), ' ') AS OBJECT_NM, A.OBJECT_LEVEL, A.UPPER_OBJECT_ID, A.UPPER_MAPNG_ID
+				            , A.OBJECT_KND_CD_ID, B.CODE_NM AS OBJECT_KND_CD_NM
+				        FROM V2 V
+				        INNER JOIN TB_CW_RCM_MAPNG A
+				        	ON A.OBJECT_ID = V.OBJECT_ID  
+				        INNER JOIN TB_CW_RCM_PROCS P
+				        	ON A.OBJECT_ID = P.PROCS_ID
+				        LEFT OUTER JOIN TB_CO_CODE B
+				            ON CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+			                		THEN 'CTW_001_003' 
+			                		ELSE A.OBJECT_KND_CD_ID END = B.CODE_ID 
+                ) T
+                LEFT OUTER JOIN TB_CW_RCM_MAPNG_USER U
+                    ON T.OBJECT_ID = U.OBJECT_ID
+                    AND U.MAPNG_CHRG_SN = '1'
+                LEFT OUTER JOIN TB_CO_USER_HIST UA
+                    ON U.CHRG_USER_ID = UA.USER_ID
+		           AND UA.HIST_ENDDE = '99991231' 	/** 최신정보 */
+                ORDER BY T.OBJECT_ID ASC 
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="view" resultType="CwrcmProcsVO">
+		SELECT 
+		  	  A.MAPNG_ID, A.OBJECT_ID, A.OBJECT_NO, A.OBJECT_NM, A.OBJECT_LEVEL, A.UPPER_OBJECT_ID, A.UPPER_MAPNG_ID
+			, A.OBJECT_KND_CD_ID, B.CODE_NM AS OBJECT_KND_CD_NM
+			, (SELECT COUNT(MAPNG_ID) FROM TB_CW_RCM_MAPNG WHERE UPPER_MAPNG_ID = A.MAPNG_ID) AS LWPRT_CNT
+		FROM TB_CW_RCM_MAPNG A
+		INNER JOIN TB_CW_RCM_PROCS P
+			ON A.OBJECT_ID = P.PROCS_ID
+		LEFT OUTER JOIN TB_CO_CODE B
+		ON CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+             	THEN 'CTW_001_003' 
+             	ELSE A.OBJECT_KND_CD_ID END = B.CODE_ID
+		WHERE A.OBJECT_ID = #{procsId}
+	</select>
+   
+	<insert id="insert">
+		<![CDATA[
+		BEGIN
+			INSERT INTO TB_CW_RCM_PROCS (
+				PROCS_ID, PROCS_NO, PROCS_NM, PROCS_KND_CD_ID, CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+			) VALUES (
+				#{procsId}, #{procsNo}, #{procsNm}, #{procsKndCdId}, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+			);
+			
+			UPDATE TB_CW_RCM_PROCS_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			     , UPD_DT = GETDATE()
+			     , UPD_USER_ID = #{suserId} 
+			 WHERE PROCS_ID = #{procsId}
+			   AND ENDTMSTMP = '99991231235959999999';
+				 
+			INSERT INTO TB_CW_RCM_PROCS_HIST (
+			    PROCS_ID, BGNTMSTMP, ENDTMSTMP, PROCS_NO, PROCS_NM, PROCS_KND_CD_ID, CMPNY_CD_ID
+				, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+			) VALUES (
+				#{procsId}, #{bgntmstmp}, '99991231235959999999', #{procsNo}, #{procsNm}, #{procsKndCdId}, #{cmpnyCdId}
+				, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 프로세스 등록'
+			);
+		END;
+		]]>
+	</insert>
+
+	<update id="update">
+		<![CDATA[
+		BEGIN
+			UPDATE TB_CW_RCM_PROCS SET 
+				  PROCS_NO   		= #{procsNo}
+				, PROCS_NM   		= #{procsNm}
+				, PROCS_KND_CD_ID 	= #{procsKndCdId}  
+				, UPD_DT 	  		= GETDATE()
+				, UPD_USER_ID 		= #{suserId}   
+			WHERE PROCS_ID = #{procsId};
+			
+			UPDATE TB_CW_RCM_PROCS_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			     , UPD_DT = GETDATE()
+			     , UPD_USER_ID = #{suserId} 
+			 WHERE PROCS_ID = #{procsId}
+			   AND ENDTMSTMP = '99991231235959999999';
+			
+			INSERT INTO TB_CW_RCM_PROCS_HIST (
+			    PROCS_ID, BGNTMSTMP, ENDTMSTMP, PROCS_NO, PROCS_NM, PROCS_KND_CD_ID, CMPNY_CD_ID
+				, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+			) VALUES (
+				#{procsId}, #{bgntmstmp}, '99991231235959999999', #{procsNo}, #{procsNm}, #{procsKndCdId}, #{cmpnyCdId}
+				, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 프로세스 수정'
+			);
+		END;
+		]]>
+	</update>
+
+	<delete id="delete">
+		<![CDATA[
+		BEGIN
+			DELETE FROM TB_CW_RCM_PROCS
+			WHERE PROCS_ID = #{procsId};
+			
+			UPDATE TB_CW_RCM_PROCS_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			     , UPD_DT = GETDATE()
+			     , UPD_USER_ID = #{suserId} 
+			 WHERE PROCS_ID = #{procsId}
+			   AND ENDTMSTMP = '99991231235959999999';
+			
+			INSERT INTO TB_CW_RCM_PROCS_HIST (
+			    PROCS_ID, BGNTMSTMP, ENDTMSTMP
+				, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+			) VALUES (
+				#{procsId}, #{bgntmstmp}, '99991231235959999999'
+				, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 프로세스 삭제'
+			);
+		END;
+		]]>
+	</delete>
+	
+	<select id="duplchk" resultType="int">
+		SELECT COUNT(*) FROM TB_CW_RCM_MAPNG WHERE OBJECT_NO = #{procsNo}
+	</select>
+
+	<delete id="deleteAll">
+		<![CDATA[
+		BEGIN
+			/** 프로세스 테이블 삭제 */
+			DELETE FROM TB_CW_RCM_PROCS;
+
+			/** 프로세스 이력 종료/시작 */
+			FOR list IN (
+				SELECT PROCS_ID, ROWNUM
+				  FROM TB_CW_RCM_PROCS_HIST
+				 WHERE ENDTMSTMP = '99991231235959999999'	
+			) LOOP
+			
+			IF list.ROWNUM = '1' THEN
+				UPDATE TB_CW_RCM_PROCS_HIST
+				   SET ENDTMSTMP = #{endtmstmp}
+				     , UPD_DT = GETDATE()
+				     , UPD_USER_ID = #{suserId} 
+				 WHERE ENDTMSTMP = '99991231235959999999';
+			END IF;
+			
+			INSERT INTO TB_CW_RCM_PROCS_HIST (
+					  PROCS_ID, BGNTMSTMP, ENDTMSTMP 
+					, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+				) VALUES (
+					  list.PROCS_ID, #{bgntmstmp}, #{endtmstmp}
+					, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 전체삭제'
+				);
+			END LOOP;
+		END;
+		]]>
+	</delete>
+	
+	<select id="procsDetailView" resultType="CwrcmProcsVO">
+		SELECT DISTINCT
+		  	  P.PROCS_ID
+			, P.PROCS_NO
+		  	, P.PROCS_NM
+		  	, M.OBJECT_LEVEL
+		  	, M.UPPER_OBJECT_ID
+		  	, UP.PROCS_NM AS UPPER_PROCS_NM
+			, M.OBJECT_KND_CD_ID
+			, B.CODE_NM AS OBJECT_KND_CD_NM
+        	, UH.USER_NM  AS CHRG_USER_NM
+        	, UH.DEPT_NM  AS CHRG_DEPT_NM
+		FROM TB_CW_RCM_PROCS P
+    	LEFT OUTER JOIN TB_CW_RCM_MAPNG M
+      		ON P.PROCS_ID = M.OBJECT_ID
+		LEFT OUTER JOIN TB_CW_RCM_PROCS UP
+			ON M.UPPER_OBJECT_ID = UP.PROCS_ID
+		LEFT OUTER JOIN (SELECT OBJECT_ID, CHRG_USER_ID FROM (
+							    SELECT OBJECT_ID
+							        , ROW_NUMBER() OVER (PARTITION BY OBJECT_ID ORDER BY UPD_DT DESC) AS RN
+							        , CHRG_USER_ID
+							    FROM TB_CW_RCM_CHRG_USER
+							    WHERE ERROR_AT = 'N'
+							) WHERE RN = 1
+						) U
+      		ON P.PROCS_ID = U.OBJECT_ID
+    	LEFT OUTER JOIN TB_CO_USER_HIST UH
+      		ON U.CHRG_USER_ID = UH.USER_ID
+      		AND UH.HIST_ENDDE = '99991231'
+		LEFT OUTER JOIN TB_CO_CODE B
+      		ON CASE WHEN M.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+               		THEN 'CTW_001_003' 
+               		ELSE M.OBJECT_KND_CD_ID END = B.CODE_ID
+		WHERE P.PROCS_ID = #{procsId}
+	</select>
+	
+	<select id="selectProcsHistList" resultType="EgovMap">
+		SELECT A.MAPNG_ID
+			 , P.BGNTMSTMP
+		     , P.ENDTMSTMP
+		     , SUBSTRING(P.BGNTMSTMP,1,4) + '-' + SUBSTRING(P.BGNTMSTMP,5,2) + '-' + SUBSTRING(P.BGNTMSTMP,7,2) + ' ' + SUBSTRING(P.BGNTMSTMP,9,2) + ':' + SUBSTRING(P.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(P.BGNTMSTMP,13,2) BGNTMSTMP_DE
+		     , SUBSTRING(P.BGNTMSTMP,1,4) + '-' + SUBSTRING(P.BGNTMSTMP,5,2) + '-' + SUBSTRING(P.BGNTMSTMP,7,2) + ' ' + SUBSTRING(P.BGNTMSTMP,9,2) + ':' + SUBSTRING(P.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(P.BGNTMSTMP,13,2) + ' - ' + P.RM AS BGNTMSTMP_RM
+		     , (CASE WHEN P.ENDTMSTMP = '99991231235959999999' THEN '-' 
+		              ELSE SUBSTRING(P.ENDTMSTMP,1,4) + '-' + SUBSTRING(P.ENDTMSTMP,5,2) + '-' + SUBSTRING(P.ENDTMSTMP,7,2) + ' ' + SUBSTRING(P.ENDTMSTMP,9,2) + ':' + SUBSTRING(P.ENDTMSTMP,11,2 ) + ':' + SUBSTRING(P.ENDTMSTMP,13,2) END) ENDTMSTMP_DE
+		     , A.OBJECT_ID
+		     , A.OBJECT_NO
+		     , A.OBJECT_NM
+		     , A.OBJECT_LEVEL
+		     , A.UPPER_OBJECT_ID
+		     , A.UPPER_MAPNG_ID
+		     , A.OBJECT_KND_CD_ID, B.CODE_NM AS OBJECT_KND_CD_NM
+		     , (SELECT COUNT(MAPNG_ID) FROM TB_CW_RCM_MAPNG WHERE UPPER_MAPNG_ID = A.MAPNG_ID) AS LWPRT_CNT
+		     , (SELECT BGNTMSTMP FROM TB_CW_RCM_PROCS_HIST WHERE PROCS_ID = P.PROCS_ID AND ENDTMSTMP = '99991231235959999999') AS SRCH_STDR_BGNTMSTMP
+		     , (SELECT COUNT(PROCS_ID) FROM TB_CW_RCM_PROCS_HIST WHERE PROCS_ID = P.PROCS_ID) AS HIST_CNT 
+		  FROM TB_CW_RCM_MAPNG_HIST A
+		  LEFT OUTER JOIN TB_CW_RCM_PROCS_HIST P
+		    ON A.OBJECT_ID = P.PROCS_ID
+		    AND A.BGNTMSTMP = P.BGNTMSTMP 
+		  LEFT OUTER JOIN TB_CO_CODE B
+		    ON CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+              		THEN 'CTW_001_003' 
+              		ELSE A.OBJECT_KND_CD_ID END = B.CODE_ID
+		WHERE A.OBJECT_ID = #{procsId}
+		ORDER BY P.ENDTMSTMP DESC
+	</select>
+
+	<select id="selectProcsHistView" resultType="EgovMap">
+		SELECT A.MAPNG_ID
+			 , P.BGNTMSTMP
+		     , P.ENDTMSTMP
+		     , SUBSTRING(P.BGNTMSTMP,1,4) + '-' + SUBSTRING(P.BGNTMSTMP,5,2) + '-' + SUBSTRING(P.BGNTMSTMP,7,2) + ' ' + SUBSTRING(P.BGNTMSTMP,9,2) + ':' + SUBSTRING(P.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(P.BGNTMSTMP,13,2) BGNTMSTMP_DE
+		     , SUBSTRING(P.BGNTMSTMP,1,4) + '-' + SUBSTRING(P.BGNTMSTMP,5,2) + '-' + SUBSTRING(P.BGNTMSTMP,7,2) + ' ' + SUBSTRING(P.BGNTMSTMP,9,2) + ':' + SUBSTRING(P.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(P.BGNTMSTMP,13,2) + ' - ' + P.RM AS BGNTMSTMP_RM
+		     , (CASE WHEN P.ENDTMSTMP = '99991231235959999999' THEN '-' 
+		              ELSE SUBSTRING(P.ENDTMSTMP,1,4) + '-' + SUBSTRING(P.ENDTMSTMP,5,2) + '-' + SUBSTRING(P.ENDTMSTMP,7,2) + ' ' + SUBSTRING(P.ENDTMSTMP,9,2) + ':' + SUBSTRING(P.ENDTMSTMP,11,2 ) + ':' + SUBSTRING(P.ENDTMSTMP,13,2) END) ENDTMSTMP_DE
+		     , A.OBJECT_ID
+		     , A.OBJECT_NO
+		     , A.OBJECT_NM
+		     , A.OBJECT_LEVEL
+		     , A.UPPER_OBJECT_ID
+		     , A.UPPER_MAPNG_ID
+		     , A.OBJECT_KND_CD_ID, B.CODE_NM AS OBJECT_KND_CD_NM
+		     , (SELECT COUNT(MAPNG_ID) FROM TB_CW_RCM_MAPNG WHERE UPPER_MAPNG_ID = A.MAPNG_ID) AS LWPRT_CNT
+		     , (SELECT BGNTMSTMP FROM TB_CW_RCM_PROCS_HIST WHERE PROCS_ID = P.PROCS_ID AND ENDTMSTMP = '99991231235959999999') AS SRCH_STDR_BGNTMSTMP
+		     , (SELECT COUNT(PROCS_ID) FROM TB_CW_RCM_PROCS_HIST WHERE PROCS_ID = P.PROCS_ID) AS HIST_CNT 
+		  FROM TB_CW_RCM_MAPNG_HIST A
+		  LEFT OUTER JOIN TB_CW_RCM_PROCS_HIST P
+		    ON A.OBJECT_ID = P.PROCS_ID
+		    AND A.BGNTMSTMP = P.BGNTMSTMP 
+		  LEFT OUTER JOIN TB_CO_CODE B
+		    ON CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+               		THEN 'CTW_001_003' 
+               		ELSE A.OBJECT_KND_CD_ID END = B.CODE_ID
+		WHERE A.OBJECT_ID = #{procsId}
+		<if test=' srchStdrBgntmstmp != null and srchStdrBgntmstmp != "" '>
+        	AND P.BGNTMSTMP = #{srchStdrBgntmstmp}
+		</if>
+	</select>
+			
+</mapper>

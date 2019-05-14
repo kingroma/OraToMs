@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.up.mng.serviceimpl.CwupMngMgrtMapper">
+    
+  	<!-- 미비점 현황 - 이행조치 점검 -->
+  	<select id="list" resultType="EgovMap">
+  		SELECT        
+				E.EVL_ID
+			  , A.OBJECT_ID --OBJECT_ID
+		      , M.OBJECT_NO
+		      , M.OBJECT_NM
+		      , A.EVL_ID
+		      , A.STTUS_CD_ID AS EXC_STTUS_CD_ID--상태코드
+		      , A.SANCTN_ID --결제ID
+		      , B.STTUS_CD_ID --이행 상태 코드ID
+		      , (SELECT CODE_NM FROM TB_CO_CODE WHERE CODE_ID = B.STTUS_CD_ID) AS STTUS_CD_NM --상태코드명
+		      , A.UPRPD_CL_CD_ID --미비점분류
+		      , (SELECT CODE_NM FROM TB_CO_CODE WHERE CODE_ID = A.UPRPD_CL_CD_ID) AS UPRPD_CL_CD_NM --미비점분류명
+		      , A.UPRPD_TY_CD_ID --미비점유형
+		      ,( SELECT CODE_NM FROM TB_CO_CODE WHERE CODE_ID = A.UPRPD_TY_CD_ID) AS UPRPD_TY_CD_NM --미비점유형명
+		      , A.EXC_COMPT_CD_ID --수행여부(수행완료코드)
+		      , (SELECT CODE_NM FROM TB_CO_CODE WHERE CODE_ID = A.EXC_COMPT_CD_ID) ASEXC_COMPT_CD_NM ----수행여부(수행완료코드)명
+		      , B.COMPT_AT --점검여부
+		      , (CASE WHEN B.COMPT_AT IS NULL THEN '대기'
+			 		  WHEN B.COMPT_AT = 'Y' THEN '이행'
+		 			  ELSE '미이행' END) AS COMPT_NM --반영여부 명칭
+			  , (CASE WHEN B.CNFIRM_DE IS NULL THEN B.CNFIRM_DE 
+				     ELSE CONVERT ( VARCHAR , CONVERT ( DATE , B.CNFIRM_DE , 112 ) , 23 ) END) AS CNFIRM_DE -- 확인일자              
+		      , A.FLFL_FLAG --미비점 개선수행 또는 미비점 사후관리 구분 플래그
+		      , A.POSMANT_SN AS POSMANT_SN
+		FROM
+			(
+			SELECT     
+					A.OBJECT_ID
+				  , A.EVL_ID
+				  , A.SANCTN_ID --결제ID
+				  , A.STTUS_CD_ID
+				  , A.EXC_COMPT_CD_ID
+				  , B.UPRPD_CL_CD_ID
+				  , B.UPRPD_TY_CD_ID
+				  , 'U' AS FLFL_FLAG
+				  , 99999 AS POSMANT_SN
+                  , B.CHRG_USER_ID
+                  , B.CHRG_USER_TY_CD_ID
+			FROM 
+				TB_CW_UPRPD_EXC A
+				, TB_CW_UPRPD B
+			WHERE 
+				A.EVL_ID = B.EVL_ID
+				AND   A.OBJECT_ID = B.OBJECT_ID
+				AND   A.EVL_ID = #{evlId}
+				AND   A.STTUS_CD_ID = 'COM_023_007' 
+				AND   A.EXC_COMPT_CD_ID != 'CTW_207_003'
+		        
+			UNION ALL
+		      
+			SELECT  A.OBJECT_ID
+				  , A.EVL_ID
+				  , A.SANCTN_ID --결제ID
+				  , P.STTUS_CD_ID
+				  , P.EXC_COMPT_CD_ID
+				  , B.UPRPD_CL_CD_ID
+				  , B.UPRPD_TY_CD_ID
+				  , 'P' AS FLFL_FLAG
+				  , P.POSMANT_SN AS POSMANT_SN
+                  , B.CHRG_USER_ID
+                  , B.CHRG_USER_TY_CD_ID
+			FROM 
+				(
+				SELECT  P1.EVL_ID
+					  , P1.OBJECT_ID
+					  , P1.POSMANT_SN
+					  , P1.STTUS_CD_ID
+					  , P1.EXC_COMPT_CD_ID
+				FROM 
+					TB_CW_UPRPD_POSMANT P1,
+						(
+						SELECT  EVL_ID
+							  , OBJECT_ID
+							  , MAX(POSMANT_SN) AS MAX_POSMANT_SN
+						FROM TB_CW_UPRPD_POSMANT
+						WHERE EVL_ID = #{evlId}
+						GROUP BY EVL_ID,OBJECT_ID
+						) P2
+				WHERE 
+					P1.POSMANT_SN = P2.MAX_POSMANT_SN
+		            AND P1.EVL_ID = P2.EVL_ID
+		            AND P1.OBJECT_ID = P2.OBJECT_ID
+		        ) P 
+		        ,TB_CW_UPRPD_EXC A
+		        ,TB_CW_UPRPD B          
+			WHERE 
+				A.EVL_ID = P.EVL_ID
+				AND   A.OBJECT_ID = P.OBJECT_ID
+				AND   A.EVL_ID = B.EVL_ID
+				AND   A.OBJECT_ID = B.OBJECT_ID
+				AND   P.STTUS_CD_ID = 'COM_023_007' 
+				AND   P.EXC_COMPT_CD_ID != 'CTW_207_003'
+			) A
+			LEFT OUTER JOIN TB_CW_UPRPD_MGRT_MANAGT B
+				ON 	A.EVL_ID = B.EVL_ID
+      			AND A.OBJECT_ID = B.OBJECT_ID  
+      		LEFT OUTER JOIN TB_CW_EVL E
+      			ON  A.EVL_ID = E.EVL_ID
+			LEFT OUTER JOIN TB_CW_EVL_EXC EE
+				ON	A.EVL_ID 			= EE.EVL_ID
+				AND A.OBJECT_ID 		= EE.OBJECT_ID
+				AND A.CHRG_USER_ID 		= EE.CHRG_USER_ID 
+				AND A.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+	        LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+	        	ON 	A.EVL_ID = M.EVL_ID
+	        	AND	A.OBJECT_ID = M.OBJECT_ID
+			<trim prefix="WHERE" prefixOverrides="AND|OR ">
+            	AND EE.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005', 'CTW_106_007')
+				<if test=' srchComptAt != null and srchComptAt != "" '>
+					<choose>
+						<when test= 'srchComptAt == "W"'>
+							AND B.COMPT_AT IS NULL
+						</when>
+						<otherwise>
+							AND B.COMPT_AT = #{srchComptAt} 
+						</otherwise>
+					</choose>
+				</if>
+				<if test=' srchUprpdClCdId != null and srchUprpdClCdId != "" '>
+					AND A.UPRPD_CL_CD_ID = #{srchUprpdClCdId} 
+				</if>          
+				<if test=' srchUprpdTyCdId != null and srchUprpdTyCdId != "" '>
+					AND A.UPRPD_TY_CD_ID = #{srchUprpdTyCdId} 
+				</if> 
+				<if test=' psrchWrd != null and psrchWrd != "" '>
+				<choose>
+					<when test="srchTy == 'cnrlNm'" >
+						AND	( M.OBJECT_NM LIKE '%' + #{psrchWrd} + '%' ) 
+					</when>
+				</choose>
+			</if>
+		</trim>   
+		ORDER BY OBJECT_ID ASC
+  	</select>
+	
+  	
+	<!-- 이행확인 조회 -->
+	<select id="view" resultType="CwupMngVO">
+		SELECT
+			  E.EVL_ID
+			, E.STTUS_CD_ID AS EVL_STTUS_CD_ID
+			, UP.OBJECT_ID
+			, M.OBJECT_NO
+			, M.OBJECT_NM
+			, UPS.POSMANT_SN
+			, UM.COMPT_AT
+			, UM.CNFIRM_SJ
+			, UM.CNFIRM_CN
+			, UM.CNFIRM_CHARGER
+			, CONVERT ( VARCHAR , CONVERT ( DATE , UM.CNFIRM_DE , 112 ) , 23 )	AS CNFIRM_DE -- 확인일자  
+			, UM.RGS_DT
+			, UM.RGS_USER_ID
+			, UE.SANCTN_ID AS SANCTN_ID
+			, UC.SANCTN_ID AS EXMNT_SANCTN_ID
+			, UPS.SANCTN_ID AS EXC_SANCTN_ID
+			, UPSC.SANCTN_ID AS POSMANT_SANCTN_ID
+			, UM.SANCTN_ID  AS MGRT_SANCTN_ID
+		FROM TB_CW_UPRPD UP
+			LEFT OUTER JOIN TB_CW_UPRPD_EXC UE
+				ON 	UP.EVL_ID = UE.EVL_ID
+				AND	UP.OBJECT_ID = UE.OBJECT_ID
+			LEFT OUTER JOIN TB_CW_UPRPD_CONFM UC
+				ON 	UP.EVL_ID = UC.EVL_ID
+				AND	UP.OBJECT_ID = UC.OBJECT_ID
+				AND UC.LAST_AT = 'Y'
+			LEFT OUTER JOIN TB_CW_UPRPD_MGRT_MANAGT UM
+				ON 	UP.EVL_ID = UM.EVL_ID
+				AND	UP.OBJECT_ID = UM.OBJECT_ID
+			LEFT OUTER JOIN TB_CW_EVL E
+				ON 	UP.EVL_ID = E.EVL_ID
+			LEFT OUTER JOIN TB_CW_UPRPD_POSMANT UPS
+				ON 	UP.EVL_ID = UPS.EVL_ID
+				AND	UP.OBJECT_ID = UPS.OBJECT_ID
+  			 	AND UPS.LAST_AT	 = 'Y'
+			LEFT OUTER JOIN TB_CW_UPRPD_POSMANT_CONFM UPSC
+				ON 	UP.EVL_ID = UPSC.EVL_ID
+				AND	UP.OBJECT_ID = UPSC.OBJECT_ID
+          		AND UPS.POSMANT_SN 	= UPSC.POSMANT_SN
+				AND UPSC.LAST_AT = 'Y'
+			LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+				ON 	UP.EVL_ID = M.EVL_ID
+				AND UP.OBJECT_ID = M.OBJECT_ID
+		WHERE
+			UP.EVL_ID = #{evlId} 
+			AND UP.OBJECT_ID = #{objectId}
+			AND (UPS.OBJECT_ID IS NULL OR (UPS.OBJECT_ID IS NOT NULL AND UPS.POSMANT_SN = (SELECT MAX(POSMANT_SN) FROM TB_CW_UPRPD_POSMANT WHERE EVL_ID = UP.EVL_ID AND OBJECT_ID = UP.OBJECT_ID)))
+	
+	</select>
+	
+  	<!-- 이행확인 저장 -->
+	<update id="save">        
+		MERGE INTO TB_CW_UPRPD_MGRT_MANAGT
+		USING DUAL
+		ON (EVL_ID = #{evlId} AND OBJECT_ID = #{objectId} )
+		WHEN MATCHED THEN
+		UPDATE SET
+			COMPT_AT = 'Y',
+			CNFIRM_SJ = #{cnfirmSj},
+			CNFIRM_CN = #{cnfirmCn},
+			CNFIRM_CHARGER = #{suserId},
+			CNFIRM_DE = REPLACE(#{cnfirmDe}, '-', ''),
+			STTUS_CD_ID = #{sttusCdId},
+			SANCTN_ID =	#{mgrtSanctnId},
+			UPD_DT = GETDATE(),
+			UPD_USER_ID = #{suserId}
+		WHEN NOT MATCHED THEN
+			INSERT (EVL_ID,OBJECT_ID,COMPT_AT,CNFIRM_SJ,CNFIRM_CN,CNFIRM_CHARGER,CNFIRM_DE,STTUS_CD_ID,SANCTN_ID,RGS_DT,RGS_USER_ID)
+			VALUES (#{evlId},#{objectId},'Y',#{cnfirmSj},#{cnfirmCn},#{suserId},REPLACE(#{cnfirmDe}, '-', ''),#{sttusCdId},#{mgrtSanctnId},GETDATE(),#{suserId})  
+	</update> 
+	
+  	<!-- 이행확인 저장 -->
+	<update id="updateSttus">        
+		UPDATE TB_CW_UPRPD_MGRT_MANAGT SET
+			STTUS_CD_ID = #{sttusCdId}
+		WHERE EVL_ID = #{evlId} AND OBJECT_ID = #{objectId}
+	</update> 
+</mapper>

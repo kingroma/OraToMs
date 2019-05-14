@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.sc.procsriskevl.serviceimpl.CwscProcsRiskEvlIemMapper">
+  	<!-- RCM MAP  -->	
+	<resultMap id="procsRiskEvlMap" type="EgovMap" >
+  		<collection property="procsRiskEvlIemList" 	column="{procsRiskEvlId=PROCS_RISK_EVL_ID,procsId=OBJECT_ID}" select="procsRiskEvlIemList" />
+  	</resultMap>
+  	
+	<resultMap id="CwscProcsRiskEvlMap" type="CwscProcsRiskEvlVO" />
+  	
+ 	<!-- 목록 -->
+ 	<select id="list" resultMap="procsRiskEvlMap">
+ 		SELECT 	T.MAPNG_ID, T.OBJECT_ID, T.OBJECT_NO, T.OBJECT_NM, T.OBJECT_LEVEL
+			  , T.UPPER_OBJECT_ID, T.UPPER_MAPNG_ID, T.OBJECT_KND_CD_ID, T.OBJECT_KND_CD_NM
+			  , #{procsRiskEvlId} AS PROCS_RISK_EVL_ID
+			  , I.RESULT_CD_ID
+			  , C.CODE_NM	AS RESULT_CD_NM
+		      , EU.EVL_CHRG_USER_ID
+		      , EU.EVL_CHRG_USER_BGNDE
+		      , UH.USER_NM	AS EVL_CHRG_USER_NM
+		      , UH.DEPT_NM  AS EVL_CHRG_DEPT_NM
+		FROM (	SELECT	DISTINCT A.MAPNG_ID, A.OBJECT_ID, A.OBJECT_NO, A.OBJECT_NM, A.OBJECT_LEVEL
+		              , A.UPPER_OBJECT_ID, A.UPPER_MAPNG_ID
+		          	  , A.OBJECT_KND_CD_ID, B.CODE_NM AS OBJECT_KND_CD_NM
+		      	FROM TB_CW_RCM_MAPNG A
+		      	INNER JOIN TB_CW_RCM_PROCS P
+		      		ON A.OBJECT_ID = P.PROCS_ID
+		      	LEFT OUTER JOIN TB_CO_CODE B
+		          	ON CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{procsStep} = 2 
+                		THEN 'CTW_001_003' 
+                		ELSE A.OBJECT_KND_CD_ID END = B.CODE_ID 
+		        <choose>
+		        	<when test=' srchTy == "stoprt" '>
+		        		<![CDATA[
+				        WHERE A.OBJECT_ID IN (SELECT EU.PROCS_ID FROM TB_CW_SC_PROCS_RISK_EVLUSER EU WHERE EU.PROCS_RISK_EVL_ID = #{procsRiskEvlId} AND EU.EVL_CHRG_USER_ID = #{suserId} )
+				        	AND A.OBJECT_LEVEL <= #{procsStep}
+				        ]]>
+		        	</when>
+		        	<otherwise>
+				         <![CDATA[ 
+				         WHERE A.OBJECT_LEVEL <= #{procsStep}
+				         ]]>
+		        	</otherwise>
+		        </choose>
+		        ORDER BY A.OBJECT_ID
+		        /** 프로세스 레벨만 */
+		   	 )T
+		LEFT OUTER JOIN TB_CW_SC_PROCS_RISK_EVL_RST I
+			ON 	I.PROCS_RISK_EVL_ID = #{procsRiskEvlId}
+			AND T.OBJECT_ID = I.PROCS_ID
+		LEFT OUTER JOIN TB_CW_SC_PROCS_RISK_EVLUSER EU
+			ON 	EU.PROCS_RISK_EVL_ID = #{procsRiskEvlId}
+			AND T.OBJECT_ID = EU.PROCS_ID
+		LEFT OUTER JOIN TB_CO_USER_HIST UH
+			ON 	EU.EVL_CHRG_USER_ID = UH.USER_ID
+			AND	EU.EVL_CHRG_USER_BGNDE = UH.HIST_BGNDE
+		LEFT OUTER JOIN TB_CO_CODE C
+			ON I.RESULT_CD_ID = C.CODE_ID
+			AND C.USE_AT = 'Y'
+			AND C.DEL_AT = 'N'
+		ORDER BY T.OBJECT_ID 
+	</select>
+	
+	<!-- 프로세스 위험평가 고려요소 항목 결과 목록 -->
+ 	<select id="procsRiskEvlIemList" resultType="EgovMap">
+		SELECT  #{procsRiskEvlId} AS PROCS_RISK_EVL_ID
+        	  , #{procsId} AS PROCS_ID
+        	  , CA.CODE_ID AS EVL_IEM_CD_ID
+			  , B.EVL_IEM_RESULT_CD_ID
+			  , CB.CODE_NM AS EVL_IEM_RESULT_CD_NM
+		FROM TB_CO_CODE CA
+			LEFT OUTER JOIN TB_CW_SC_PROCS_RISK_EVL_IEM B
+				ON 	CA.CODE_ID = B.EVL_IEM_CD_ID
+	        	AND B.PROCS_RISK_EVL_ID = #{procsRiskEvlId}
+	        	AND B.PROCS_ID = #{procsId}
+	        LEFT OUTER JOIN TB_CO_CODE CB
+	        	ON	B.EVL_IEM_RESULT_CD_ID = CB.CODE_ID
+	            AND CB.USE_AT = 'Y'
+		        AND CB.DEL_AT = 'N'	
+		WHERE CA.GROUP_ID = 'CTW_124'
+		  AND CA.USE_AT = 'Y'
+		  AND CA.DEL_AT = 'N'
+		ORDER BY CA.SORT_SN ASC
+	</select>
+	
+	<!-- 프로세스 위험평가 고려요소 항목 목록 -->
+ 	<select id="procsRiskEvlList" resultType="EgovMap">
+		SELECT  C.CODE_ID AS EVL_IEM_CD_ID
+			  , C.CODE_NM AS EVL_IEM_CD_NM
+		FROM TB_CO_CODE C
+		WHERE C.GROUP_ID = 'CTW_124' 
+		  AND C.USE_AT = 'Y'
+		  AND C.DEL_AT = 'N'
+		ORDER BY C.SORT_SN ASC
+	</select>
+	
+	<!-- 평가 항목 결과코드 목록 -->
+ 	<select id="evlResultCodeList" resultMap="CwscProcsRiskEvlMap">
+		SELECT  C.CODE_ID AS EVL_IEM_RESULT_CD_ID
+			  , C.CODE_NM AS EVL_IEM_RESULT_CD_NM
+        	<if test=' procsRiskEvlId != null and procsRiskEvlId !="" '>	
+        	  , S.EVL_IEM_RESULT_SCORE
+       		</if>
+		FROM TB_CO_CODE C
+        	<if test=' procsRiskEvlId != null and procsRiskEvlId !="" '>	
+			LEFT OUTER JOIN TB_CW_SC_PROCS_RISK_SCORE S
+        		ON 	S.PROCS_RISK_EVL_ID = #{procsRiskEvlId}
+        			AND	C.CODE_ID 	= S.EVL_IEM_RESULT_CD_ID
+       		</if>
+		WHERE C.GROUP_ID = 'CTW_125'
+		  AND C.USE_AT = 'Y'
+		  AND C.DEL_AT = 'N'
+		ORDER BY C.SORT_SN ASC
+	</select>
+	
+	<!-- 평가 항목 결과코드 조회목록 -->
+ 	<select id="evlResultCodeViewList" resultMap="CwscProcsRiskEvlMap">
+		SELECT  S.EVL_IEM_RESULT_CD_ID
+			  , S.EVL_IEM_RESULT_CD_NM
+        	  , S.EVL_IEM_RESULT_SCORE
+		FROM TB_CW_SC_PROCS_RISK_SCORE S
+		WHERE   S.PROCS_RISK_EVL_ID= #{procsRiskEvlId}
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO TB_CW_SC_PROCS_RISK_EVL_IEM (
+			  PROCS_RISK_EVL_ID, PROCS_ID, EVL_IEM_CD_ID, EVL_IEM_RESULT_CD_ID
+			, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES  (
+			  #{procsRiskEvlId}, #{procsId}, #{evlIemCdId}, #{evlIemResultCdId}
+			, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		) 
+	</insert>
+	
+	<insert id="update">
+		<selectKey keyProperty="resultCdId" resultType="String" order="BEFORE">
+			SELECT T.EVL_IEM_RESULT_CD_ID
+			FROM (	SELECT 	A.EVL_IEM_RESULT_CD_ID, count(A.EVL_IEM_RESULT_CD_ID) CNT
+					FROM 	TB_CW_SC_PROCS_RISK_EVL_IEM A
+					WHERE 	A.PROCS_RISK_EVL_ID = #{procsRiskEvlId}
+						AND A.PROCS_ID = #{procsId}
+					GROUP BY A.EVL_IEM_RESULT_CD_ID
+			      	ORDER BY COUNT(A.EVL_IEM_RESULT_CD_ID) DESC, A.EVL_IEM_RESULT_CD_ID
+			      )T
+			WHERE ROWNUM = 1
+		</selectKey>
+		INSERT INTO TB_CW_SC_PROCS_RISK_EVL_RST (
+			  PROCS_RISK_EVL_ID, PROCS_ID, RESULT_CD_ID
+			, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES  (
+			  #{procsRiskEvlId}, #{procsId}, #{resultCdId}
+			, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		) 
+	</insert>
+	
+	
+	<!-- 프로세스 위험평가 고려요소 항목 결과 조회 -->
+ 	<select id="view" resultType="CwscProcsRiskEvlVO">
+		SELECT  A.PROCS_RISK_EVL_ID
+			  , A.RESULT_CD_ID
+ 			  , C.CODE_NM AS RESULT_CD_NM
+ 		FROM TB_CW_SC_PROCS_RISK_EVL_RST A
+ 			LEFT OUTER JOIN TB_CO_CODE C
+ 				ON A.RESULT_CD_ID = C.CODE_ID
+ 				AND C.USE_AT = 'Y'
+ 				AND C.DEL_AT = 'N'
+ 		WHERE 	A.PROCS_RISK_EVL_ID = #{procsRiskEvlId}
+ 			AND	A.PROCS_ID = #{procsId}
+ 	</select>
+	
+	<!--삭제 -->
+	<delete id="delete">
+		BEGIN
+			DELETE FROM TB_CW_SC_PROCS_RISK_EVL_IEM 
+			WHERE PROCS_RISK_EVL_ID = #{procsRiskEvlId}
+				AND PROCS_ID = #{procsId}
+				AND EVL_IEM_CD_ID = #{evlIemCdId};
+				
+			DELETE FROM TB_CW_SC_PROCS_RISK_EVL_RST
+			WHERE PROCS_RISK_EVL_ID = #{procsRiskEvlId}
+				AND PROCS_ID = #{procsId};
+		END;
+	</delete>
+	
+	<insert id="insertProcsRiskScore">
+		INSERT INTO TB_CW_SC_PROCS_RISK_SCORE (
+			PROCS_RISK_EVL_ID, EVL_IEM_RESULT_CD_ID, EVL_IEM_RESULT_CD_NM, EVL_IEM_RESULT_SCORE
+		) VALUES  (
+			#{procsRiskEvlId}, #{evlIemResultCdId}, #{evlIemResultCdNm}, #{evlIemResultScore}
+		) 
+	</insert>
+	
+	<delete id="deleteProcsRiskScore">
+		DELETE TB_CW_SC_PROCS_RISK_SCORE
+		WHERE PROCS_RISK_EVL_ID = #{procsRiskEvlId}
+	</delete>
+
+</mapper>

@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.elc.evlrefrndoc.serviceimpl.CwelcEvlRefrnDocMapper">
+
+	<!-- control detail -->
+	<select id="list" resultType="EgovMap">
+		<if test=' srchUpperObjectId != null and srchUpperObjectId != "" '>
+			WITH V1 (OBJECT_ID ,MAPNG_ID, UPPER_OBJECT_ID )AS (
+				SELECT OBJECT_ID ,MAPNG_ID, UPPER_OBJECT_ID 
+				FROM TB_CW_ELC_RCM_MAPNG 
+				WHERE UPPER_OBJECT_ID = #{srchUpperObjectId}
+				
+				UNION ALL 
+				
+				SELECT M.OBJECT_ID , M.MAPNG_ID , M.UPPER_MAPNG_ID 
+				FROM TB_CW_ELC_RCM_MAPNG M , V1 ROOT 
+				WHERE ROOT.MAPNG_ID = M.UPPER_MAPNG_ID
+			)
+		</if>
+		SELECT TOT.*
+		     , CD1.CODE_NM        AS FILE_KND_CD_NM
+		     , COUNT(DISTINCT TOT.CNRL_ID) OVER() AS TOT_CNT
+		  FROM (
+		        SELECT
+		              A.CNRL_ID
+		            , A.CNRL_NO
+		            , A.CNRL_NM
+		            , A.CNRL_CN
+		            , ISNULL(A.KEY_CNRL_AT, 'N')               AS KEY_CNRL_AT
+		            , A.REFRN_NO
+		            , A.CNRL_RELATE_REF
+		            , A.CNRL_EXC_UPPER_DEPT
+		            , A.CNRL_EXC_DEPT
+		            , A.CNRL_EXCBER
+		            , A.CNRL_RSPNSBL_UPPER_DEPT
+		            , A.CNRL_RSPNSBL_DEPT
+		            , A.CNRL_RSPNBER
+		            , A.RELATE_REGLTN_NM
+		            , A.CNRL_RELATE_DOC
+		            , A.CNRL_RELATE_SYS
+		            , A.CNRL_RM
+		            , A.CNRL_PURPS
+		            , A.CNRL_PURPS_CD_ID
+		            , AF.CODE_NM AS CNRL_PURPS_CD_NM
+		            , A.CNRL_PURPS_FNNR_RLABLTY
+		            , A.CNRL_PURPS_ASSET_PRTC
+		            , A.CNRL_PURPS_INSTC_PRVN
+		            , A.CNRL_TY_CD_ID
+		            , AI.CODE_NM AS CNRL_TY_CD_NM
+		            , A.CNRL_TY_CECK01
+		            , A.CNRL_TY_CECK02
+		            , A.CNRL_TY_CECK03
+		            , A.CNRL_TY_CECK04
+		            , A.CNRL_TY_CECK05
+		            , A.CNRL_TY_CECK06
+		            , A.CNRL_TY_CECK07
+		            , A.CNRL_TY_CECK08
+		            , A.CNRL_TY_CECK09
+		            , A.CNRL_TY01_CD_ID
+		            , AA.CODE_NM                            AS CNRL_TY01_CD_NM
+		            , A.CNRL_TY02_CD_ID
+		            , AB.CODE_NM                            AS CNRL_TY02_CD_NM
+		            , A.CNRL_TY03_CD_ID
+		            , AC.CODE_NM                            AS CNRL_TY03_CD_NM
+		            , A.DELNG_TY_CD_ID
+		            , AF.CODE_NM                            AS DELNG_TY_CD_NM
+		            , A.CNRL_CTGRY
+		            , A.CNRL_CYCLE_CD_ID
+		            , AG.CODE_NM                            AS CNRL_CYCLE_CD_NM
+		            , A.OFFICE_TY_CD_ID
+		            , AE.CODE_NM                            AS OFFICE_TY_CD_NM
+		            , ISNULL(A.DSGN_EFCT_AT, 'N')              AS DSGN_EFCT_AT
+		            , ISNULL(A.OPER_EFCT_AT, 'N')              AS OPER_EFCT_AT
+		            , A.CNRL_UPRPD_NO
+		            , ISNULL(A.MRC_CNRL_AT, 'N')               AS MRC_CNRL_AT
+		            , A.MRC_CTGRY_CD_ID
+		            , A.MRC_NO
+		            , ISNULL(A.IPE_CNRL_AT, 'N')               AS IPE_CNRL_AT
+		            , A.IPE_CTGRY_CD_ID
+		            , A.IPE_NO
+		            , A.IPE_NM
+		            , A.IPE_TEST_PROCSS
+		            , A.COSO_NO
+		            , A.TEST_CYCLE_CD_ID
+		            , AD.CODE_NM                            AS TEST_CYCLE_CD_NM
+		            , A.TEST_TRGET
+		            , A.SAMPLE_SIZE
+		            , A.TEST_PROCSS
+		            , A.EXCP_CNT
+		            , A.TEST_MTH
+		            , A.TEST_MTH_QESTN
+		            , A.TEST_MTH_OBSERV
+		            , A.TEST_MTH_VRIFY
+		            , A.TEST_MTH_ECGN
+		            , A.TEST_MTH_SYS_TRACE
+		            , A.ATMC_SAMPLE_AT
+		            , ISNULL(A.TEST_SANCTN_AT, 'N')            AS TEST_SANCTN_AT
+		            , A.ACNT_CD
+		            , A.CNRL_ACNTCTGR
+		            , A.RELATE_ACNTCTGR_PBLNTF
+		            , A.CNRL_CM_IEM
+		            , A.ASSE_C_AT
+		            , A.ASSE_E_AT
+		            , A.ASSE_R_AT
+		            , A.ASSE_V_AT
+		            , A.ASSE_P_AT
+		            , A.ASSE_S_AT
+		            , A.ASSE_O_AT
+		            , A.ASSE_A_AT
+		            , A.ASSE_PF_AT
+		            , A.TREXAMIN_PROCSS
+		            , A.TREXAMIN_PRUF
+		            , A.TREXAMIN_CNCLSN
+		            , A.RISK_RESIDUAL_LIKEHOOD
+		            , A.RISK_RESIDUAL_IMPACT
+		            , A.RISK_RESIDUAL_RATIONG
+		            , A.AFTER_RISK_RESIDUAL_LIKEHOOD
+		            , A.AFTER_RISK_RESIDUAL_IMPACT
+		            , A.AFTER_RISK_RESIDUAL_RATIONG
+		            , A.CNRL_IMPRVM_NM
+		            , A.CNRL_IMPRVM_DC
+		                      
+		            /** 엑셀다운 RCM_FIELD_NM_EN에 맞춤 */
+		            , AA.CODE_NM                            AS CNRL_TY01
+		            , AB.CODE_NM                            AS CNRL_TY02
+		            , AC.CODE_NM                            AS CNRL_TY03
+		            , ISNULL(A.KEY_CNRL_AT, 'N')               AS KEY_CNRL
+		            , ISNULL(A.MRC_CNRL_AT, 'N')               AS MRC_CNRL
+		            , ISNULL(A.IPE_CNRL_AT, 'N')               AS IPE_CNRL
+		            , AG.CODE_NM                            AS CNRL_CYCLE
+		            , AD.CODE_NM                            AS TEST_CYCLE
+		            , AE.CODE_NM                            AS OFFICE_TY
+		            , ISNULL(A.DSGN_EFCT_AT, 'N')              AS DSGN_EFCT
+		            , ISNULL(A.OPER_EFCT_AT, 'N')              AS OPER_EFCT
+		            , ISNULL(A.TEST_SANCTN_AT, 'N')    AS TEST_SANCTN
+		            , AF.CODE_NM                                    AS CNRL_PURPS_CHOISE
+		            , AH.CODE_NM                                    AS DELNG_TY
+		            , AI.CODE_NM                                    AS CNRL_TY
+		            , RD.UNITY_ID
+		
+		            , AJ.CODE_ID    AS FILE_KND_CD_ID
+		            , ( CASE
+		                   WHEN AJ.CODE_ID = 'CTW_008_001' OR AJ.CODE_ID = 'CTW_008_004' THEN 'Y'
+		                   WHEN AJ.CODE_ID = 'CTW_008_002' AND ISNULL(A.MRC_CNRL_AT, 'N') = 'Y' THEN 'Y'
+		                   WHEN AJ.CODE_ID = 'CTW_008_003' AND ISNULL(A.IPE_CNRL_AT, 'N') = 'Y' THEN 'Y'
+		                   ELSE 'N'
+		                END  )      AS CODE_VIEW_AT
+		        FROM TB_CW_ELC_RCM_CNRL A 
+		            LEFT OUTER JOIN TB_CO_CODE AA
+		                ON A.CNRL_TY01_CD_ID = AA.CODE_ID
+		            LEFT OUTER JOIN TB_CO_CODE AB
+		                ON A.CNRL_TY02_CD_ID = AB.CODE_ID 
+		            LEFT OUTER JOIN TB_CO_CODE AC
+		                ON A.CNRL_TY03_CD_ID = AC.CODE_ID
+		            LEFT OUTER JOIN TB_CO_CODE AD
+		                ON A.TEST_CYCLE_CD_ID = AD.CODE_ID
+		            LEFT OUTER JOIN TB_CO_CODE AE
+		                ON A.OFFICE_TY_CD_ID = AE.CODE_ID
+		            LEFT OUTER JOIN TB_CO_CODE AF
+		                ON A.CNRL_PURPS_CD_ID = AF.CODE_ID     
+		            LEFT OUTER JOIN TB_CO_CODE AG
+		                ON A.CNRL_CYCLE_CD_ID = AG.CODE_ID     
+		            LEFT OUTER JOIN TB_CO_CODE AH
+		                ON A.DELNG_TY_CD_ID = AH.CODE_ID
+		            LEFT OUTER JOIN TB_CO_CODE AI
+		                ON A.CNRL_TY_CD_ID = AI.CODE_ID
+		            LEFT OUTER JOIN TB_CO_CODE AJ
+		                ON AJ.GROUP_ID = 'CTW_008'
+		            LEFT OUTER JOIN TB_CW_ELC_CNRL_DOC RD
+		                ON A.CNRL_ID = RD.CNRL_ID
+		               AND RD.FILE_KND_CD_ID = AJ.CODE_ID
+		      ) TOT
+		      LEFT OUTER JOIN TB_CO_CODE CD1
+		            ON TOT.FILE_KND_CD_ID = CD1.CODE_ID
+		 WHERE TOT.CODE_VIEW_AT = 'Y'
+		
+		    <if test=' srchWrd != null and srchWrd != "" '>
+		        <choose>
+		            <when test="srchTy == 'no'" > AND UPPER(TOT.CNRL_NO) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+		            <when test="srchTy == 'nm'" > AND UPPER(TOT.CNRL_NM) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>					
+		            <when test="srchTy == 'cn'" > AND UPPER(TOT.CNRL_CN) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+		        </choose>
+		    </if>
+		    <if test=' srchUpperObjectId != null and srchUpperObjectId != "" '>
+		        AND TOT.CNRL_ID IN (
+		                            SELECT DISTINCT OBJECT_ID
+		                            FROM V1
+		                            )
+		    </if>
+		
+		 ORDER BY TOT.CNRL_ID, TOT.FILE_KND_CD_ID
+	</select>
+	
+	<!-- 평가참조문서 조회 -->
+	<select id="selectEvlRefrnDoc" resultType="EgovMap">
+		SELECT 
+			TOT.*
+    		, CD1.CODE_NM        AS FILE_KND_CD_NM
+		FROM (
+      		SELECT 
+      			A.CNRL_ID
+        		, B.CODE_ID    AS FILE_KND_CD_ID
+				, C.UNITY_ID
+      			, ( CASE
+                   	WHEN B.CODE_ID = 'CTW_008_001' OR B.CODE_ID = 'CTW_008_004' THEN 'Y'
+                   	WHEN B.CODE_ID = 'CTW_008_002' AND ISNULL(A.MRC_CNRL_AT, 'N') = 'Y' THEN 'Y'
+                   	WHEN B.CODE_ID = 'CTW_008_003' AND ISNULL(A.IPE_CNRL_AT, 'N') = 'Y' THEN 'Y'
+                   	ELSE 'N'
+                END  )      AS CODE_VIEW_AT
+ 			FROM TB_CW_ELC_RCM_CNRL A
+ 				LEFT OUTER JOIN TB_CO_CODE B
+        			ON B.GROUP_ID = 'CTW_008'
+      			LEFT OUTER JOIN 
+      				<choose>
+	 					<when test='evlSttutsCdId == "CTW_101_006" '>
+		      				TB_CW_ELC_CNRL_DOC C
+	 					</when>
+	 					<otherwise>
+		      				TB_CW_EVL_ELC_CNRL_DOC C
+	 					</otherwise>
+	 				</choose> 
+        			ON A.CNRL_ID = C.CNRL_ID
+        			AND C.FILE_KND_CD_ID = B.CODE_ID
+        			<if test='evlSttutsCdId != "CTW_101_006" '>
+	              		AND C.EVL_ID = #{evlId} 
+        			</if>
+ 			WHERE A.CNRL_ID = #{cnrlId}
+    	) TOT
+	      	LEFT OUTER JOIN TB_CO_CODE CD1
+				ON TOT.FILE_KND_CD_ID = CD1.CODE_ID
+		WHERE TOT.CODE_VIEW_AT = 'Y'
+		ORDER BY TOT.FILE_KND_CD_ID
+	</select>
+	
+	<!-- 평가참조문서 이력조회 -->
+	<select id="selectEvlRefrnDocHist" resultType="EgovMap">
+		SELECT 
+			A.UNITY_ID
+			, A.EVL_ID
+			, A.FILE_KND_CD_ID
+			, SUBSTRING(A.BGNTMSTMP,1,4) + '-' + SUBSTRING(A.BGNTMSTMP,5,2) + '-' + SUBSTRING(A.BGNTMSTMP,7,2) + ' ' + SUBSTRING(A.BGNTMSTMP,9,2) + ':' + SUBSTRING(A.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(A.BGNTMSTMP,13,2) BGNTMSTMP_DE
+			, B.CODE_NM AS FILE_KND_CD_NM 
+      		, C.EVL_SJ
+ 		FROM TB_CW_ELC_CNRL_DOC_HIST A
+ 			LEFT OUTER JOIN TB_CO_CODE B
+ 				ON A.FILE_KND_CD_ID = B.CODE_ID
+      		LEFT OUTER JOIN TB_CW_EVL C
+ 				ON A.EVL_ID = C.EVL_ID
+ 		WHERE CNRL_ID = #{cnrlId}
+ 		ORDER BY A.FILE_KND_CD_ID ASC, BGNTMSTMP DESC
+	</select>
+	
+ 	<select id="selectUnityId" resultType="String">
+ 		SELECT UNITY_ID 
+ 		FROM TB_CW_ELC_CNRL_DOC 
+ 		WHERE CNRL_ID = #{cnrlId}
+ 	</select>
+ 	
+ 	<update id="updateUnityId">
+ 		UPDATE TB_CO_FILE
+ 		SET UNITY_ID  = #{docUnityId}
+		WHERE UNITY_ID = #{entUnityId}
+ 	</update>
+
+	<insert id="save">
+		MERGE INTO TB_CW_ELC_CNRL_DOC T1
+		USING (VALUES (1)) AS Source (Number) 
+		ON 
+			( 
+			T1.CNRL_ID = #{cnrlId}  
+			AND T1.FILE_KND_CD_ID = #{fileKndCdId}
+			)
+		WHEN MATCHED THEN
+			UPDATE SET
+				UNITY_ID = #{unityId}
+		WHEN NOT MATCHED THEN 
+			INSERT (
+				CNRL_ID
+				, UNITY_ID
+				, FILE_KND_CD_ID
+			) VALUES (
+				#{cnrlId}
+				, #{unityId}
+				, #{fileKndCdId}
+			)
+	</insert>
+	
+	<insert id="insertHist">
+ 		INSERT INTO TB_CW_ELC_CNRL_DOC_HIST(
+			CNRL_ID
+			, UNITY_ID
+			, BGNTMSTMP
+			, ENDTMSTMP
+			, EVL_ID
+			, FILE_KND_CD_ID
+			, CMPNY_CD_ID
+		) VALUES (
+			#{cnrlId}
+			, #{unityId}
+			, #{bgntmstmp}
+			, #{endtmstmp}
+			, #{evlId}
+			, #{fileKndCdId}
+			, #{cmpnyCdId}
+		)
+ 	</insert>
+	
+	<!-- 통제정보 조회 -->
+	<select id="popupView" resultType="CwelcEvlRefrnDocVO">
+		SELECT
+			  A.CNRL_ID
+			, A.CNRL_NO
+			, A.CNRL_NM
+			, A.CNRL_CN
+			, ISNULL(A.KEY_CNRL_AT, 'N') 		AS KEY_CNRL_AT
+			, A.REFRN_NO
+			, A.CNRL_RELATE_REF
+			, A.CNRL_EXC_UPPER_DEPT
+			, A.CNRL_EXC_DEPT
+			, A.CNRL_EXCBER
+			, A.CNRL_RSPNSBL_UPPER_DEPT
+			, A.CNRL_RSPNSBL_DEPT
+			, A.CNRL_RSPNBER
+			, A.RELATE_REGLTN_NM
+			, A.CNRL_RELATE_DOC
+			, A.CNRL_RELATE_SYS
+			, A.CNRL_RM
+			, A.CNRL_PURPS
+			, A.CNRL_PURPS_CD_ID
+			, AF.CODE_NM AS CNRL_PURPS_CD_NM
+			, A.CNRL_PURPS_FNNR_RLABLTY
+			, A.CNRL_PURPS_ASSET_PRTC
+			, A.CNRL_PURPS_INSTC_PRVN
+			, A.CNRL_TY_CD_ID
+			, AI.CODE_NM AS CNRL_TY_CD_NM
+			, A.CNRL_TY_CECK01
+			, A.CNRL_TY_CECK02
+			, A.CNRL_TY_CECK03
+			, A.CNRL_TY_CECK04
+			, A.CNRL_TY_CECK05
+			, A.CNRL_TY_CECK06
+			, A.CNRL_TY_CECK07
+			, A.CNRL_TY_CECK08
+			, A.CNRL_TY_CECK09
+			, A.CNRL_TY01_CD_ID
+			, AA.CODE_NM 					AS CNRL_TY01_CD_NM
+			, A.CNRL_TY02_CD_ID
+			, AB.CODE_NM 					AS CNRL_TY02_CD_NM
+			, A.CNRL_TY03_CD_ID
+			, AC.CODE_NM 					AS CNRL_TY03_CD_NM
+			, A.DELNG_TY_CD_ID
+			, AH.CODE_NM					AS DELNG_TY_CD_NM
+			, A.CNRL_CTGRY
+		    , A.CNRL_CYCLE_CD_ID
+			, AG.CODE_NM 					AS CNRL_CYCLE_CD_NM
+			, A.OFFICE_TY_CD_ID
+			, AE.CODE_NM 					AS OFFICE_TY_CD_NM
+			, ISNULL(A.DSGN_EFCT_AT, 'N') 		AS DSGN_EFCT_AT
+			, ISNULL(A.OPER_EFCT_AT, 'N') 		AS OPER_EFCT_AT
+			, A.CNRL_UPRPD_NO
+			, ISNULL(A.MRC_CNRL_AT, 'N') 		AS MRC_CNRL_AT
+			, A.MRC_CTGRY_CD_ID
+			, A.MRC_NO
+			, ISNULL(A.IPE_CNRL_AT, 'N') 		AS IPE_CNRL_AT
+			, A.IPE_CTGRY_CD_ID
+			, A.IPE_NO
+			, A.IPE_NM
+			, A.IPE_TEST_PROCSS
+			, A.COSO_NO
+			, A.TEST_CYCLE_CD_ID
+			, AD.CODE_NM 					AS TEST_CYCLE_CD_NM
+			, A.TEST_RELATE_DOC
+			, A.TEST_TRGET
+			, A.SAMPLE_SIZE
+			, A.TEST_PROCSS
+			, A.EXCP_CNT
+			, A.TEST_MTH
+			, A.TEST_MTH_QESTN
+			, A.TEST_MTH_OBSERV
+			, A.TEST_MTH_VRIFY
+			, A.TEST_MTH_ECGN
+			, A.TEST_MTH_SYS_TRACE
+			, A.ATMC_SAMPLE_AT
+			, ISNULL(A.TEST_SANCTN_AT, 'N') 	AS TEST_SANCTN_AT
+			, A.ACNT_CD
+			, A.CNRL_ACNTCTGR
+			, A.RELATE_ACNTCTGR_PBLNTF
+			, A.CNRL_CM_IEM
+			, A.ASSE_C_AT
+			, A.ASSE_E_AT
+			, A.ASSE_R_AT
+			, A.ASSE_V_AT
+			, A.ASSE_P_AT
+			, A.ASSE_S_AT
+			, A.ASSE_O_AT
+			, A.ASSE_A_AT
+			, A.ASSE_PF_AT
+			, A.TREXAMIN_PROCSS
+			, A.TREXAMIN_PRUF
+			, A.TREXAMIN_CNCLSN
+			, A.RISK_RESIDUAL_LIKEHOOD
+			, A.RISK_RESIDUAL_IMPACT
+			, A.RISK_RESIDUAL_RATIONG
+			, A.AFTER_RISK_RESIDUAL_LIKEHOOD
+			, A.AFTER_RISK_RESIDUAL_IMPACT
+			, A.AFTER_RISK_RESIDUAL_RATIONG
+			, A.CNRL_IMPRVM_NM
+			, A.CNRL_IMPRVM_DC
+			, (SELECT COUNT(REFRN_NO) FROM TB_CW_ELC_RCM_CNRL WHERE REFRN_NO = A.CNRL_NO ) AS REFRN_NO_CNT
+			, (SELECT BGNTMSTMP FROM TB_CW_ELC_RCM_CNRL_HIST WHERE CNRL_ID = A.CNRL_ID AND ENDTMSTMP = '99991231235959999999') AS SRCH_STDR_BGNTMSTMP
+            , (SELECT COUNT(CNRL_ID) FROM TB_CW_ELC_RCM_CNRL_HIST WHERE CNRL_ID = A.CNRL_ID) AS HIST_CNT
+            --, A.JOB_PROCS_TCHNLGY
+			--, A.RELATE_REGLTN_DOC
+		FROM TB_CW_ELC_RCM_CNRL A
+	        LEFT OUTER JOIN TB_CO_CODE AA
+	            ON A.CNRL_TY01_CD_ID = AA.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE AB
+	            ON A.CNRL_TY02_CD_ID = AB.CODE_ID 
+	        LEFT OUTER JOIN TB_CO_CODE AC
+	            ON A.CNRL_TY03_CD_ID = AC.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE AD
+	            ON A.TEST_CYCLE_CD_ID = AD.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE AE
+	            ON A.OFFICE_TY_CD_ID = AE.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE AF
+	            ON A.CNRL_PURPS_CD_ID = AF.CODE_ID     
+	        LEFT OUTER JOIN TB_CO_CODE AG
+	            ON A.CNRL_CYCLE_CD_ID = AG.CODE_ID     
+	        LEFT OUTER JOIN TB_CO_CODE AH
+	            ON A.DELNG_TY_CD_ID = AH.CODE_ID     
+	        LEFT OUTER JOIN TB_CO_CODE AI
+	            ON A.CNRL_TY_CD_ID = AI.CODE_ID
+		WHERE A.CNRL_ID = #{cnrlId}
+	</select>
+</mapper>

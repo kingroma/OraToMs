@@ -1,0 +1,908 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.elc.chrg.serviceimpl.CwelcChrgMapper">
+
+	<select id="list" resultType="EgovMap">
+		SELECT
+              A.UNITY_ID
+            , A.INSPCT_AT
+            , A.REFLCT_AT
+            , A.RGS_DT
+            , A.RGS_USER_ID
+            , B.USER_NM AS RGS_USER_NM
+            , C.FILE_ID
+            , C.FILE_SN
+            , C.FILE_EXTSN
+            , C.FILE_PATH
+            , C.FILE_NM
+            , C.FILE_ORGINL_NM
+            , C.FILE_SIZE
+            , C.FILE_SJ
+        FROM TB_CW_ELC_RCM_CHRG A
+        LEFT OUTER JOIN TB_CO_USER B
+            ON A.RGS_USER_ID = B.USER_ID
+        LEFT OUTER JOIN TB_CO_FILE C
+            ON A.UNITY_ID = C.UNITY_ID
+            AND C.DEL_AT = 'N'
+        <trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+		            <when test="srchTy == 'sj'" > 	AND	UPPER(C.FILE_SJ)		LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+		            <when test="srchTy == 'fn'" > 	AND	UPPER(C.FILE_ORGINL_NM) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+		            <when test="srchTy == 'un'" > 	AND	UPPER(B.USER_NM)        LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+				</choose>
+			</if>
+		</trim>
+		ORDER BY A.RGS_DT DESC
+	</select>
+
+	<select id="view" resultType="EgovMap">
+		SELECT
+              A.UNITY_ID
+            , A.INSPCT_AT
+            , A.REFLCT_AT
+            , A.RGS_DT
+            , A.RGS_USER_ID
+            , B.USER_NM AS RGS_USER_NM
+            , C.FILE_ID
+            , C.FILE_SN
+            , C.FILE_EXTSN
+            , C.FILE_PATH
+            , C.FILE_NM
+            , C.FILE_ORGINL_NM
+            , C.FILE_SIZE
+            , C.FILE_SJ
+        FROM TB_CW_ELC_RCM_CHRG A
+        LEFT OUTER JOIN TB_CO_USER B
+            ON A.RGS_USER_ID = B.USER_ID
+        LEFT OUTER JOIN TB_CO_FILE C
+            ON A.UNITY_ID = C.UNITY_ID
+            AND C.DEL_AT = 'N'
+       	WHERE A.UNITY_ID = #{unityId}
+	</select>
+
+	<!-- context-excel.xml에서 이용 -->
+	<insert id="insert">
+		INSERT INTO TB_CW_ELC_RCM_CHRG (
+			UNITY_ID, INSPCT_AT, REFLCT_AT, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES (
+			#{unityId}, ISNULL(#{inspctAt}, 'N'), ISNULL(#{reflctAt}, 'N'), GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		)
+	</insert>
+
+	<delete id="delete">
+		DELETE FROM TB_CW_ELC_RCM_CHRG
+		WHERE UNITY_ID = #{unityId}
+	</delete>
+
+
+<!-- 템플릿 리스트 -->
+	<select id="tmplatList" resultType="EgovMap">
+      	SELECT
+              MA.*
+            , MB.CODE_NM AS OBJECT_KND_CD_NM
+            , (CASE WHEN MA.CHRG_TY_CD_ID = 'CTW_105_002' THEN #{chrgEvlSe02} ELSE #{chrgEvlSe01} END) AS CHRG_EVL_SE
+            , SA.MAPNG_CHRG_SN, ISNULL(SA.CHRG_GROUP_SN, 1) AS CHRG_GROUP_SN, SA.CHRG_USER_ID
+            , SB.USER_CD, SB.USER_NM, SB.DEPT_NM
+       	FROM (
+            /** 통제 없는 프로세스 제외  */
+            SELECT
+                  DISTINCT T.OBJECT_ID, T.OBJECT_NO, T.OBJECT_NM, T.OBJECT_LEVEL, T.OBJECT_KND_CD_ID, T.UPPER_OBJECT_ID
+                , T.CHRG_TY_CD_ID, T.CNRL_CN, T.KEY_CNRL_AT, T.CNRL_RSPNBER, T.CNRL_EXCBER
+            FROM (
+                /** 위험, 통제 중복 제거 */
+                SELECT
+                     DISTINCT A.OBJECT_ID, A.OBJECT_NO, A.OBJECT_NM, A.OBJECT_LEVEL, A.OBJECT_KND_CD_ID
+					 <choose>
+						<when test=' elcRiskUseAt != "false" '>
+	               , (CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN B.UPPER_OBJECT_ID ELSE A.UPPER_OBJECT_ID END) AS UPPER_OBJECT_ID
+						</when>
+						<otherwise>
+				   , A.UPPER_OBJECT_ID AS UPPER_OBJECT_ID
+						</otherwise>
+					 </choose>
+                   , ISNULL(C.CHRG_TY_CD_ID, 'CTW_105_001') AS CHRG_TY_CD_ID
+                   , C.CNRL_CN, C.KEY_CNRL_AT, C.CNRL_RSPNBER, C.CNRL_EXCBER
+                FROM TB_CW_ELC_RCM_MAPNG A
+                LEFT OUTER JOIN TB_CW_ELC_RCM_MAPNG B
+                   ON A.UPPER_MAPNG_ID = B.MAPNG_ID
+                LEFT OUTER JOIN (
+                    /** 통제 평가자/ 테스터 */
+                    SELECT 'CTW_105_001' AS CHRG_TY_CD_ID, CNRL_ID, CNRL_CN, KEY_CNRL_AT, CNRL_RSPNBER, CNRL_EXCBER FROM TB_CW_ELC_RCM_CNRL
+                    UNION ALL
+                    SELECT 'CTW_105_002' AS CHRG_TY_CD_ID, CNRL_ID, CNRL_CN, KEY_CNRL_AT, CNRL_RSPNBER, CNRL_EXCBER FROM TB_CW_ELC_RCM_CNRL
+                ) C
+                    ON A.OBJECT_ID = C.CNRL_ID
+                WHERE A.OBJECT_KND_CD_ID != 'CTW_001_004'
+           ) T
+        ) MA
+        LEFT OUTER JOIN TB_CO_CODE MB
+            ON MB.GROUP_ID = 'CTW_001'
+            AND CASE WHEN MA.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{elcProcsStep} = 2
+                		THEN 'CTW_001_003'
+                		ELSE MA.OBJECT_KND_CD_ID END = MB.CODE_ID
+        LEFT OUTER JOIN TB_CW_ELC_RCM_MAPNG_USER SA
+            ON MA.OBJECT_ID = SA.OBJECT_ID
+            AND MA.CHRG_TY_CD_ID = SA.CHRG_TY_CD_ID
+        LEFT OUTER JOIN TB_CO_USER_HIST SB
+            ON SA.CHRG_USER_ID = SB.USER_ID
+            AND SB.HIST_ENDDE  = '99991231'     /** 최신정보 */
+            AND SB.STTUS_CD_ID = 'COM_003_001'  /** 재직자 */
+ 		ORDER BY MA.OBJECT_ID ASC, ISNULL(SA.MAPNG_CHRG_SN, 1) ASC, SA.CHRG_GROUP_SN ASC, MA.CHRG_TY_CD_ID ASC
+	</select>
+
+
+<!-- 담당자 -->
+	<select id="chrgUserList" resultType="EgovMap">
+		SELECT
+		      A.UNITY_ID
+		    , A.INSPCT_AT
+		    , B.EXCEL_ROW_SN
+		    , B.OBJECT_ID
+		    , B.CHRG_RM
+		    , B.ERROR_AT
+		    , B.ERROR_CN
+		    , B.MAPNG_CHRG_SN
+		    , B.CHRG_TY_CD_ID
+		    , C.CODE_NM AS CHRG_TY_CD_NM
+		    , B.CHRG_GROUP_SN
+		    , B.CHRG_USER_CD
+		    , B.CHRG_USER_ID
+		    , D.USER_ID
+		    , D.HIST_ENDDE
+		    , D.USER_CD
+		    , D.USER_NM
+		    , D.DEPT_ID
+		    , D.DEPT_CD
+		    , D.DEPT_NM
+		FROM TB_CW_ELC_RCM_CHRG A
+        INNER JOIN TB_CW_ELC_RCM_CHRG_USER B
+            ON A.UNITY_ID = B.UNITY_ID
+		LEFT OUTER JOIN TB_CO_CODE C
+		    ON B.CHRG_TY_CD_ID = C.CODE_ID
+		LEFT OUTER JOIN TB_CO_USER_HIST D
+		    ON B.CHRG_USER_CD = D.USER_CD
+		    AND D.HIST_ENDDE = '99991231'
+		WHERE A.UNITY_ID = #{unityId}
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+		            <when test="srchTy == 'sj'" > 	AND	UPPER(A.DOC_SJ)		 	LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+		            <when test="srchTy == 'un'" > 	AND	UPPER(D.USER_NM)        LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+		            <when test="srchTy == 'dn'" > 	AND	UPPER(D.DEPT_NM)        LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+		            <when test="srchTy == 'er'" > 	AND	UPPER(B.ERROR_CN)       LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+				</choose>
+			</if>
+			<if test=' srchSttusCdId != null and srchSttusCdId != "" '>
+				AND D.STTUS_CD_ID = #{srchSttusCdId}
+			</if>
+			<if test=' srchUserTyCdId != null and srchUserTyCdId != "" '>
+				AND D.USER_TY_CD_ID = #{srchUserTyCdId}
+			</if>
+			<if test=' srchErrorAt != null and srchErrorAt != "" '>
+				AND B.ERROR_AT = #{srchErrorAt}
+			</if>
+		ORDER BY B.UNITY_ID, B.EXCEL_ROW_SN ASC
+	</select>
+
+	<!-- context-excel-cwsol.xml에서 이용 -->
+	<insert id="insertExcel">
+		INSERT INTO TB_CW_ELC_RCM_CHRG_USER (
+			  UNITY_ID, EXCEL_ROW_SN, OBJECT_ID
+			, CHRG_GROUP_SN
+			, CHRG_TY_CD_ID
+			, CHRG_USER_CD
+			, CHRG_RM, ERROR_AT, ERROR_CN, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES (
+			  #{unityId}, #{excelRowSn}, #{cell1}
+			<choose>
+				<when test=' asseMultiAt != null and asseMultiAt == "true" '>
+					, ISNULL(#{cell7}, 1)
+					, (CASE WHEN #{cell8} = #{chrgEvlSe01} THEN 'CTW_105_001' WHEN #{cell8} = #{chrgEvlSe02} THEN 'CTW_105_002' ELSE #{cell8} END)
+					, #{cell9}
+				</when>
+				<otherwise>
+					, 1
+					, (CASE WHEN #{cell7} = #{chrgEvlSe01} THEN 'CTW_105_001' WHEN #{cell7} = #{chrgEvlSe02} THEN 'CTW_105_002' ELSE #{cell7} END)
+					, #{cell8}
+				</otherwise>
+			</choose>
+			, NULL, NULL, NULL, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		)
+	</insert>
+
+	<delete id="chrgUserDelete">
+		DELETE FROM TB_CW_ELC_RCM_CHRG_USER
+		WHERE UNITY_ID = #{unityId}
+	</delete>
+
+	<!-- 담당자 오류 건수 -->
+	<select id="chrgErrorCnt" resultType="int">
+		SELECT COUNT(*) AS ERROR_CNT
+		FROM TB_CW_ELC_RCM_CHRG_USER
+		WHERE UNITY_ID = #{unityId}
+			AND ERROR_AT = 'Y'
+	</select>
+
+	<!-- 담당자 오류 검사 -->
+	<insert id="chrgInspct">
+	<![CDATA[
+	DECLARE
+
+		V_ERROR_AT VARCHAR2(1)    := 'N';      /** 오류여부 */
+		V_ERROR_CN VARCHAR2(1000) := '';       /** 오류내용 */
+
+	BEGIN
+		FOR list IN (
+			SELECT
+		          A.UNITY_ID
+		        , A.EXCEL_ROW_SN
+		        , A.OBJECT_ID
+		        , A.CHRG_GROUP_SN
+		        , A.CHRG_TY_CD_ID
+		        , A.CHRG_USER_CD
+		        , B.CODE_ID AS CHK_CHRG_TY_CD_ID
+		        , AA.OBJECT_ID AS CHK_OBJECT_ID
+		        , AA.OBJECT_KND_CD_ID
+		        , C.USER_ID
+		        , C.USER_NM
+		        , C.USER_TY_CD_ID
+		        , C.STTUS_CD_ID
+		        , ( ROW_NUMBER() OVER (PARTITION BY A.UNITY_ID, A.OBJECT_ID ORDER BY A.EXCEL_ROW_SN ASC) ) AS MAPNG_CHRG_SN
+		        , ( COUNT(A.EXCEL_ROW_SN) OVER (PARTITION BY A.UNITY_ID, A.OBJECT_ID, A.CHRG_GROUP_SN, A.CHRG_TY_CD_ID) ) AS OBJECT_CNT
+		    	, ( COUNT(A.EXCEL_ROW_SN) OVER (PARTITION BY A.UNITY_ID, A.OBJECT_ID, A.CHRG_GROUP_SN, A.CHRG_TY_CD_ID, A.CHRG_USER_CD) ) AS GROUP_DPLCT_CNT
+		    FROM TB_CW_ELC_RCM_CHRG_USER A
+		    LEFT OUTER JOIN (
+		    	/** 위험 제외, 존재하는 오프젝트 */
+		        SELECT
+		        	DISTINCT OBJECT_ID, OBJECT_KND_CD_ID
+		        FROM TB_CW_ELC_RCM_MAPNG
+		        WHERE OBJECT_KND_CD_ID != 'CTW_001_004'			/** 프로세스, 통제 담당자 반영 */
+		    ) AA
+		        ON A.OBJECT_ID = AA.OBJECT_ID
+		    LEFT OUTER JOIN TB_CO_CODE B
+		        ON A.CHRG_TY_CD_ID = B.CODE_ID
+		    LEFT OUTER JOIN TB_CO_USER C
+		        ON A.CHRG_USER_CD = C.USER_CD
+		    WHERE A.UNITY_ID = #{unityId}
+		    ORDER BY A.UNITY_ID, A.EXCEL_ROW_SN ASC
+		) LOOP
+
+			/** 초기화 */
+			V_ERROR_AT := 'N';
+			V_ERROR_CN := '';
+
+			/** RCM ID 존재 */
+	        IF list.CHK_OBJECT_ID IS NULL THEN
+	        	V_ERROR_AT := 'Y';
+				V_ERROR_CN := #{msgNotRcmNo};
+
+			 /** 그룹/평가 타입별 중복 사번  */
+			ELSIF ( list.GROUP_DPLCT_CNT > 1 ) THEN
+	        	V_ERROR_AT := 'Y';
+				V_ERROR_CN := #{msgEvlDplct};
+
+	        /** 평가자 중복  */
+			ELSIF ( list.CHRG_TY_CD_ID != 'CTW_105_002' AND list.OBJECT_CNT > 1 ) THEN
+	        	V_ERROR_AT := 'Y';
+				V_ERROR_CN := #{msgEvlDplct};
+
+			/** 평가자 구분 */
+			ELSIF list.CHK_CHRG_TY_CD_ID IS NULL THEN
+	        	V_ERROR_AT := 'Y';
+				V_ERROR_CN := #{msgChrgTy};
+
+			/** 프로세스를 테스터 지정 */
+			ELSIF  (list.OBJECT_KND_CD_ID = 'CTW_001_001' OR list.OBJECT_KND_CD_ID = 'CTW_001_002' OR list.OBJECT_KND_CD_ID = 'CTW_001_003') AND list.CHRG_TY_CD_ID = 'CTW_105_002' THEN
+	        	V_ERROR_AT := 'Y';
+				V_ERROR_CN := #{msgChrgTy02};
+
+			/** 사번 존재 */
+			ELSIF list.USER_ID IS NULL THEN
+	        	V_ERROR_AT := 'Y';
+				V_ERROR_CN := #{msgNotUserCd};
+
+			/** 퇴사자 */
+			ELSIF list.STTUS_CD_ID != 'COM_003_001' THEN
+	        	V_ERROR_AT := 'Y';
+				V_ERROR_CN := #{msgRetireUserCd};
+
+	        END IF;
+
+	        /** 담당자 내역 수정 */
+	        UPDATE TB_CW_ELC_RCM_CHRG_USER SET
+				  ERROR_AT 		= V_ERROR_AT
+				, ERROR_CN 		= V_ERROR_CN
+				, CHRG_USER_ID 	= list.USER_ID
+				, MAPNG_CHRG_SN = list.MAPNG_CHRG_SN
+				, UPD_DT 		= GETDATE()
+				, UPD_USER_ID 	= #{suserId}
+			WHERE UNITY_ID 		= list.UNITY_ID
+				AND EXCEL_ROW_SN= list.EXCEL_ROW_SN;
+
+			/** 검사 내역 수정 */
+			UPDATE TB_CW_ELC_RCM_CHRG SET
+				  INSPCT_AT		= 'Y'
+				, UPD_DT 		= GETDATE()
+				, UPD_USER_ID 	= #{suserId}
+			WHERE UNITY_ID 		= list.UNITY_ID;
+
+		END LOOP;
+	END;
+	]]>
+	</insert>
+
+
+
+	<!-- 담당자 반영 -->
+	<insert id="chrgReflct">
+	<![CDATA[
+	BEGIN
+		/** RCM 매핑 담당자 삭제 */
+		DELETE FROM TB_CW_ELC_RCM_MAPNG_USER
+		WHERE OBJECT_ID IN(
+			SELECT
+			      DISTINCT A.OBJECT_ID
+			FROM TB_CW_ELC_RCM_CHRG_USER A
+	        INNER JOIN TB_CO_USER_HIST B
+	            ON A.CHRG_USER_ID = B.USER_ID
+	            AND B.HIST_ENDDE = '99991231'
+	        WHERE A.UNITY_ID = #{unityId}
+	            AND A.ERROR_AT = 'N'
+	            AND B.STTUS_CD_ID = 'COM_003_001'  /** 재직자 */
+		);
+
+		/** 매핑 유저 이력 종료 */
+			UPDATE TB_CW_ELC_RCM_MAPNG_USER_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			      ,UPD_DT = GETDATE()
+			      ,UPD_USER_ID = #{suserId}
+			 WHERE OBJECT_ID IN (
+								SELECT
+								      DISTINCT A.OBJECT_ID
+								FROM TB_CW_ELC_RCM_CHRG_USER A
+						        INNER JOIN TB_CO_USER_HIST B
+						            ON A.CHRG_USER_ID = B.USER_ID
+						            AND B.HIST_ENDDE = '99991231'
+						        WHERE A.UNITY_ID = #{unityId}
+						            AND A.ERROR_AT = 'N'
+						            AND B.STTUS_CD_ID = 'COM_003_001'  /** 재직자 */
+							     )
+			   AND ENDTMSTMP = '99991231235959999999';
+
+		/** RCM 매핑 담당자 입력 */
+		INSERT INTO TB_CW_ELC_RCM_MAPNG_USER (
+			OBJECT_ID, MAPNG_CHRG_SN, CHRG_GROUP_SN, CHRG_TY_CD_ID, CHRG_USER_ID, CHRG_USER_BGNDE, CHRG_RM, CMPNY_CD_ID
+			,RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		)
+		SELECT
+		      A.OBJECT_ID
+		    , A.MAPNG_CHRG_SN
+		    , A.CHRG_GROUP_SN
+		    , A.CHRG_TY_CD_ID
+		    , B.USER_ID
+		    , B.HIST_BGNDE
+		    , A.CHRG_RM
+		    , #{cmpnyCdId}
+		    , GETDATE()
+		    , #{suserId}
+		    , GETDATE()
+		    , #{suserId}
+		FROM TB_CW_ELC_RCM_CHRG_USER A
+		INNER JOIN TB_CO_USER_HIST B
+		    ON A.CHRG_USER_CD = B.USER_CD
+		    AND B.HIST_ENDDE = '99991231'
+		WHERE A.UNITY_ID   = #{unityId}
+		    AND A.ERROR_AT = 'N'
+		    AND B.STTUS_CD_ID = 'COM_003_001'  /** 재직자 */
+		;
+
+		/** RCM 매핑 담당자 입력 */
+		INSERT INTO TB_CW_ELC_RCM_MAPNG_USER_HIST (
+			OBJECT_ID, MAPNG_CHRG_SN, CHRG_GROUP_SN, BGNTMSTMP, ENDTMSTMP, CHRG_TY_CD_ID, CHRG_USER_ID, CHRG_USER_BGNDE, CHRG_RM, CMPNY_CD_ID
+			,RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+		)
+		SELECT
+		      A.OBJECT_ID
+		    , A.MAPNG_CHRG_SN
+		    , A.CHRG_GROUP_SN
+		    , #{bgntmstmp}
+		    , '99991231235959999999'
+		    , A.CHRG_TY_CD_ID
+		    , B.USER_ID
+		    , B.HIST_BGNDE
+		    , A.CHRG_RM
+		    , #{cmpnyCdId}
+		    , GETDATE()
+		    , #{suserId}
+		    , GETDATE()
+		    , #{suserId}
+		    , 'RCM 담당자 엑셀업로드'
+		FROM TB_CW_ELC_RCM_CHRG_USER A
+		INNER JOIN TB_CO_USER_HIST B
+		    ON A.CHRG_USER_CD = B.USER_CD
+		    AND B.HIST_ENDDE = '99991231'
+		WHERE A.UNITY_ID   = #{unityId}
+		    AND A.ERROR_AT = 'N'
+		    AND B.STTUS_CD_ID = 'COM_003_001'  /** 재직자 */
+		;
+
+		/** 반영파일 외 최신여부 N수정 */
+		UPDATE TB_CW_ELC_RCM_CHRG SET
+			  INSPCT_AT		= 'N'
+			 ,REFLCT_AT		= 'N'
+		WHERE UNITY_ID 		!= #{unityId};
+
+		/** 반영여부 수정 */
+		UPDATE TB_CW_ELC_RCM_CHRG SET
+			  REFLCT_AT		= 'Y'
+			, UPD_DT 		= GETDATE()
+			, UPD_USER_ID 	= #{suserId}
+		WHERE UNITY_ID 		= #{unityId};
+	END;
+	]]>
+	</insert>
+
+
+
+
+	<!-- 조직형 - 부서별 승인자 -->
+	<select id="deptConfmList" resultType="EgovMap">
+		SELECT C.DEPT_ID AS CHRG_DEPT_ID, C.DEPT_CD AS CHRG_DEPT_CD, C.DEPT_NM AS CHRG_DEPT_NM
+		     , D1.CONFM_USER_ID AS CONFM_USER_ID1, U1.USER_CD AS CONFM_USER_CD1, U1.USER_NM AS CONFM_USER_NM1
+             , CASE WHEN COALESCE(U1.DEPT_ID,'NA') != COALESCE(U11.DEPT_ID,'NA') THEN 'Y' ELSE 'N' END AS DEPT_UPD_AT1
+             , CASE WHEN COALESCE(U1.STTUS_CD_ID,'NA') != COALESCE(U11.STTUS_CD_ID,'NA') THEN 'Y' ELSE 'N' END AS RETIRE_AT1
+             , D2.CONFM_USER_ID AS CONFM_USER_ID2, U2.USER_CD AS CONFM_USER_CD2, U2.USER_NM AS CONFM_USER_NM2
+             , CASE WHEN COALESCE(U2.DEPT_ID,'NA') != COALESCE(U22.DEPT_ID,'NA') THEN 'Y' ELSE 'N' END AS DEPT_UPD_AT2
+             , CASE WHEN COALESCE(U2.STTUS_CD_ID,'NA') != COALESCE(U22.STTUS_CD_ID,'NA') THEN 'Y' ELSE 'N' END AS RETIRE_AT2
+             , D3.CONFM_USER_ID AS CONFM_USER_ID3, U3.USER_CD AS CONFM_USER_CD3, U3.USER_NM AS CONFM_USER_NM3
+             , CASE WHEN COALESCE(U3.DEPT_ID,'NA') != COALESCE(U33.DEPT_ID,'NA') THEN 'Y' ELSE 'N' END AS DEPT_UPD_AT3
+             , CASE WHEN COALESCE(U3.STTUS_CD_ID,'NA') != COALESCE(U33.STTUS_CD_ID,'NA') THEN 'Y' ELSE 'N' END AS RETIRE_AT3
+		     , COUNT(A.OBJECT_ID) AS OBJECT_CNT
+		FROM TB_CW_ELC_RCM_MAPNG A
+		     INNER JOIN TB_CW_ELC_RCM_MAPNG_USER B
+		      ON A.OBJECT_ID = B.OBJECT_ID
+		       AND B.CHRG_TY_CD_ID = 'CTW_105_001'
+		       AND B.MAPNG_CHRG_SN = 1
+		     INNER JOIN TB_CO_USER_HIST C
+		      ON B.CHRG_USER_ID = C.USER_ID
+		       AND C.HIST_ENDDE = '99991231'
+		     LEFT OUTER JOIN TB_CW_ELC_RCM_MAPNG_DEPT_CONFM D1
+		      ON C.DEPT_ID = D1.CHRG_DEPT_ID
+		       AND D1.CONFM_STEP = 1
+		     LEFT OUTER JOIN TB_CO_USER_HIST U1
+		      ON D1.CONFM_USER_ID = U1.USER_ID
+		       AND D1.CONFM_USER_BGNDE = U1.HIST_BGNDE
+		     LEFT OUTER JOIN TB_CO_USER U11
+		      ON D1.CONFM_USER_ID = U11.USER_ID
+		     LEFT OUTER JOIN TB_CW_ELC_RCM_MAPNG_DEPT_CONFM D2
+		      ON C.DEPT_ID = D2.CHRG_DEPT_ID
+		       AND D2.CONFM_STEP = 2
+		     LEFT OUTER JOIN TB_CO_USER_HIST U2
+		      ON D2.CONFM_USER_ID = U2.USER_ID
+		       AND D2.CONFM_USER_BGNDE = U2.HIST_BGNDE
+		     LEFT OUTER JOIN TB_CO_USER U22
+		      ON D2.CONFM_USER_ID = U22.USER_ID
+		     LEFT OUTER JOIN TB_CW_ELC_RCM_MAPNG_DEPT_CONFM D3
+		      ON C.DEPT_ID = D3.CHRG_DEPT_ID
+		       AND D3.CONFM_STEP = 3
+		     LEFT OUTER JOIN TB_CO_USER_HIST U3
+		      ON D3.CONFM_USER_ID = U3.USER_ID
+		       AND D3.CONFM_USER_BGNDE = U3.HIST_BGNDE
+		     LEFT OUTER JOIN TB_CO_USER U33
+		      ON D3.CONFM_USER_ID = U33.USER_ID
+		WHERE A.OBJECT_KND_CD_ID = 'CTW_001_005'
+		GROUP BY C.DEPT_ID, C.DEPT_CD, C.DEPT_NM
+             , D1.CONFM_USER_ID, U1.USER_CD, U1.USER_NM, U1.DEPT_ID, U11.DEPT_ID, U1.STTUS_CD_ID, U11.STTUS_CD_ID
+             , D2.CONFM_USER_ID, U2.USER_CD, U2.USER_NM, U2.DEPT_ID, U22.DEPT_ID, U2.STTUS_CD_ID, U22.STTUS_CD_ID
+             , D3.CONFM_USER_ID, U3.USER_CD, U3.USER_NM, U3.DEPT_ID, U33.DEPT_ID, U3.STTUS_CD_ID, U33.STTUS_CD_ID
+		ORDER BY C.DEPT_CD ASC
+	</select>
+
+
+	<!-- context-excel-cwsol.xml에서 이용, 조직형 승인자 excel upload -->
+	<insert id="insertDeptConfmExcel">
+	<![CDATA[
+	BEGIN
+		/** RCM 매핑 승인자 삭제 */
+		DELETE FROM TB_CW_ELC_RCM_MAPNG_DEPT_CONFM
+		WHERE CHRG_DEPT_ID = #{cell1};
+
+		/** RCM 매핑 1 승인자 입력 */
+		INSERT INTO TB_CW_ELC_RCM_MAPNG_DEPT_CONFM (
+			CONFM_STEP, CHRG_DEPT_ID, CONFM_USER_ID, CONFM_USER_BGNDE, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		)
+		SELECT
+		      1
+		    , #{cell1}
+		    , A.USER_ID
+		    , A.HIST_BGNDE
+		    , GETDATE()
+		    , #{suserId}
+		    , GETDATE()
+		    , #{suserId}
+		FROM TB_CO_USER_HIST A
+		WHERE A.USER_CD = #{cell4}
+			AND A.HIST_ENDDE = '99991231'
+            AND ROWNUM = 1
+		;
+
+		/** RCM 매핑 2 승인자 입력 */
+		INSERT INTO TB_CW_ELC_RCM_MAPNG_DEPT_CONFM (
+			CONFM_STEP, CHRG_DEPT_ID, CONFM_USER_ID, CONFM_USER_BGNDE, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		)
+		SELECT
+		      2
+		    , #{cell1}
+		    , A.USER_ID
+		    , A.HIST_BGNDE
+		    , GETDATE()
+		    , #{suserId}
+		    , GETDATE()
+		    , #{suserId}
+		FROM TB_CO_USER_HIST A
+		WHERE A.USER_CD = #{cell6}
+			AND A.HIST_ENDDE = '99991231'
+            AND ROWNUM = 1
+		;
+
+		/** RCM 매핑 3 승인자 입력 */
+		INSERT INTO TB_CW_ELC_RCM_MAPNG_DEPT_CONFM (
+			CONFM_STEP, CHRG_DEPT_ID, CONFM_USER_ID, CONFM_USER_BGNDE, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		)
+		SELECT
+		      3
+		    , #{cell1}
+		    , A.USER_ID
+		    , A.HIST_BGNDE
+		    , GETDATE()
+		    , #{suserId}
+		    , GETDATE()
+		    , #{suserId}
+		FROM TB_CO_USER_HIST A
+		WHERE A.USER_CD = #{cell8}
+			AND A.HIST_ENDDE = '99991231'
+            AND ROWNUM = 1
+		;
+	END;
+	]]>
+	</insert>
+
+
+
+	<update id="updateDeptConfm">
+	<![CDATA[
+	BEGIN
+		/** RCM 매핑 승인자 삭제 */
+		DELETE FROM TB_CW_ELC_RCM_MAPNG_DEPT_CONFM
+		WHERE CHRG_DEPT_ID = #{deptId}
+			AND CONFM_STEP = #{confmStep};
+
+		/** RCM 매핑 승인자 입력 */
+		INSERT INTO TB_CW_ELC_RCM_MAPNG_DEPT_CONFM (
+			CONFM_STEP, CHRG_DEPT_ID, CONFM_USER_ID, CONFM_USER_BGNDE, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES (
+		 	#{confmStep}
+		  , #{deptId}
+		  , #{userId}
+		  , #{userBgnde}
+		  , GETDATE()
+		  , #{suserId}
+		  , GETDATE()
+		  , #{suserId}
+		);
+	END;
+	]]>
+	</update>
+
+	<!-- 담당자 등록 현황 -->
+	<select id='chrgUserSttusList' resultType="EgovMap">
+		WITH  TOP AS (
+			SELECT
+				MAX(CONVERT(VARCHAR,UPD_DT,112) + REPLACE(CONVERT(VARCHAR,UPD_DT,8),':',''))  AS UPD_DE
+			FROM TB_CW_ELC_RCM_MAPNG_USER
+		)
+		SELECT
+              MA.*
+            , MB.CODE_NM AS OBJECT_KND_CD_NM
+            , C1.CODE_NM  AS CHRG_EVL_SE
+            , ISNULL(SA.MAPNG_CHRG_SN,0) AS MAPNG_CHRG_SN , ISNULL(SA.CHRG_GROUP_SN, 1) AS CHRG_GROUP_SN, SA.CHRG_USER_ID
+            , SB.USER_CD
+            , SB.USER_NM
+            , SB.DEPT_NM
+            , (CASE WHEN SB.STTUS_CD_ID IN ('COM_003_002', 'COM_003_003') THEN 'Y' ELSE 'N' END) AS RETIRE_AT
+			, CONVERT ( VARCHAR , SA.UPD_DT , 23 ) + ' ' + CONVERT ( VARCHAR , SA.UPD_DT , 8) AS UPD_DE
+			, SA.UPD_USER_ID AS UPD_USER_ID
+			, U1.USER_NM AS UPD_USER_NM
+			, ( CASE WHEN ( SELECT UPD_DE FROM TOP ) = CONVERT(VARCHAR,SA.UPD_DT,112) + REPLACE(CONVERT(VARCHAR,SA.UPD_DT,8),':','') THEN 'Y' ELSE 'N' END ) AS LAST_AT
+			, ( CASE WHEN SB.USER_CD IS NULL THEN 'Y' ELSE 'N' END ) AS CHRG_AT
+       	FROM (
+            /** 통제 없는 프로세스 제외  */
+            SELECT
+                  DISTINCT T.OBJECT_ID, T.OBJECT_NO, T.OBJECT_NM, T.OBJECT_LEVEL, T.OBJECT_KND_CD_ID, T.UPPER_OBJECT_ID
+                , T.CHRG_TY_CD_ID, T.CNRL_CN, T.KEY_CNRL_AT, T.CNRL_RSPNBER, T.CNRL_EXCBER
+            FROM (
+                /** 위험, 통제 중복 제거 */
+                SELECT
+                     DISTINCT A.OBJECT_ID, A.OBJECT_NO, A.OBJECT_NM, A.OBJECT_LEVEL, A.OBJECT_KND_CD_ID
+					<choose>
+						<when test=' elcRiskUseAt != "false" '>
+		           , (CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN B.UPPER_OBJECT_ID ELSE A.UPPER_OBJECT_ID END) AS UPPER_OBJECT_ID
+						</when>
+						<otherwise>
+				   , A.UPPER_OBJECT_ID AS UPPER_OBJECT_ID
+						</otherwise>
+					</choose>
+                   , ISNULL(C.CHRG_TY_CD_ID, 'CTW_105_001') AS CHRG_TY_CD_ID
+                   , C.CNRL_CN, C.KEY_CNRL_AT, C.CNRL_RSPNBER, C.CNRL_EXCBER
+                FROM TB_CW_ELC_RCM_MAPNG A
+                LEFT OUTER JOIN TB_CW_ELC_RCM_MAPNG B
+                   ON A.UPPER_MAPNG_ID = B.MAPNG_ID
+                LEFT OUTER JOIN (
+                    /** 통제 평가자/ 테스터 */
+                    SELECT 'CTW_105_001' AS CHRG_TY_CD_ID, CNRL_ID, CNRL_CN, KEY_CNRL_AT, CNRL_RSPNBER, CNRL_EXCBER FROM TB_CW_ELC_RCM_CNRL
+                    UNION ALL
+                    SELECT 'CTW_105_002' AS CHRG_TY_CD_ID, CNRL_ID, CNRL_CN, KEY_CNRL_AT, CNRL_RSPNBER, CNRL_EXCBER FROM TB_CW_ELC_RCM_CNRL
+                ) C
+                    ON A.OBJECT_ID = C.CNRL_ID
+                WHERE A.OBJECT_KND_CD_ID != 'CTW_001_004'
+           ) T
+        ) MA
+        LEFT OUTER JOIN TB_CO_CODE MB
+            ON MB.GROUP_ID = 'CTW_001'
+            AND CASE WHEN MA.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{elcProcsStep} = 2
+                		THEN 'CTW_001_003'
+                		ELSE MA.OBJECT_KND_CD_ID END = MB.CODE_ID
+        -- LEFT OUTER JOIN 전체
+        -- INNER JOIN 부분만
+        LEFT OUTER JOIN TB_CW_ELC_RCM_MAPNG_USER SA
+            ON MA.OBJECT_ID = SA.OBJECT_ID
+            AND MA.CHRG_TY_CD_ID = SA.CHRG_TY_CD_ID
+        LEFT OUTER JOIN TB_CO_USER_HIST SB
+            ON SA.CHRG_USER_ID = SB.USER_ID
+            AND SB.HIST_ENDDE  = '99991231'     /** 최신정보 */
+            AND SB.STTUS_CD_ID = 'COM_003_001'  /** 재직자 */
+        LEFT OUTER JOIN TB_CO_CODE C1
+        	ON C1.CODE_ID = MA.CHRG_TY_CD_ID
+		LEFT OUTER JOIN TB_CO_USER U1
+        	ON U1.USER_ID = SA.UPD_USER_ID
+
+        WHERE 1=1
+        <choose>
+        	<when test='srchAllAt != null and srchAllAt == "N"'>
+        		-- 담당자의 변경된 곳만
+        		AND SB.USER_CD IS NOT NULL
+        		AND SB.USER_NM IS NOT NULL
+        		AND SB.USER_ID IS NOT NULL
+        	</when>
+        	<when test='srchAllAt != null and srchAllAt == "NN"'>
+        		-- 담당자의 변경되지 않은 곳만
+        		AND SB.USER_CD IS NULL
+	        	AND SB.USER_NM IS NULL
+	        	AND SB.USER_ID IS NULL
+        	</when>
+        	<otherwise>
+        		-- 전체
+        	</otherwise>
+        </choose>
+
+        <if test="srchTy != null and srchTy != '' and srchWrd != null and srchWrd != '' ">
+        	<choose>
+        		<when test="srchTy == 'rcm' ">
+        			-- 오브젝트 명
+        			AND MA.OBJECT_NO + MA.OBJECT_NM LIKE '%' + #{srchWrd} + '%'
+        		</when>
+        		<when test="srchTy == 'nm' ">
+	        		-- 담당자 명
+	        		AND SB.USER_NM LIKE '%' + #{srchWrd} + '%'
+        		</when>
+        		<when test="srchTy == 'dp' ">
+	        		-- 부서 명
+    	    		AND SB.DEPT_NM LIKE '%' + #{srchWrd} + '%'
+        		</when>
+        		<when test="srchTy == 'uu' ">
+        			-- 수정자 이름
+        			AND U1.USER_NM LIKE '%' + #{srchWrd} + '%'
+        		</when>
+	        </choose>
+        </if>
+
+        <choose>
+        	<when test="srchChrgEvlSe != null and srchChrgEvlSe == 'CTW_105_001' ">
+        		-- 평가자
+				AND MA.CHRG_TY_CD_ID = 'CTW_105_001'
+			</when>
+        	<when test="srchChrgEvlSe != null and srchChrgEvlSe == 'CTW_105_002' ">
+        		-- 테스터
+        		AND MA.CHRG_TY_CD_ID = 'CTW_105_002'
+        	</when>
+        	<otherwise></otherwise>
+        </choose>
+
+		ORDER BY MA.OBJECT_ID ASC, ISNULL(SA.MAPNG_CHRG_SN, 1) ASC, SA.CHRG_GROUP_SN ASC, MA.CHRG_TY_CD_ID ASC
+	</select>
+
+	<insert id='chrgUserSttusUpdate'>
+		BEGIN
+			/* 현재 가지고있는 유저 매핑을 수정한다 */
+			<foreach collection="updateList" item="item" index="j" >
+				UPDATE TB_CW_ELC_RCM_MAPNG_USER SET
+					CHRG_USER_ID 	= #{item.changeUserId} ,
+					CHRG_USER_BGNDE = #{item.changeUserBgnde} ,
+					UPD_USER_ID		= #{item.suserId} ,
+					UPD_DT 			= GETDATE()
+				WHERE OBJECT_ID = #{item.objectId} AND MAPNG_CHRG_SN = #{item.mapngChrgSn}
+				;
+			</foreach>
+			/* 현재 가지고있는 유저 매핑 이력을 수정한다 Endde 를 현재시간으로 */
+			<foreach collection="updateList" item="item" index="j" >
+				UPDATE TB_CW_ELC_RCM_MAPNG_USER_HIST
+					SET
+						ENDTMSTMP			= CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),14),':','') + '000'
+					WHERE
+						OBJECT_ID 		= #{item.objectId}
+					AND MAPNG_CHRG_SN 	= #{item.mapngChrgSn}
+					AND ENDTMSTMP 		= '99991231235959999999'
+				;
+			</foreach>
+			/* 현재 가지고있는 유저 매핑 이력을 추가한다 */
+			<foreach collection="updateList" item="item" index="index" separator=" " open="INSERT ALL" close="SELECT * ">
+				INTO TB_CW_ELC_RCM_MAPNG_USER_HIST(
+					OBJECT_ID,
+					MAPNG_CHRG_SN,
+					BGNTMSTMP ,
+					ENDTMSTMP ,
+					CHRG_GROUP_SN,
+
+					CHRG_TY_CD_ID,
+					CHRG_USER_ID,
+					CHRG_USER_BGNDE,
+					CHRG_RM,
+					CMPNY_CD_ID,
+
+					RM ,
+					RGS_DT,
+					RGS_USER_ID,
+					UPD_DT,
+					UPD_USER_ID
+				)
+				VALUES (
+					#{item.objectId} ,
+					#{item.mapngChrgSn} ,
+					CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),14),':','') + '000',
+					'99991231235959999999',
+					'1' ,
+
+					#{item.chrgTyCdId} ,
+					#{item.changeUserId} ,
+					#{item.changeUserBgnde} ,
+					'' ,
+					'GA' ,
+
+					'RCM 담당자 수동 변경' ,
+					GETDATE() ,
+					#{item.suserId} ,
+					GETDATE() ,
+					#{item.suserId}
+				)
+			</foreach>
+			;
+
+		END ;
+	</insert>
+
+	<select id='chrgUserSttusHistList' resultType="EgovMap" >
+		SELECT
+		    A.OBJECT_ID AS OBJECT_ID ,
+			A.MAPNG_CHRG_SN AS MAPNG_CHRG_SN ,
+		 	TO_CHAR(TO_TIMESTAMP(A.BGNTMSTMP,'YYYYMMDDHH24MISSFF6'),'YYYY-MM-DD') AS BGNDE ,
+		 	TO_CHAR(TO_TIMESTAMP(A.BGNTMSTMP,'YYYYMMDDHH24MISSFF6'),'HH24:MI:SS') AS BGNDE2 ,
+		  	TO_CHAR(TO_TIMESTAMP(A.ENDTMSTMP,'YYYYMMDDHH24MISSFF6'),'YYYY-MM-DD') AS ENDDE ,
+		  	TO_CHAR(TO_TIMESTAMP(A.ENDTMSTMP,'YYYYMMDDHH24MISSFF6'),'HH24:MI:SS') AS ENDDE2 ,
+			A.CHRG_GROUP_SN AS CHRG_GROUP_SN ,
+			A.CHRG_USER_ID AS CHRG_USER_ID ,
+			UH1.USER_NM AS CHRG_USER_NM ,
+			UH1.DEPT_NM AS CHRG_DEPT_NM ,
+			A.CHRG_RM AS CHRG_RM ,
+			A.RM AS RM ,
+			A.CMPNY_CD_ID AS CMPNY_CD_ID ,
+			A.UPD_USER_ID AS UPD_USER_ID ,
+			U1.USER_NM AS UPD_USER_NM ,
+			(CASE WHEN A.ENDTMSTMP = '99991231235959999999' THEN 'Y' ELSE 'N' END) AS LAST_AT
+
+		FROM TB_CW_ELC_RCM_MAPNG_USER_HIST A
+			LEFT OUTER JOIN TB_CO_USER_HIST UH1
+				ON UH1.USER_ID = A.CHRG_USER_ID AND UH1.HIST_BGNDE = A.CHRG_USER_BGNDE
+			LEFT OUTER JOIN TB_CO_USER U1
+				ON U1.USER_ID = A.UPD_USER_ID
+
+		WHERE
+			OBJECT_ID 		= #{objectId}
+		AND	MAPNG_CHRG_SN 	= #{mapngChrgSn}
+
+	 	ORDER BY A.OBJECT_ID ASC , A.MAPNG_CHRG_SN ASC , A.ENDTMSTMP DESC
+	</select>
+
+	<insert id='chrgUserSttusInsert'>
+		BEGIN
+			/* 담당자 메핑 추가 */
+			<foreach collection="insertList" item="item" index="index" separator=" " open="INSERT ALL" close="SELECT * ">
+				INTO TB_CW_ELC_RCM_MAPNG_USER (
+					OBJECT_ID,
+					MAPNG_CHRG_SN,
+					CHRG_GROUP_SN,
+					CHRG_TY_CD_ID,
+					CHRG_USER_ID,
+
+					CHRG_USER_BGNDE,
+					CHRG_RM,
+					CMPNY_CD_ID,
+					RGS_DT,
+					RGS_USER_ID,
+
+					UPD_DT,
+					UPD_USER_ID
+				)
+				VALUES (
+					#{item.objectId} ,
+					(CASE WHEN #{item.chrgTyCdId} = 'CTW_105_001' THEN '1' ELSE '2' END ) ,
+					'1' ,
+					#{item.chrgTyCdId} ,
+					#{item.changeUserId} ,
+
+					#{item.changeUserBgnde} ,
+					'' ,
+					'GA' ,
+					GETDATE() ,
+					#{item.suserId} ,
+
+					GETDATE() ,
+					#{item.suserId}
+				)
+			</foreach>
+			;
+
+			/* HIST 추가 */
+			<foreach collection="insertList" item="item" index="index" separator=" " open="INSERT ALL" close="SELECT * ">
+				INTO TB_CW_ELC_RCM_MAPNG_USER_HIST (
+					OBJECT_ID,
+					MAPNG_CHRG_SN,
+					BGNTMSTMP ,
+					ENDTMSTMP ,
+					CHRG_GROUP_SN,
+
+					CHRG_TY_CD_ID,
+					CHRG_USER_ID,
+					CHRG_USER_BGNDE,
+					CHRG_RM,
+					CMPNY_CD_ID,
+
+					RM ,
+					RGS_DT,
+					RGS_USER_ID,
+					UPD_DT,
+					UPD_USER_ID
+				)
+				VALUES (
+					#{item.objectId} ,
+					(CASE WHEN #{item.chrgTyCdId} = 'CTW_105_001' THEN '1' ELSE '2' END ) ,
+					CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),14),':','') + '000',
+					'99991231235959999999',
+					'1' ,
+
+					#{item.chrgTyCdId} ,
+					#{item.changeUserId} ,
+					#{item.changeUserBgnde} ,
+					'' ,
+					'GA' ,
+
+					'RCM 담당자 수동 변경' ,
+					GETDATE() ,
+					#{item.suserId} ,
+					GETDATE() ,
+					#{item.suserId}
+				)
+			</foreach>
+				;
+		END ;
+	</insert>
+</mapper>

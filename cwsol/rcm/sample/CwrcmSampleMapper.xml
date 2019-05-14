@@ -1,0 +1,583 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.rcm.sample.serviceimpl.CwrcmSampleMapper">
+	
+    <!-- 모집단 목록 -->
+	<select id="list" resultType="EgovMap">
+		SELECT  A.SAMPLE_ID
+		      , A.SAMPLE_NM
+		      , A.RM
+		      , A.USE_AT
+		      , A.UNITY_ID
+		      , A.RGS_DT
+		      , A.RGS_USER_ID
+		      , A.UPD_DT
+		      , A.UPD_USER_ID
+		      , B.USER_NM AS UPD_USER_NM
+		FROM TB_CW_SAMPLE A
+		LEFT OUTER JOIN TB_CO_USER B
+			ON A.UPD_USER_ID = B.USER_ID
+		WHERE 1=1
+		 <if test=' srchSampleNm != null and srchSampleNm != "" '>
+               AND UPPER(A.SAMPLE_NM) LIKE '%' + UPPER(#{srchSampleNm}) + '%'  
+         </if>
+         <if test=' srchUseAt != null and srchUseAt != "" '>
+               AND A.USE_AT = #{srchUseAt} 
+         </if>
+         ORDER BY UPD_DT DESC
+	</select>
+	
+	<!-- 모집단 상세 -->
+	<select id="view" resultType="CwrcmSampleVO">
+		SELECT  A.SAMPLE_ID
+		      , A.SAMPLE_NM
+		      , A.RM
+		      , A.USE_AT
+		      , A.UNITY_ID
+		      , A.RGS_DT
+		      , A.RGS_USER_ID
+		      , A.UPD_DT
+		      , A.UPD_USER_ID
+		FROM TB_CW_SAMPLE A
+		WHERE 1=1
+			AND  A.SAMPLE_ID = #{sampleId}
+	</select>
+	
+	<!-- 업로드 항목 목록 -->
+	<select id="uploadIemList" resultType="EgovMap">
+		SELECT  A.SAMPLE_ID
+		      , A.COLUMN_NM
+		      , A.IEM_NM
+		      , A.INDICT_AT
+		      , A.IEM_SN
+		      , A.RGS_DT
+		      , A.RGS_USER_ID
+		      , A.UPD_DT
+		      , A.UPD_USER_ID
+		FROM TB_CW_SAMPLE_IEM A
+			<if test=' (cnrlId != null and cnrlId != "") and (sampleId = null or sampleId = "") '>
+				INNER JOIN TB_CW_SAMPLE_CNRL B
+					ON A.SAMPLE_ID = B.SAMPLE_ID
+					AND B.CNRL_ID = #{cnrlId}
+					AND B.RCM_SE = #{rcmSe}
+			</if>
+		WHERE 1=1
+			<if test=' sampleId != null and sampleId != "" '>
+				AND A.SAMPLE_ID = #{sampleId}
+			</if>
+			<if test=' indictAt != null and indictAt != "" '>
+				AND A.INDICT_AT = #{indictAt}
+        	</if>
+		ORDER BY A.IEM_SN
+	</select>
+	
+	<!-- 관련 통제 목록 -->
+	<select id="relateCnrlList" resultType="EgovMap">
+		SELECT TOT.* FROM (
+			/** PLC 통제 */
+			SELECT
+			      B.CNRL_ID
+			    , B.CNRL_NO
+			    , B.CNRL_NM
+			    , B.CNRL_TY01_CD_ID
+			    , BA.CODE_NM AS CNRL_TY01_CD_NM
+			    , B.CNRL_TY02_CD_ID
+			    , BB.CODE_NM AS CNRL_TY02_CD_NM
+			    , B.CNRL_TY03_CD_ID
+			    , BC.CODE_NM AS CNRL_TY03_CD_NM
+			    , ISNULL(B.KEY_CNRL_AT, 'N') AS KEY_CNRL_AT
+			    , ISNULL(B.MRC_CNRL_AT, 'N') AS MRC_CNRL_AT
+			    , ISNULL(B.IPE_CNRL_AT, 'N') AS IPE_CNRL_AT
+				, BA.CODE_NM 		AS CNRL_TY01
+				, BB.CODE_NM 		AS CNRL_TY02
+			    , BC.CODE_NM 		AS CNRL_TY03
+			    , B.KEY_CNRL_AT 	AS KEY_CNRL
+	            , B.MRC_CNRL_AT		AS MRC_CNRL
+	            , B.IPE_CNRL_AT  	AS IPE_CNRL
+				, A.RCM_SE
+			FROM TB_CW_SAMPLE_CNRL A
+			INNER JOIN TB_CW_RCM_CNRL B
+		   		ON A.CNRL_ID = B.CNRL_ID
+	        LEFT OUTER JOIN TB_CO_CODE BA
+	            ON B.CNRL_TY01_CD_ID = BA.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE BB
+	            ON B.CNRL_TY02_CD_ID = BB.CODE_ID 
+	        LEFT OUTER JOIN TB_CO_CODE BC
+	            ON B.CNRL_TY03_CD_ID = BC.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE BD
+	            ON B.TEST_CYCLE_CD_ID = BD.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE BE
+	            ON B.OFFICE_TY_CD_ID = BE.CODE_ID
+	        WHERE 1=1
+	        	AND A.SAMPLE_ID = #{sampleId}
+	        	AND A.RCM_SE = 'P'
+	        
+	        UNION ALL
+	        
+	        /** ELC 통제 */
+			SELECT
+			      B.CNRL_ID
+			    , B.CNRL_NO
+			    , B.CNRL_NM
+			    , B.CNRL_TY01_CD_ID
+			    , BA.CODE_NM AS CNRL_TY01_CD_NM
+			    , B.CNRL_TY02_CD_ID
+			    , BB.CODE_NM AS CNRL_TY02_CD_NM
+			    , B.CNRL_TY03_CD_ID
+			    , BC.CODE_NM AS CNRL_TY03_CD_NM
+			    , ISNULL(B.KEY_CNRL_AT, 'N') AS KEY_CNRL_AT
+			    , ISNULL(B.MRC_CNRL_AT, 'N') AS MRC_CNRL_AT
+			    , ISNULL(B.IPE_CNRL_AT, 'N') AS IPE_CNRL_AT
+				, BA.CODE_NM 		AS CNRL_TY01
+				, BB.CODE_NM 		AS CNRL_TY02
+			    , BC.CODE_NM 		AS CNRL_TY03
+			    , B.KEY_CNRL_AT 	AS KEY_CNRL
+	            , B.MRC_CNRL_AT		AS MRC_CNRL
+	            , B.IPE_CNRL_AT  	AS IPE_CNRL
+				, A.RCM_SE
+			FROM TB_CW_SAMPLE_CNRL A
+			INNER JOIN TB_CW_ELC_RCM_CNRL B
+		   		ON A.CNRL_ID = B.CNRL_ID
+	        LEFT OUTER JOIN TB_CO_CODE BA
+	            ON B.CNRL_TY01_CD_ID = BA.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE BB
+	            ON B.CNRL_TY02_CD_ID = BB.CODE_ID 
+	        LEFT OUTER JOIN TB_CO_CODE BC
+	            ON B.CNRL_TY03_CD_ID = BC.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE BD
+	            ON B.TEST_CYCLE_CD_ID = BD.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE BE
+	            ON B.OFFICE_TY_CD_ID = BE.CODE_ID
+	        WHERE 1=1
+	        	AND A.SAMPLE_ID = #{sampleId}
+	        	AND A.RCM_SE = 'E'
+        ) TOT
+		ORDER BY TOT.CNRL_ID
+	</select>
+	
+	<!-- 업로드 조회 목록 -->
+	<select id="uploadDataList" resultType="EgovMap">
+		SELECT  A.SAMPLE_ID
+		      , A.SN
+		      ${sql}
+		      , A.RGS_DT
+		      , A.RGS_USER_ID
+		      , A.UPD_DT
+		      , A.UPD_USER_ID
+		FROM TB_CW_SAMPLE_DATA A
+		WHERE 1=1
+			AND  A.SAMPLE_ID = #{sampleId}
+		ORDER BY A.SN
+	</select>
+	
+	<!-- PLC 통제 목록 -->
+	<select id="cnrlList" resultType="EgovMap">
+		<choose>
+			<when test=' (srchKeyCnrlAt != null and srchKeyCnrlAt != "") 
+						+ (srchCnrlTy03CdId != null and srchCnrlTy03CdId != "") 
+						'>
+				WITH V1 ( OBJECT_ID , MAPNG_ID , UPPER_MAPNG_ID ) AS (
+					SELECT OBJECT_ID , MAPNG_ID , UPPER_MAPNG_ID 
+					FROM TB_CW_RCM_MAPNG
+					WHERE OBJECT_ID IN (
+						SELECT
+							DISTINCT M.OBJECT_ID
+						FROM TB_CW_RCM_MAPNG M
+						LEFT OUTER JOIN TB_CW_RCM_PROCS P
+							ON M.OBJECT_ID = P.PROCS_ID
+						LEFT OUTER JOIN TB_CW_RCM_CNRL C
+							ON M.OBJECT_ID = C.CNRL_ID
+						<trim prefix="WHERE" prefixOverrides="AND|OR ">
+							<if test=' srchKeyCnrlAt != null and srchKeyCnrlAt != "" '>
+								AND ISNULL(C.KEY_CNRL_AT, 'N')  = #{srchKeyCnrlAt} 
+							</if>
+							<if test=' srchCnrlTy03CdId != null and srchCnrlTy03CdId != "" '>
+								AND C.CNRL_TY03_CD_ID = #{srchCnrlTy03CdId} 
+								</if>
+						</trim>
+					) -- IN 
+													
+					UNION ALL 
+			
+					SELECT M.OBJECT_ID , M.MAPNG_ID , M.UPPER_MAPNG_ID 
+					FROM TB_CW_RCM_MAPNG M , V1 ROOT 
+					WHERE M.MAPNG_ID = ROOT.UPPER_MAPNG_ID 
+				)
+			</when>
+		</choose>
+		/** 이미 해당 통제를 선택한 다른 모집단이 있거나, 통제가 아닌 경우 disabled */
+		SELECT TTT.*, CASE WHEN 
+		<choose>
+			<when test=' sampleId != null and sampleId != ""'>
+			   ( T1.CNRL_ID IS NOT NULL AND T1.SAMPLE_ID != #{sampleId} )
+		    </when>
+		    <otherwise>
+				T1.CNRL_ID IS NOT NULL
+	    	</otherwise>
+	    </choose>
+	    	OR TTT.CNRL_NO IS NULL THEN 'disabled' ELSE '' END SHOW_AT 
+		FROM (
+			SELECT TT.*
+			FROM (
+				SELECT	T.OBJECT_ID
+		          	  , T.OBJECT_NO
+		          	  , T.OBJECT_NM
+		          	  , T.OBJECT_LEVEL
+		          	  , T.OBJECT_KND_CD_ID
+		              , T.UPPER_OBJECT_ID
+		              , T.OBJECT_ID + '_' + ISNULL(T.UPPER_OBJECT_ID, 'TOP') AS MAPNG_ID
+		              , C.CNRL_NO
+		              , C.CNRL_CN
+		              , CASE WHEN EP.PROCS_ID IS NOT NULL THEN 'Y'
+		              		 WHEN ER.RISK_ID IS NOT NULL THEN 'Y'
+		              		 WHEN C.CNRL_ID IS NOT NULL THEN 'Y'
+		                     ELSE 'N'
+		                END AS CONTROL_CHECK_AT
+		              , C.OFFICE_TY_CD_ID
+		              , ISNULL(C.KEY_CNRL_AT, 'N')								AS KEY_CNRL_AT
+		              , ISNULL(C.MRC_CNRL_AT, 'N')								AS MRC_CNRL_AT
+		              , ISNULL(C.IPE_CNRL_AT, 'N')								AS IPE_CNRL_AT
+		              , (CASE WHEN C.CNRL_TY03_CD_ID = 'CTW_004_001' THEN 'Y' ELSE 'N' END) 	AS ATMC_AT
+		              , C.REFRN_NO
+		              , C.SAMPLE_SIZE
+		              , C.CNRL_TY01_CD_ID
+                      , CA.CODE_NM AS CNRL_TY01_CD_NM
+                      , C.CNRL_TY02_CD_ID
+                      , CB.CODE_NM AS CNRL_TY02_CD_NM
+                      , C.CNRL_TY03_CD_ID
+                      , CC.CODE_NM AS CNRL_TY03_CD_NM
+				FROM	(	
+						/** RCM Mapng Tree 구조 */
+		            	SELECT DISTINCT
+		            		  A.MAPNG_ID
+							, A.OBJECT_ID
+						    , A.OBJECT_NO
+						    , A.OBJECT_NM
+						    , A.OBJECT_LEVEL
+						    , A.OBJECT_KND_CD_ID
+						    , A.UPPER_MAPNG_ID
+							, (CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN (SELECT UPPER_OBJECT_ID FROM TB_CW_RCM_MAPNG WHERE OBJECT_ID = A.UPPER_OBJECT_ID) ELSE A.UPPER_OBJECT_ID END) AS UPPER_OBJECT_ID
+						FROM 
+							<choose>
+								<when test=' (srchKeyCnrlAt != null and srchKeyCnrlAt != "") 
+											+ (srchCnrlTy03CdId != null and srchCnrlTy03CdId != "") 
+											'>
+								    (
+								    	SELECT M.* FROM V1 V 
+								    	INNER JOIN TB_CW_RCM_MAPNG M
+								    		ON V.OBJECT_ID = M.OBJECT_ID 
+								    ) A
+							    </when>
+							    <otherwise>
+									TB_CW_RCM_MAPNG A
+						    	</otherwise>
+						    </choose>
+						WHERE 	A.OBJECT_KND_CD_ID != 'CTW_001_004'
+		      		 	) T
+		        LEFT OUTER JOIN TB_CW_RCM_CNRL C
+		        	ON 	T.OBJECT_ID				= C.CNRL_ID
+		        LEFT OUTER JOIN TB_CW_RCM_PROCS EP
+		        	ON	T.OBJECT_ID				= EP.PROCS_ID
+		        LEFT OUTER JOIN TB_CW_RCM_RISK ER
+		        	ON T.OBJECT_ID				= ER.RISK_ID
+		        LEFT OUTER JOIN TB_CO_CODE CA
+                    ON C.CNRL_TY01_CD_ID 		= CA.CODE_ID
+                LEFT OUTER JOIN TB_CO_CODE CB
+                    ON C.CNRL_TY02_CD_ID 		= CB.CODE_ID 
+                LEFT OUTER JOIN TB_CO_CODE CC
+                    ON C.CNRL_TY03_CD_ID 		= CC.CODE_ID
+		    ) TT
+		) TTT
+		LEFT OUTER JOIN TB_CW_SAMPLE_CNRL T1
+		ON TTT.OBJECT_ID = T1.CNRL_ID
+		AND T1.RCM_SE = 'P'
+		ORDER BY TTT.OBJECT_ID 
+	</select>
+	
+	
+	<!-- ELC 통제 목록 -->
+	<select id="elcCnrlList" resultType="EgovMap">
+		<choose>
+			<when test=' (srchKeyCnrlAt != null and srchKeyCnrlAt != "") 
+						+ (srchCnrlTy03CdId != null and srchCnrlTy03CdId != "") 
+						'>
+			WITH V1 ( OBJECT_ID , MAPNG_ID , UPPER_MAPNG_ID ) AS (
+				SELECT OBJECT_ID , MAPNG_ID , UPPER_MAPNG_ID 
+				FROM TB_CW_ELC_RCM_MAPNG
+				WHERE OBJECT_ID IN (
+					SELECT
+						DISTINCT M.OBJECT_ID
+					FROM TB_CW_ELC_RCM_MAPNG M
+					LEFT OUTER JOIN TB_CW_ELC_RCM_PROCS P
+						ON M.OBJECT_ID = P.PROCS_ID
+					LEFT OUTER JOIN TB_CW_ELC_RCM_CNRL C
+						ON M.OBJECT_ID = C.CNRL_ID
+					<trim prefix="WHERE" prefixOverrides="AND|OR ">
+						<if test=' srchKeyCnrlAt != null and srchKeyCnrlAt != "" '>
+							AND ISNULL(C.KEY_CNRL_AT, 'N')  = #{srchKeyCnrlAt} 
+						</if>
+						<if test=' srchCnrlTy03CdId != null and srchCnrlTy03CdId != "" '>
+							AND C.CNRL_TY03_CD_ID = #{srchCnrlTy03CdId} 
+						</if>
+					</trim>
+				) -- IN 
+											
+				UNION ALL 
+	
+				SELECT M.OBJECT_ID , M.MAPNG_ID , M.UPPER_MAPNG_ID 
+				FROM TB_CW_ELC_RCM_MAPNG M , V1 ROOT 
+				WHERE M.MAPNG_ID = ROOT.UPPER_MAPNG_ID 
+			)
+		   	</when>
+		</choose>
+		/** 이미 해당 통제를 선택한 다른 모집단이 있거나, 통제가 아닌 경우 disabled */
+		SELECT TTT.*, CASE WHEN 
+		<choose>
+			<when test=' sampleId != null and sampleId != ""'>
+			   ( T1.CNRL_ID IS NOT NULL AND T1.SAMPLE_ID != #{sampleId} )
+		    </when>
+		    <otherwise>
+				T1.CNRL_ID IS NOT NULL
+	    	</otherwise>
+	    </choose>
+	    	OR TTT.CNRL_NO IS NULL THEN 'disabled' ELSE '' END SHOW_AT 
+		FROM (
+			SELECT TT.*
+			FROM (
+				SELECT	T.OBJECT_ID
+		          	  , T.OBJECT_NO
+		          	  , T.OBJECT_NM
+		          	  , T.OBJECT_LEVEL
+		          	  , T.OBJECT_KND_CD_ID
+		              , T.UPPER_OBJECT_ID
+		              , T.OBJECT_ID + '_' + ISNULL(T.UPPER_OBJECT_ID, 'TOP') AS MAPNG_ID
+		              , C.CNRL_NO
+		              , C.CNRL_CN
+		              , CASE WHEN EP.PROCS_ID IS NOT NULL THEN 'Y'
+		              		 WHEN ER.RISK_ID IS NOT NULL THEN 'Y'
+		              		 WHEN C.CNRL_ID IS NOT NULL THEN 'Y'
+		                     ELSE 'N'
+		                END AS CONTROL_CHECK_AT
+		              , C.OFFICE_TY_CD_ID
+		              , ISNULL(C.KEY_CNRL_AT, 'N')								AS KEY_CNRL_AT
+		              , ISNULL(C.MRC_CNRL_AT, 'N')								AS MRC_CNRL_AT
+		              , ISNULL(C.IPE_CNRL_AT, 'N')								AS IPE_CNRL_AT
+		              , (CASE WHEN C.CNRL_TY03_CD_ID = 'CTW_004_001' THEN 'Y' ELSE 'N' END) 	AS ATMC_AT
+		              , C.REFRN_NO
+		              , C.SAMPLE_SIZE
+		              , C.CNRL_TY01_CD_ID
+                      , CA.CODE_NM AS CNRL_TY01_CD_NM
+                      , C.CNRL_TY02_CD_ID
+                      , CB.CODE_NM AS CNRL_TY02_CD_NM
+                      , C.CNRL_TY03_CD_ID
+                      , CC.CODE_NM AS CNRL_TY03_CD_NM
+				FROM	(	
+						/** RCM Mapng Tree 구조 */
+		            	SELECT DISTINCT
+		            		  A.MAPNG_ID
+							, A.OBJECT_ID
+						    , A.OBJECT_NO
+						    , A.OBJECT_NM
+						    , A.OBJECT_LEVEL
+						    , A.OBJECT_KND_CD_ID
+						    , A.UPPER_MAPNG_ID
+							, (CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN (SELECT UPPER_OBJECT_ID FROM TB_CW_ELC_RCM_MAPNG WHERE OBJECT_ID = A.UPPER_OBJECT_ID) ELSE A.UPPER_OBJECT_ID END) AS UPPER_OBJECT_ID
+						FROM 
+							<choose>
+								<when test=' (srchKeyCnrlAt != null and srchKeyCnrlAt != "") 
+											+ (srchCnrlTy03CdId != null and srchCnrlTy03CdId != "") 
+											'>
+								    (
+								    	SELECT M.* FROM V1 V 
+								    	INNER JOIN TB_CW_ELC_RCM_MAPNG M
+								    		ON V.OBJECT_ID = M.OBJECT_ID 
+								    ) A
+							    </when>
+							    <otherwise>
+									TB_CW_ELC_RCM_MAPNG A
+						    	</otherwise>
+						    </choose>
+						WHERE 	A.OBJECT_KND_CD_ID != 'CTW_001_004'
+		      		 	) T
+		        LEFT OUTER JOIN TB_CW_ELC_RCM_CNRL C
+		        	ON 	T.OBJECT_ID				= C.CNRL_ID
+		        LEFT OUTER JOIN TB_CW_ELC_RCM_PROCS EP
+		        	ON	T.OBJECT_ID				= EP.PROCS_ID
+		        LEFT OUTER JOIN TB_CW_ELC_RCM_RISK ER
+		        	ON T.OBJECT_ID				= ER.RISK_ID
+		        LEFT OUTER JOIN TB_CO_CODE CA
+                    ON C.CNRL_TY01_CD_ID 		= CA.CODE_ID
+                LEFT OUTER JOIN TB_CO_CODE CB
+                    ON C.CNRL_TY02_CD_ID 		= CB.CODE_ID 
+                LEFT OUTER JOIN TB_CO_CODE CC
+                    ON C.CNRL_TY03_CD_ID 		= CC.CODE_ID
+		    ) TT
+		) TTT
+		LEFT OUTER JOIN TB_CW_SAMPLE_CNRL T1
+		ON TTT.OBJECT_ID = T1.CNRL_ID
+		AND T1.RCM_SE = 'E'
+		ORDER BY TTT.OBJECT_ID 
+	</select>
+	
+	<!-- 모집단 정보 등록 -->
+	<insert id="insert">
+		INSERT INTO TB_CW_SAMPLE (
+			  SAMPLE_ID
+			, SAMPLE_NM
+			, RM
+			, USE_AT
+			, UNITY_ID
+			, RGS_DT
+			, RGS_USER_ID
+			, UPD_DT
+			, UPD_USER_ID
+		)VALUES  (
+			  #{sampleId}
+			, #{sampleNm}
+			, #{rm}
+			, #{useAt}
+			, #{unityId}
+			, GETDATE()
+			, #{suserId}
+			, GETDATE()
+			, #{suserId}
+		)
+	</insert>
+	
+	<!-- 업로드 항목 등록 -->
+	<insert id="insertUloadIem">
+		INSERT INTO TB_CW_SAMPLE_IEM (
+			  SAMPLE_ID
+			, COLUMN_NM
+			, IEM_NM
+			, INDICT_AT
+			, IEM_SN
+			, RGS_DT
+			, RGS_USER_ID
+			, UPD_DT
+			, UPD_USER_ID
+		) VALUES (
+			  #{sampleId}
+			, #{columnNm}
+			, #{iemNm}
+			, #{indictAt}
+			, #{iemSn}
+			, GETDATE()
+			, #{suserId}
+			, GETDATE()
+			, #{suserId}
+		)
+	</insert>
+	
+	<!-- 관련 통제 등록 -->
+	<insert id="insertCnrl">
+		INSERT INTO TB_CW_SAMPLE_CNRL (
+			  SAMPLE_ID
+			, CNRL_ID
+			, RCM_SE
+			, RGS_DT
+			, RGS_USER_ID
+			, UPD_DT
+			, UPD_USER_ID
+		) VALUES (
+			  #{sampleId}
+			, #{cnrlId}
+			, #{rcmSe}
+			, GETDATE()
+			, #{suserId}
+			, GETDATE()
+			, #{suserId}
+		)
+	</insert>
+	
+	<!-- 모집단 정보 삭제 -->
+	<delete id="delete">
+		DELETE FROM TB_CW_SAMPLE
+		WHERE SAMPLE_ID = #{sampleId}
+	</delete>
+	
+	<!-- 업로드 항목 삭제 -->
+	<delete id="deleteUploadIem">
+		DELETE FROM TB_CW_SAMPLE_IEM
+		WHERE SAMPLE_ID = #{sampleId}
+	</delete>
+	
+	<!-- 관련 통제 삭제 -->
+	<delete id="deleteCnrl">
+		DELETE FROM TB_CW_SAMPLE_CNRL
+		WHERE SAMPLE_ID = #{sampleId}
+	</delete>
+	
+	<!-- 모집단 정보 수정 -->
+	<update id="update">
+		UPDATE TB_CW_SAMPLE SET 
+			  SAMPLE_NM            = #{sampleNm}
+			, RM                   = #{rm}
+			, USE_AT               = #{useAt}
+			, UNITY_ID			   = #{unityId}
+			, UPD_DT               = GETDATE()
+			, UPD_USER_ID          = #{suserId}
+		WHERE SAMPLE_ID = #{sampleId}
+	</update>
+	
+	<!-- 모집단 데이터 삭제 -->
+	<delete id="deleteExcel">
+		DELETE FROM TB_CW_SAMPLE_DATA
+		WHERE SAMPLE_ID = #{sampleId}
+	</delete>
+
+	<!-- 모집단 엑셀 업로드 -->
+	<insert id="insertExcel">
+        INSERT INTO TB_CW_SAMPLE_DATA (
+                SAMPLE_ID, SN, UNITY_ID
+              , COLUMN_1, COLUMN_2, COLUMN_3, COLUMN_4, COLUMN_5, COLUMN_6, COLUMN_7, COLUMN_8, COLUMN_9, COLUMN_10
+		      , COLUMN_11, COLUMN_12, COLUMN_13, COLUMN_14, COLUMN_15, COLUMN_16, COLUMN_17, COLUMN_18, COLUMN_19, COLUMN_20
+		      , COLUMN_21, COLUMN_22, COLUMN_23, COLUMN_24, COLUMN_25, COLUMN_26, COLUMN_27, COLUMN_28, COLUMN_29, COLUMN_30
+		      , COLUMN_31, COLUMN_32, COLUMN_33, COLUMN_34, COLUMN_35, COLUMN_36, COLUMN_37, COLUMN_38, COLUMN_39, COLUMN_40
+		      , COLUMN_41, COLUMN_42, COLUMN_43, COLUMN_44, COLUMN_45, COLUMN_46, COLUMN_47, COLUMN_48, COLUMN_49, COLUMN_50
+		      , COLUMN_51, COLUMN_52, COLUMN_53, COLUMN_54, COLUMN_55, COLUMN_56, COLUMN_57, COLUMN_58, COLUMN_59, COLUMN_60
+		      , COLUMN_61, COLUMN_62, COLUMN_63, COLUMN_64, COLUMN_65, COLUMN_66, COLUMN_67, COLUMN_68, COLUMN_69, COLUMN_70
+		      , COLUMN_71, COLUMN_72, COLUMN_73, COLUMN_74, COLUMN_75, COLUMN_76, COLUMN_77, COLUMN_78, COLUMN_79, COLUMN_80
+		      , COLUMN_81, COLUMN_82, COLUMN_83, COLUMN_84, COLUMN_85, COLUMN_86, COLUMN_87, COLUMN_88, COLUMN_89, COLUMN_90
+		      , COLUMN_91, COLUMN_92, COLUMN_93, COLUMN_94, COLUMN_95, COLUMN_96, COLUMN_97, COLUMN_98, COLUMN_99
+		      , RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+        ) VALUES  (
+                #{sampleId}, (SELECT ISNULL(MAX(SN),0)+1 FROM TB_CW_SAMPLE_DATA WHERE SAMPLE_ID=#{sampleId}), #{unityId}, #{cell0}
+              , #{cell1}, #{cell2}, #{cell3}, #{cell4}, #{cell5}, #{cell6}, #{cell7}, #{cell8}, #{cell9}, #{cell10}
+		      , #{cell11}, #{cell12}, #{cell13}, #{cell14}, #{cell15}, #{cell16}, #{cell17}, #{cell18}, #{cell19}, #{cell20}
+		      , #{cell21}, #{cell22}, #{cell23}, #{cell24}, #{cell25}, #{cell26}, #{cell27}, #{cell28}, #{cell29}, #{cell30}
+		      , #{cell31}, #{cell32}, #{cell33}, #{cell34}, #{cell35}, #{cell36}, #{cell37}, #{cell38}, #{cell39}, #{cell40}
+		      , #{cell41}, #{cell42}, #{cell43}, #{cell44}, #{cell45}, #{cell46}, #{cell47}, #{cell48}, #{cell49}, #{cell50}
+		      , #{cell51}, #{cell52}, #{cell53}, #{cell54}, #{cell55}, #{cell56}, #{cell57}, #{cell58}, #{cell59}, #{cell60}
+		      , #{cell61}, #{cell62}, #{cell63}, #{cell64}, #{cell65}, #{cell66}, #{cell67}, #{cell68}, #{cell69}, #{cell70}
+		      , #{cell71}, #{cell72}, #{cell73}, #{cell74}, #{cell75}, #{cell76}, #{cell77}, #{cell78}, #{cell79}, #{cell80}
+		      , #{cell81}, #{cell82}, #{cell83}, #{cell84}, #{cell85}, #{cell86}, #{cell87}, #{cell88}, #{cell89}, #{cell90}
+		      , #{cell91}, #{cell92}, #{cell93}, #{cell94}, #{cell95}, #{cell96}, #{cell97}, #{cell98}
+		      , GETDATE(), #{suserId}, GETDATE(), #{suserId}
+        ) 
+    </insert>
+    
+    <!-- 모집단 자동 추출 목록 -->
+    <select id="sampleExtrcList" resultType="EgovMap">
+    	SELECT * 
+          FROM (
+	    	SELECT  A.SAMPLE_ID
+			      , A.SN
+			      ${sql}
+			      , A.RGS_DT
+			      , A.RGS_USER_ID
+			      , A.UPD_DT
+			      , A.UPD_USER_ID
+			FROM TB_CW_SAMPLE_DATA A
+			INNER JOIN TB_CW_SAMPLE_CNRL B
+				ON A.SAMPLE_ID = B.SAMPLE_ID
+			WHERE 1=1
+				AND  B.CNRL_ID = #{cnrlId}
+				AND  B.RCM_SE = #{rcmSe}
+			ORDER BY DBMS_RANDOM.RANDOM()
+               )
+        <![CDATA[
+         WHERE ROWNUM <= #{extrcCnt}
+        ]]> 		
+    </select>
+</mapper>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.sc.tiabl.serviceimpl.CwscMngerAssrMapper">
+	<!-- 경영자의 주장 추가 목록 -->
+	<select id="list" resultType="EgovMap">
+		 SELECT
+		 	  A.MNGER_ASSR_ID
+			, A.MNGER_ASSR_BGNTMSTMP
+			, A.MNGER_ASSR_ENDTMSTMP
+			, A.MNGER_ASSR_NM
+			, A.MNGER_ASSR_ABRV
+            , A.SORT_SN
+            , A.USE_AT
+            , (SELECT COUNT(MNGER_ASSR_ID) FROM TB_CW_SC_MNGER_ASSR_MAPNG WHERE MNGER_ASSR_ID = A.MNGER_ASSR_ID AND MNGER_ASSR_BGNTMSTMP = A.MNGER_ASSR_BGNTMSTMP) LOWER_CNT      
+        FROM TB_CW_SC_MNGER_ASSR_HIST A	
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			AND A.MNGER_ASSR_ENDTMSTMP = '99991231235959999999'
+	        <if test=' srchUseAt != null and srchUseAt != "" '>
+				AND A.USE_AT = #{srchUseAt} 
+			</if>	
+		</trim>
+        ORDER BY A.SORT_SN
+	</select>
+	
+	<!-- 경영자의 주장 insert -->
+	<insert id="insert">
+		BEGIN
+			
+			INSERT INTO TB_CW_SC_MNGER_ASSR (
+				MNGER_ASSR_ID, MNGER_ASSR_NM, MNGER_ASSR_ABRV, SORT_SN, USE_AT
+				, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+			) VALUES (
+				  #{mngerAssrId}, #{mngerAssrNm}, #{mngerAssrAbrv}, #{sortSn}, #{useAt}
+				, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+			);
+			
+			INSERT INTO TB_CW_SC_MNGER_ASSR_HIST (
+				  MNGER_ASSR_ID, MNGER_ASSR_BGNTMSTMP, MNGER_ASSR_ENDTMSTMP
+				, MNGER_ASSR_NM, MNGER_ASSR_ABRV, SORT_SN, USE_AT
+				, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+			) VALUES (
+				  #{mngerAssrId}, #{mngerAssrBgntmstmp}, '99991231235959999999'
+				, #{mngerAssrNm}, #{mngerAssrAbrv}, #{sortSn}, #{useAt}
+				, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+			);
+		END;
+	</insert>
+	
+	<update id="update">
+	<![CDATA[
+		BEGIN
+			UPDATE 	TB_CW_SC_MNGER_ASSR_HIST 
+			SET		MNGER_ASSR_ENDTMSTMP 	= #{mngerAssrEndtmstmp}
+			WHERE 	MNGER_ASSR_BGNTMSTMP 	< #{mngerAssrEndtmstmp}
+				AND MNGER_ASSR_ENDTMSTMP 	= '99991231235959999999';
+			
+			DELETE FROM TB_CW_SC_MNGER_ASSR;
+		END;
+	]]>
+	</update>
+	
+</mapper>

@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.up.mng.serviceimpl.CwupMngExmntMapper">
+	
+	<!-- CTW 관리부서의 미비점 목록 row 클릭시 미비점검토 목록 조회 쿼리 -->
+  	<select id="list" resultType="EgovMap">
+       SELECT
+       		UP.OBJECT_ID 	
+          , EM.OBJECT_NO
+          , EM.OBJECT_NM
+          , UE.STTUS_CD_ID 										-- 상태코드
+          , C1.CODE_NM 						AS STTUS_CD_NM 		-- 상태코드명
+          , UP.UPRPD_CL_CD_ID 									-- 미비점분류
+          , C2.CODE_NM 						AS UPRPD_CL_CD_NM 	-- 미비점분류명
+          , UP.UPRPD_TY_CD_ID 									-- 미비점유형
+          , C3.CODE_NM 						AS UPRPD_TY_CD_NM 	-- 미비점유형명
+          , UE.EXC_COMPT_CD_ID 									-- 수행여부(수행완료코드)
+          , C4.CODE_NM 						AS EXC_COMPT_CD_NM 	-- 수행여부(수행완료코드)명
+          , CONVERT ( VARCHAR , CONVERT ( DATE , UE.EXC_DE , 112 ) , 23 ) 
+          									AS EXC_DE 			-- 수행완료예정일자 
+          , UH.USER_NM AS EXC_USER_NM 							-- 수행자 이름
+		  , UH.DEPT_NM AS EXC_DEPT_NM 							-- 수행자 부서명
+          , UP.CHRG_USER_ID   									-- 미비점 담당자 ID
+          , UP.CHRG_USER_TY_CD_ID  								-- 미비점 담당 사용자 유형 코드 ID
+          , UC.STTUS_CD_ID					AS EXMNT_STTUS_CD_ID -- 검토 상태코드ID
+          , C5.CODE_NM 						AS EXMNT_STTUS_CD_NM 	-- 검토 상태코드명
+   		FROM TB_CW_UPRPD UP
+	    	LEFT OUTER JOIN TB_CW_UPRPD_EXC UE
+	        	ON  UP.EVL_ID = UE.EVL_ID
+	        	AND UP.OBJECT_ID = UE.OBJECT_ID
+			LEFT OUTER JOIN TB_CW_EVL_EXC EE
+				ON	UP.EVL_ID 			= EE.EVL_ID
+				AND UP.OBJECT_ID 		= EE.OBJECT_ID
+				AND UP.CHRG_USER_ID 	= EE.CHRG_USER_ID 
+				AND UP.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+	    	LEFT OUTER JOIN TB_CW_UPRPD_CONFM UC
+	        	ON  UP.EVL_ID = UC.EVL_ID
+	        	AND UP.OBJECT_ID = UC.OBJECT_ID
+	        	AND UC.LAST_AT = 'Y'
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG EM
+	        	ON  UP.EVL_ID = EM.EVL_ID
+	        	AND UP.OBJECT_ID = EM.OBJECT_ID
+	      	LEFT OUTER JOIN TB_CO_CODE C1
+	        	ON 	C1.CODE_ID = UE.STTUS_CD_ID
+	      	LEFT OUTER JOIN TB_CO_CODE C2
+	        	ON 	C2.CODE_ID = UP.UPRPD_CL_CD_ID
+	      	LEFT OUTER JOIN TB_CO_CODE C3
+	        	ON 	C3.CODE_ID = UP.UPRPD_TY_CD_ID
+	      	LEFT OUTER JOIN TB_CO_CODE C4
+	        	ON 	C4.CODE_ID = UE.EXC_COMPT_CD_ID
+	      	LEFT OUTER JOIN TB_CO_CODE C5
+	        	ON 	C5.CODE_ID = UC.STTUS_CD_ID
+	      	LEFT OUTER JOIN TB_CO_USER_HIST UH
+	        	ON 	UH.USER_ID = UE.EXC_USER_ID
+	        	AND UH.HIST_BGNDE = UE.EXC_USER_BGNDE
+	    WHERE UP.EVl_ID = #{evlId}
+		    AND UE.STTUS_CD_ID IN ( 'COM_023_005','COM_023_006','COM_023_007' ) --승인요청, 승인반려, 완료
+		    AND UP.UPRPD_TY_CD_ID != 'CTW_204_002'
+            AND EE.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005', 'CTW_106_007')
+        <if test=' psrchSttusCdId != null and psrchSttusCdId != "" '>
+            AND UE.STTUS_CD_ID = #{psrchSttusCdId} 
+        </if>
+        <if test=' srchUprpdClCdId != null and srchUprpdClCdId != "" '>
+            AND UP.UPRPD_CL_CD_ID = #{srchUprpdClCdId} 
+        </if>          
+        <if test=' srchUprpdTyCdId != null and srchUprpdTyCdId != "" '>
+            AND UP.UPRPD_TY_CD_ID = #{srchUprpdTyCdId} 
+        </if> 
+        <if test=' psrchWrd != null and psrchWrd != "" '>
+            <choose>
+                <when test="srchTy == 'cn'" >             
+                	AND    UP.UPRPD_CN LIKE '%' + #{psrchWrd} + '%'                   
+                </when>
+                <when test="srchTy == 'plan'" >             
+                	AND    UP.UPRPD_IMPRVM_PLAN LIKE '%' + #{psrchWrd} + '%'     
+                </when>
+				<when test="srchTy == 'cnrlNm'" >            
+					AND	( EM.OBJECT_NM LIKE '%' + #{psrchWrd} + '%'
+							OR  EM.OBJECT_ID LIKE '%' + #{psrchWrd} + '%'  ) 
+				</when>
+			</choose>
+		</if>
+		ORDER BY EM.OBJECT_ID ASC
+  	</select>
+  	
+  	<!-- CTW 관리부서의 미비점 목록 row 클릭시 미비점검토 목록 조회 쿼리 -->
+  	<select id="exmntCountByYear" resultType="String">
+       	SELECT COUNT(UE.OBJECT_ID)
+		FROM TB_CW_UPRPD UP
+	    	LEFT OUTER JOIN TB_CW_UPRPD_EXC UE
+	        	ON  UP.EVL_ID = UE.EVL_ID
+	        	AND UP.OBJECT_ID = UE.OBJECT_ID
+			LEFT OUTER JOIN TB_CW_EVL_EXC EE
+				ON	UP.EVL_ID 			= EE.EVL_ID
+				AND UP.OBJECT_ID 		= EE.OBJECT_ID
+				AND UP.CHRG_USER_ID 	= EE.CHRG_USER_ID 
+				AND UP.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+	    	LEFT OUTER JOIN TB_CW_UPRPD_CONFM UC
+	        	ON  UP.EVL_ID = UC.EVL_ID
+	        	AND UP.OBJECT_ID = UC.OBJECT_ID
+	        	AND UC.LAST_AT = 'Y'
+	        LEFT OUTER JOIN TB_CW_EVL EVL
+	        	ON EVL.EVL_ID = UP.EVL_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG EM
+	        	ON  UP.EVL_ID = EM.EVL_ID
+	        	AND UP.OBJECT_ID = EM.OBJECT_ID
+	    WHERE  	EVL.STTUS_CD_ID = 'CTW_101_005'	 	/**  평가 진행중 */
+	    	AND UE.STTUS_CD_ID IN ( 'COM_023_005')  /**  승인요청     */
+		    AND UP.UPRPD_TY_CD_ID != 'CTW_204_002'
+            AND EE.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005', 'CTW_106_007')
+  	</select>
+  	
+  	<!-- 승인 내용 출력 -->
+  	<select id="view" resultType="CwupMngVO">
+  		SELECT UP.EVL_ID
+  			 , E.EVL_TY_CD_ID
+  			 , E.EVL_KND_CD_ID
+  			 , UP.OBJECT_ID
+  			 , M.OBJECT_NO
+  			 , M.OBJECT_NM
+  			 , M.OBJECT_KND_CD_ID
+  			 , UC.CONFM_SN
+  			 , UC.CONFM_CN
+  			 , UC.CONFM_AT
+  			 , UE.SANCTN_ID AS SANCTN_ID
+  			 , UC.SANCTN_ID AS EXMNT_SANCTN_ID
+  			 , UC.STTUS_CD_ID AS EXMNT_STTUS_CD_ID
+  			 , UE.STTUS_CD_ID
+  			 , EXC.CHRG_DEPT_ID
+  		FROM TB_CW_UPRPD UP
+  			LEFT OUTER JOIN TB_CW_UPRPD_EXC UE 
+  				ON 	UP.EVL_ID 		= UE.EVL_ID
+  				AND	UP.OBJECT_ID 	= UE.OBJECT_ID
+  			 LEFT OUTER JOIN TB_CW_UPRPD_CONFM UC
+  			 	ON	UP.EVL_ID 		= UC.EVL_ID
+  			 	AND	UP.OBJECT_ID 	= UC.OBJECT_ID
+  			 	AND UC.LAST_AT		= 'Y'
+  			 LEFT OUTER JOIN TB_CW_EVL E
+  			 	ON 	UP.EVL_ID 		= E.EVL_ID
+  			 LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+  			 	ON 	UP.EVL_ID 		= M.EVL_ID
+  			 	AND	UP.OBJECT_ID 	= M.OBJECT_ID
+             LEFT OUTER JOIN TB_CW_EVL_EXC EXC
+                ON E.EVL_ID = EXC.EVL_ID
+                AND UP.OBJECT_ID     = EXC.OBJECT_ID
+                AND EXC.CHRG_USER_TY_CD_ID = 'CTW_105_001'
+		WHERE 	UP.EVL_ID 		= #{evlId}
+			AND UP.OBJECT_ID 	= #{objectId} 
+  	</select>
+  	
+  	
+  	<!-- 미비점 개선 수행 확정에 따른 승인 내용 insert -->
+	<insert id="save">
+		<selectKey keyProperty="confmSn" resultType="String" order="BEFORE">
+			SELECT ISNULL(#{confmSn}, ISNULL(MAX(CONFM_SN), 0)+1) AS CONFM_SN FROM TB_CW_UPRPD_CONFM WHERE EVL_ID = #{evlId} AND OBJECT_ID = #{objectId}
+		</selectKey>
+			MERGE INTO TB_CW_UPRPD_CONFM A
+	        USING (VALUES (1)) AS Source (Number)  ON ( A.EVL_ID  = #{evlId} AND A.OBJECT_ID = #{objectId} AND A.CONFM_SN = #{confmSn})
+	        WHEN MATCHED THEN
+	            UPDATE SET                                           
+					  CONFM_AT           = #{confmAt}                 
+					, LAST_AT            = 'Y'                        
+					, CONFM_CN	         = #{confmCn}                 
+					, SANCTN_ID          = #{exmntSanctnId}           
+					, STTUS_CD_ID        = #{exmntSttusCdId}          
+					, CONFM_USER_ID      = #{suserId}                 
+					, CONFM_USER_BGNDE   = #{suserBgnde}              
+					, CONFM_DT           = GETDATE()                    
+	        WHEN NOT MATCHED THEN       
+		        INSERT ( 
+		        	  EVL_ID, OBJECT_ID, CONFM_SN, CONFM_AT, LAST_AT
+		        	, CONFM_CN, SANCTN_ID, STTUS_CD_ID
+					, CONFM_USER_ID, CONFM_USER_BGNDE, CONFM_DT
+		        ) VALUES  ( 
+		        	  #{evlId}, #{objectId}, #{confmSn}, #{confmAt}, 'Y'
+		        	, #{confmCn}, #{exmntSanctnId}, #{exmntSttusCdId}
+					, #{suserId}, #{suserBgnde}, GETDATE()
+			 	)
+	</insert>
+  	
+  	
+  	<!-- 내부통제 미비점 수행 테이블  -->
+	<!-- 미비점 개선 수행 확정/반려에 따른 상태값 업데이트 -->
+	<update id="sttusCdIdUpdate">
+		UPDATE TB_CW_UPRPD_EXC 
+		SET   
+			STTUS_CD_ID = #{sttusCdId}
+		WHERE  
+			EVL_ID = #{evlId}
+			AND OBJECT_ID = #{objectId}
+	</update>
+      
+	<!-- 내부통제 미비점 승인이력 테이블  -->
+	<!-- 미비점 개선 수행 확정/반려에 따른 LastAt 업데이트 -->
+	<update id="lastAtUpdate">
+		UPDATE TB_CW_UPRPD_CONFM
+		SET LAST_AT = 'N'
+		WHERE 
+			EVL_ID = #{evlId}
+			AND OBJECT_ID = #{objectId}
+	</update>
+      
+	<!-- 내부통제 평가 수행 테이블의 상태값 업데이트   -->
+	<update id="evlExcStatusUpdate">
+		UPDATE TB_CW_EVL_EXC
+	  	SET STTUS_CD_ID = #{sttusCdId}
+		WHERE 
+	  		EVL_ID = #{evlId} 
+			AND OBJECT_ID = #{objectId}
+			AND CHRG_USER_TY_CD_ID = 'CTW_105_001'
+			AND STTUS_CD_ID = 'CTW_106_007'
+  	</update>
+  	
+  	<!-- 최종 결재 후 상태값 변경을 위한 상위 objectid 검색  -->
+  	<select id="upperObjectIdView" resultType="CwupMngVO">
+		SELECT 
+			CASE WHEN A.OBJECT_KND_CD_ID  = 'CTW_001_005' THEN 
+				(
+				SELECT B.UPPER_OBJECT_ID 
+				FROM TB_CW_EVL_RCM_MAPNG B
+				WHERE 
+					A.UPPER_MAPNG_ID = B.MAPNG_ID
+					AND  A.EVL_ID = B.EVL_ID 
+					<![CDATA[ 	AND ROWNUM <= 1 ) ]]> 
+			ELSE A.UPPER_OBJECT_ID END AS UPPER_OBJECT_ID                                            
+		FROM TB_CW_EVL_RCM_MAPNG A 
+		WHERE 
+			A.EVL_ID   = #{evlId}
+			AND A.OBJECT_ID  = #{objectId}
+  	</select>
+  	
+  	<!-- 검토 결재에 따른 상태 업데이트 -->
+	<update id="updateSttus">       
+		UPDATE TB_CW_UPRPD_CONFM SET
+			STTUS_CD_ID = #{exmntSttusCdId}
+		WHERE EVL_ID = #{evlId} AND OBJECT_ID = #{objectId} AND CONFM_SN = #{confmSn}
+	</update> 
+  	
+</mapper>

@@ -1,0 +1,697 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.ee.sttus.serviceimpl.CweeSttusRcmMapper">
+
+    <!-- RCM MAP  -->
+    <resultMap id="rcmSttusMap" type="EgovMap" >
+        <result property="objectId"             column="OBJECT_ID"          />
+        <result property="objectKndCdId"        column="OBJECT_KND_CD_ID"   />
+        <result property="megaId"               column="MEGA_ID"            />
+        <result property="megaNo"               column="MEGA_NO"            />
+        <result property="megaNm"               column="MEGA_NM"            />
+        <result property="mjrId"                column="MJR_ID"             />
+        <result property="mjrNo"                column="MJR_NO"             />
+        <result property="mjrNm"                column="MJR_NM"             />
+        <result property="subId"                column="SUB_ID"             />
+        <result property="subNo"                column="SUB_NO"             />
+        <result property="subNm"                column="SUB_NM"             />
+        <result property="riskId"               column="RISK_ID"            />
+        <result property="cnrlId"               column="CNRL_ID"            />
+        <result property="cnrlNo"               column="CNRL_NO"            />
+        <result property="cnrlCn"               column="CNRL_CN"            />
+        <result property="refNo"                column="REF_NO"             />
+        <result property="keyCnrlAt"            column="KEY_CNRL_AT"        />
+        <result property="mrcCnrlAt"            column="MRC_CNRL_AT"        />
+        <result property="ipeCnrlAt"            column="IPE_CNRL_AT"        />
+        <result property="controlCheckAt"       column="CONTROL_CHECK_AT"   />
+        <result property="evlId"                column="EVL_ID"             />
+        <result property="chrgUserId"           column="CHRG_USER_ID"       />
+        <result property="chrgUserBgnde"        column="CHRG_USER_BGNDE"    />
+        <result property="chrgDeptId"           column="CHRG_DEPT_ID"       />
+        <result property="chrgDeptBgnde"        column="CHRG_DEPT_BGNDE"    />
+        <result property="chrgUserNm"           column="CHRG_USER_NM"       />
+        <result property="chrgDeptNm"           column="CHRG_DEPT_NM"       />
+        <result property="chrgSttusCdId"        column="CHRG_STTUS_CD_ID"   />
+        <result property="chrgSttusCdNm"        column="CHRG_STTUS_CD_NM"   />
+        <result property="srchKeyCnrlAt"        column="SRCH_KEY_CNRL_AT"   />
+        <result property="srchMrcCnrlAt"        column="SRCH_MRC_CNRL_AT"   />
+        <result property="srchIpeCnrlAt"        column="SRCH_IPE_CNRL_AT"   />
+        <result property="srchUpdtAt"           column="SRCH_UPDT_AT"   />
+        <result property="srchUprpdAt"          column="SRCH_UPRPD_AT"  />
+        <result property="srchSttusCdId"        column="SRCH_STTUS_CD_ID"   />
+        <collection property="typeList"         column="{evlId=EVL_ID,objectId=OBJECT_ID}" select="selectTestUserList" />
+    </resultMap>
+
+    <select id="list" resultMap="rcmSttusMap">
+		SELECT  T.OBJECT_ID
+         		, T.OBJECT_NO
+				, T.OBJECT_NM
+				, T.OBJECT_LEVEL
+				, T.OBJECT_KND_CD_ID
+				, T.UPPER_OBJECT_ID
+				, T.EVL_ID
+				, EC.CNRL_NO
+				, EC.CNRL_CN
+				, EC.OFFICE_TY_CD_ID
+				, EC.KEY_CNRL_AT
+				, EC.MRC_CNRL_AT
+				, EC.IPE_CNRL_AT
+				, EC.REFRN_NO
+				, E.CHRG_USER_ID
+				, E.CHRG_USER_BGNDE
+				, E.CHRG_DEPT_ID
+				, E.CHRG_DEPT_BGNDE
+				, U.USER_NM                   AS CHRG_USER_NM
+				, D.DEPT_NM                   AS CHRG_DEPT_NM
+				, E.STTUS_CD_ID               AS CHRG_STTUS_CD_ID
+				, C1.CODE_NM                  AS CHRG_STTUS_CD_NM
+				, E.EVL_CNCLSN_CD_ID
+				, C2.CODE_NM              AS EVL_CNCLSN_CD_NM
+				, ( CASE WHEN P.OBJECT_ID IS NOT NULL THEN 'Y'
+				         ELSE 'N'
+				    END )                        AS UPRPD_REQUST_AT
+				, PE.STTUS_CD_ID      AS UPRPD_STTUS_CD_ID
+				, C3.CODE_NM          AS UPRPD_STTUS_CD_NM
+				, CASE WHEN T.OBJECT_KND_CD_ID = 'CTW_001_001' THEN 'mega'
+				       WHEN T.OBJECT_KND_CD_ID = 'CTW_001_002' THEN 'mjr'
+				       WHEN T.OBJECT_KND_CD_ID = 'CTW_001_003' THEN 'sub'
+				       WHEN T.OBJECT_KND_CD_ID = 'CTW_001_005' THEN 'cnrl'
+				  END AS SRCH_PAGE
+			 	, ROWNUM                      AS ROW_SN
+		FROM (  /** RCM Mapng Tree 구조 */
+		        SELECT A.EVL_ID
+		               , A.OBJECT_ID
+		               , A.OBJECT_NO
+		               , A.OBJECT_NM
+		               , A.OBJECT_LEVEL
+		               , A.OBJECT_KND_CD_ID
+						<choose>
+							<when test=' elcRiskUseAt != "false" '>
+						    	, (CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN B.UPPER_OBJECT_ID ELSE A.UPPER_OBJECT_ID END) AS UPPER_OBJECT_ID
+							</when>
+							<otherwise>
+								, A.UPPER_OBJECT_ID AS UPPER_OBJECT_ID
+							</otherwise>
+						</choose>
+		        FROM TB_CW_EVL_RCM_MAPNG A
+		        LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG B
+		            ON A.EVL_ID = B.EVL_ID
+		            AND A.UPPER_OBJECT_ID = B.OBJECT_ID
+		        WHERE A.EVL_ID = #{evlId}
+		            AND A.OBJECT_KND_CD_ID != 'CTW_001_004'
+		        ) T
+			LEFT OUTER JOIN TB_CW_EVL_EXC E
+			    ON  T.EVL_ID                = E.EVL_ID
+			    AND T.OBJECT_ID             = E.OBJECT_ID
+			    AND E.CHRG_USER_TY_CD_ID    = 'CTW_105_001'
+			LEFT OUTER JOIN TB_CW_EVL_ELC_RCM_PROCS EP
+			    ON  E.EVL_ID                = EP.EVL_ID
+			    AND T.OBJECT_ID             = EP.PROCS_ID
+			LEFT OUTER JOIN TB_CW_EVL_ELC_RCM_RISK ER
+			    ON  E.EVL_ID                = ER.EVL_ID
+			    AND T.OBJECT_ID             = ER.RISK_ID
+			LEFT OUTER JOIN TB_CW_EVL_ELC_RCM_CNRL EC
+			    ON  E.EVL_ID                = EC.EVL_ID
+			    AND T.OBJECT_ID             = EC.CNRL_ID
+			LEFT OUTER JOIN TB_CW_UPRPD_ELC_CNRL_UPDT ECU
+			    ON  E.EVL_ID                = ECU.EVL_ID
+			    AND T.OBJECT_ID             = ECU.CNRL_ID
+			LEFT OUTER JOIN TB_CW_UPRPD P
+			    ON  E.EVL_ID                = P.EVL_ID
+			    AND E.OBJECT_ID             = P.OBJECT_ID
+			    AND E.CHRG_USER_ID          = P.CHRG_USER_ID
+			    AND E.CHRG_USER_TY_CD_ID    = P.CHRG_USER_TY_CD_ID
+			LEFT OUTER JOIN TB_CW_UPRPD_EXC PE
+			    ON  E.EVL_ID                = PE.EVL_ID
+			    AND E.OBJECT_ID             = PE.OBJECT_ID                        
+			LEFT OUTER JOIN TB_CO_USER_HIST U
+			    ON  E.CHRG_USER_ID          = U.USER_ID
+			    AND E.CHRG_USER_BGNDE       = U.HIST_BGNDE
+			LEFT OUTER JOIN TB_CO_DEPT_HIST D
+			    ON  E.CHRG_DEPT_ID          = D.DEPT_ID
+			    AND E.CHRG_DEPT_BGNDE       = D.HIST_BGNDE
+			LEFT OUTER JOIN TB_CO_CODE C1
+			    ON  E.STTUS_CD_ID           = C1.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE C2
+			    ON  E.EVL_CNCLSN_CD_ID      = C2.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE C3
+			    ON  PE.STTUS_CD_ID          = C3.CODE_ID
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+		    AND 1=1
+		    /** 핵심통제여부 */
+		    <if test=' srchKeyCnrlAt == "Y"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND EC.KEY_CNRL_AT = 'Y'))
+		    </if>
+		    <if test=' srchKeyCnrlAt == "N"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND EC.KEY_CNRL_AT = 'N'))
+		    </if>
+		    <if test=' srchKeyCnrlAt == "NULL"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND EC.KEY_CNRL_AT IS NULL))
+		    </if>
+		    /** 효과성 평가 */
+		    <if test=' srchEvlCnclsnCdId != null and srchEvlCnclsnCdId != "" '>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (E.EVL_CNCLSN_CD_ID = #{srchEvlCnclsnCdId}))
+		    </if>
+		    /** 조직형 부서별 검색 - 선택한 부서와 통제만 출력 */
+		    <if test=' srchDeptId != null and srchDeptId != "" '>
+			    AND E.CHRG_DEPT_ID			= #{srchDeptId}
+			    AND T.OBJECT_KND_CD_ID = 'CTW_001_005'
+			</if>
+		</trim>
+		ORDER BY T.OBJECT_ID
+    </select>
+
+    <select id="selectTestUserList" resultType="EgovMap">
+        SELECT    ET.EVL_ID
+                , ET.OBJECT_ID
+                , ET.CHRG_USER_ID               AS TEST_USER_ID
+                , ET.CHRG_USER_BGNDE            AS TEST_USER_BGNDE
+                , ET.CHRG_DEPT_ID               AS TEST_DEPT_ID
+                , ET.CHRG_DEPT_BGNDE            AS TEST_DEPT_BGNDE
+                , ET.EVL_OPINION                AS TEST_OPINION
+                , UT.USER_NM                    AS TEST_USER_NM
+                , DT.DEPT_NM                    AS TEST_DEPT_NM
+                , ET.STTUS_CD_ID                AS TEST_STTUS_CD_ID
+                , C2.CODE_NM                    AS TEST_STTUS_CD_NM
+                , 'test' AS SRCH_PAGE
+        FROM TB_CW_EVL_EXC ET
+            LEFT OUTER JOIN TB_CO_USER_HIST UT
+                ON  ET.CHRG_USER_ID     = UT.USER_ID
+                AND ET.CHRG_USER_BGNDE  = UT.HIST_BGNDE
+            LEFT OUTER JOIN TB_CO_DEPT_HIST DT
+                ON  ET.CHRG_DEPT_ID     = DT.DEPT_ID
+                AND ET.CHRG_DEPT_BGNDE  = DT.HIST_BGNDE
+            LEFT OUTER JOIN TB_CO_CODE C2
+                ON ET.STTUS_CD_ID       = C2.CODE_ID
+        WHERE   ET.EVL_ID               = #{evlId}
+            AND ET.OBJECT_ID            = #{objectId}
+            AND ET.CHRG_USER_TY_CD_ID   = 'CTW_105_002'
+    </select>
+
+    <!-- 프로세스 평가 결과 목록 -->
+    <select id="resultProcsList" resultType="EgovMap">
+        SELECT  DISTINCT EXC.EVL_ID
+              , M.OBJECT_ID
+              , M.OBJECT_KND_CD_ID
+              , M.OBJECT_NO
+              , M.OBJECT_NM
+              , EXC.EVL_CNCLSN_CD_ID
+              , C2.CODE_NM          AS EVL_CNCLSN_CD_NM
+              , EXC.EVL_OPINION
+              , EXC.UNITY_ID
+              , EXC.CHRG_USER_TY_CD_ID
+              , EXC.CHRG_USER_ID
+              , EXC.CHRG_USER_BGNDE
+              , EXC.CHRG_DEPT_ID
+              , EXC.CHRG_DEPT_BGNDE
+              , U.USER_NM AS CHRG_USER_NM
+              , U.DEPT_NM AS CHRG_DEPT_NM
+              , EXC.STTUS_CD_ID
+              , C1.CODE_NM AS STTUS_CD_NM
+              , U2.USER_NM  AS UPD_USER_NM
+              , CONVERT ( VARCHAR , EXC.UPD_DT , 23 ) + ' ' + CONVERT ( VARCHAR , EXC.UPD_DT , 8) AS UPD_DT
+              , CONVERT ( VARCHAR , F.CONFM_DT , 23 ) + ' ' + CONVERT ( VARCHAR , F.CONFM_DT , 8) AS CONFM_DT
+              , F.CONFM_ID
+              , F.CONFM_CN
+              , ( CASE WHEN P.EVL_ID IS NOT NULL THEN 'Y'
+                     ELSE 'N'
+                END ) AS UPRPD_REQUST_AT
+              , ( CASE WHEN PE.STTUS_CD_ID = 'COM_023_007' THEN 'Y'
+                     ELSE 'N'
+                END ) AS UPRPD_REQUST_COMPT_AT
+              , PE.STTUS_CD_ID           AS UPRPD_STTUS_CD_ID
+              , C3.CODE_NM              AS UPRPD_STTUS_CD_NM
+        FROM TB_CW_EVL_RCM_MAPNG M
+            LEFT OUTER JOIN TB_CW_EVL_EXC EXC
+                ON  M.EVL_ID = EXC.EVL_ID
+                AND M.OBJECT_ID = EXC.OBJECT_ID
+            LEFT OUTER JOIN TB_CW_EVL_EXC_CONFM F
+                ON  EXC.CONFM_ID = F.CONFM_ID
+                AND F.LAST_AT = 'Y'
+            LEFT OUTER JOIN TB_CW_UPRPD P
+                ON  EXC.EVL_ID = P.EVL_ID
+                AND M.OBJECT_ID = P.OBJECT_ID
+            LEFT OUTER JOIN TB_CW_UPRPD_EXC PE
+                ON  EXC.EVL_ID = PE.EVL_ID
+                AND M.OBJECT_ID = PE.OBJECT_ID
+            LEFT OUTER JOIN TB_CO_USER_HIST U
+                ON  EXC.CHRG_USER_ID = U.USER_ID
+                AND EXC.CHRG_USER_BGNDE = U.HIST_BGNDE
+            LEFT OUTER JOIN TB_CO_USER_HIST U2
+                ON  EXC.UPD_USER_ID = U2.USER_ID
+                AND U2.HIST_ENDDE = '99991231'
+            LEFT OUTER JOIN TB_CO_DEPT_HIST D
+                ON  EXC.CHRG_DEPT_ID = D.DEPT_ID
+                AND EXC.CHRG_DEPT_BGNDE = D.HIST_BGNDE
+            LEFT OUTER JOIN TB_CO_CODE C1
+                ON EXC.STTUS_CD_ID = C1.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE C2
+                ON EXC.EVL_CNCLSN_CD_ID = C2.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE C3
+                ON PE.STTUS_CD_ID = C3.CODE_ID
+        WHERE   M.EVL_ID                = #{evlId}
+            AND M.OBJECT_LEVEL          =  1
+            AND M.OBJECT_KND_CD_ID      = 'CTW_001_001'
+            AND EXC.CHRG_USER_TY_CD_ID  = 'CTW_105_001'
+        ORDER BY M.OBJECT_NO ASC
+    </select>
+
+    <select id="detailExcelList" resultType="EgovMap">
+		SELECT T.OBJECT_ID
+			 , T.OBJECT_NO
+			 , T.OBJECT_NM
+			 , T.OBJECT_LEVEL
+			 , T.OBJECT_KND_CD_ID
+			 , C3.CODE_NM                  AS OBJECT_KND_CD_NM
+			 , T.UPPER_OBJECT_ID
+			 , T.EVL_ID
+			 , EC.CNRL_NO
+			 , EC.CNRL_CN
+			 , CASE WHEN EP.PROCS_ID IS NOT NULL THEN 'Y'
+			        WHEN ER.RISK_ID IS NOT NULL THEN 'Y'
+			        WHEN EC.CNRL_ID IS NOT NULL THEN 'Y'
+			        ELSE 'N'
+			   END                         AS CONTROL_CHECK_AT
+			 , EC.OFFICE_TY_CD_ID
+			 , EC.KEY_CNRL_AT
+			 , EC.MRC_CNRL_AT
+			 , EC.IPE_CNRL_AT
+			 , EC.REFRN_NO
+			 , E.CHRG_USER_TY_CD_ID
+			 , C2.CODE_NM                  AS CHRG_USER_TY_CD_NM
+			 , E.CHRG_USER_ID
+			 , U.USER_CD                   AS CHRG_USER_CD
+			 , E.CHRG_USER_BGNDE
+			 , E.CHRG_DEPT_ID
+			 , E.CHRG_DEPT_BGNDE
+			 , U.USER_NM                   AS CHRG_USER_NM
+			 , D.DEPT_NM                   AS CHRG_DEPT_NM
+			 , E.STTUS_CD_ID               AS CHRG_STTUS_CD_ID
+			 , ISNULL(C1.CODE_NM, '대기')       AS CHRG_STTUS_CD_NM
+			 , CASE WHEN ECU.CNRL_ID IS NOT NULL THEN 'Y'
+			   END                         AS UPDT_AT
+			 , CASE WHEN P.OBJECT_ID IS NOT NULL THEN 'Y'
+			   END                         AS UPRPD_AT
+			 , EC.CNRL_RSPNBER
+			 , EC.CNRL_EXCBER
+			 , ROWNUM                      AS ROW_SN
+		FROM (  /** RCM Mapng Tree 구조 */
+		        SELECT A.EVL_ID
+		               , A.OBJECT_ID
+		               , A.OBJECT_NO
+		               , A.OBJECT_NM
+		               , A.OBJECT_LEVEL
+		               , A.OBJECT_KND_CD_ID
+						<choose>
+							<when test=' elcRiskUseAt != "false" '>
+		               			, (CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN B.UPPER_OBJECT_ID ELSE A.UPPER_OBJECT_ID END) AS UPPER_OBJECT_ID
+							</when>
+							<otherwise>
+								, A.UPPER_OBJECT_ID AS UPPER_OBJECT_ID
+							</otherwise>
+						</choose>
+		        FROM TB_CW_EVL_RCM_MAPNG A
+		        LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG B
+		            ON A.EVL_ID = B.EVL_ID
+		            AND A.UPPER_OBJECT_ID = B.OBJECT_ID
+		        WHERE A.EVL_ID = #{evlId}
+		            AND A.OBJECT_KND_CD_ID != 'CTW_001_004'
+		        ) T
+			LEFT OUTER JOIN TB_CW_EVL_EXC E
+			    ON  T.EVL_ID                = E.EVL_ID
+			    AND T.OBJECT_ID             = E.OBJECT_ID
+			LEFT OUTER JOIN TB_CW_EVL_ELC_RCM_PROCS EP
+			    ON  E.EVL_ID                = EP.EVL_ID
+			    AND T.OBJECT_ID             = EP.PROCS_ID
+			LEFT OUTER JOIN TB_CW_EVL_ELC_RCM_RISK ER
+			    ON  E.EVL_ID                = ER.EVL_ID
+			    AND T.OBJECT_ID             = ER.RISK_ID
+			LEFT OUTER JOIN TB_CW_EVL_ELC_RCM_CNRL EC
+			    ON  E.EVL_ID                = EC.EVL_ID
+			    AND T.OBJECT_ID             = EC.CNRL_ID
+			LEFT OUTER JOIN TB_CW_UPRPD_ELC_CNRL_UPDT ECU
+			    ON  E.EVL_ID                = ECU.EVL_ID
+			    AND T.OBJECT_ID             = ECU.CNRL_ID
+			LEFT OUTER JOIN TB_CW_UPRPD P
+			    ON  E.EVL_ID                = P.EVL_ID
+			    AND T.OBJECT_ID             = P.OBJECT_ID
+			LEFT OUTER JOIN TB_CO_USER_HIST U
+			    ON  E.CHRG_USER_ID          = U.USER_ID
+			    AND E.CHRG_USER_BGNDE       = U.HIST_BGNDE
+			LEFT OUTER JOIN TB_CO_DEPT_HIST D
+			    ON  E.CHRG_DEPT_ID          = D.DEPT_ID
+			    AND E.CHRG_DEPT_BGNDE       = D.HIST_BGNDE
+			LEFT OUTER JOIN TB_CO_CODE C1
+			    ON E.STTUS_CD_ID            = C1.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE C2
+			    ON E.CHRG_USER_TY_CD_ID     = C2.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE C3
+			    ON CASE WHEN T.OBJECT_KND_CD_ID = 'CTW_001_002' AND #{elcProcsStep} = 2 
+                		THEN 'CTW_001_003' 
+                		ELSE T.OBJECT_KND_CD_ID END       = C3.CODE_ID
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+		    AND 1=1
+		    /** 핵심통제여부 */
+		    <if test=' srchKeyCnrlAt == "Y"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND EC.KEY_CNRL_AT = 'Y'))
+		    </if>
+		    <if test=' srchKeyCnrlAt == "N"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND EC.KEY_CNRL_AT = 'N'))
+		    </if>
+		    <if test=' srchKeyCnrlAt == "NULL"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND EC.KEY_CNRL_AT IS NULL))
+		    </if>
+		    /** 설계평가 수정된 통제 */
+		    <if test=' srchUpdtAt == "Y"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND ECU.CNRL_ID IS NOT NULL))
+		    </if>
+		    /** 운영평가 비효과적(미비점 요청) 통제 */
+		    <if test=' srchUprpdAt == "Y"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND P.CNRL_ID IS NOT NULL))
+		    </if>
+		    /** 운영평가 효과적 통제 */
+		    <if test=' srchUprpdAt == "N"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND P.CNRL_ID IS NULL))
+		    </if>
+		</trim>
+        ORDER BY T.OBJECT_ID
+    </select>
+
+    <!-- RCM 리스트 : 엑셀 업로드 형태로 변경 -->
+    <select id="rcmExcelList" resultType="EgovMap">
+        SELECT
+              A.*
+		    <if test=' elcRiskUseAt != "false" ' >    
+		    	, R.*
+		    </if>
+		    /** 엑셀다운 RCM_FIELD_NM_EN에 맞춤 */
+			, AA.CODE_NM 					AS CNRL_TY01
+			, AB.CODE_NM 					AS CNRL_TY02
+			, AC.CODE_NM 					AS CNRL_TY03
+			, ISNULL(A.KEY_CNRL_AT, 'N') 		AS KEY_CNRL
+			, ISNULL(A.MRC_CNRL_AT, 'N')		AS MRC_CNRL
+			, ISNULL(A.IPE_CNRL_AT, 'N')  		AS IPE_CNRL
+			, AG.CODE_NM        			AS CNRL_CYCLE
+			, AD.CODE_NM        			AS TEST_CYCLE
+			, AE.CODE_NM        			AS OFFICE_TY
+			, ISNULL(A.DSGN_EFCT_AT, 'N') 		AS DSGN_EFCT
+			, ISNULL(A.OPER_EFCT_AT, 'N')		AS OPER_EFCT
+			, ISNULL(A.TEST_SANCTN_AT, 'N') 	AS TEST_SANCTN
+			, ISNULL(A.ATMC_SAMPLE_AT, 'N') 	AS ATMC_SAMPLE
+			, A.MRC_CTGRY_CD_ID 			AS MRC_CTGRY
+			, A.IPE_CTGRY_CD_ID 	 		AS IPE_CTGRY
+			, AF.CODE_NM					AS CNRL_PURPS_CHOISE
+			, AH.CODE_NM 					AS DELNG_TY
+			, A.RELATE_REGLTN_NM				AS CNRL_REG_NM
+			, A.CNRL_PURPS_FNNR_RLABLTY			AS CNRL_PURPS_RELIABILITY_FIN
+			, A.CNRL_PURPS_ASSET_PRTC			AS CNRL_PURPS_ASSET_PROTECTION
+			, A.CNRL_PURPS_INSTC_PRVN			AS CNRL_PURPS_FRAUD_PREVENTION
+			, AI.CODE_NM						AS CNRL_TY
+			, A.TEST_RELATE_DOC					AS TEST_RELATION_DOC
+			, A.TEST_MTH_QESTN					AS TEST_MTH_QUESTION
+			, A.TEST_MTH_OBSERV					AS TEST_MTH_OBSERVE
+			, A.TEST_MTH_VRIFY					AS TEST_MTH_VERIFICATION
+			, A.TEST_MTH_ECGN					AS TEST_MTH_RE_RUN
+			, A.TEST_MTH_SYS_TRACE				AS TEST_MTH_TRACKING
+			, A.ACNT_CD							AS CNRL_ANT_CTGR_CODE
+			, A.CNRL_CM_IEM						AS CNRL_REMARK
+			, A.ASSE_C_AT						AS ASSE_C
+			, A.ASSE_E_AT						AS ASSE_E
+			, A.ASSE_R_AT						AS ASSE_R
+			, A.ASSE_V_AT						AS ASSE_V
+			, A.ASSE_P_AT						AS ASSE_P
+			, A.ASSE_S_AT						AS ASSE_S
+			, A.ASSE_O_AT						AS ASSE_O
+			, A.ASSE_A_AT						AS ASSE_A
+			, A.ASSE_PF_AT						AS ASSE_PF
+			, A.RISK_RESIDUAL_LIKEHOOD			AS RISK_RESIDUAL_LIKEHOOD
+			, A.RISK_RESIDUAL_IMPACT			AS RISK_RESIDUAL_IMPACT
+			, A.RISK_RESIDUAL_RATIONG			AS RISK_RESIDUAL_RATING
+			, A.AFTER_RISK_RESIDUAL_LIKEHOOD	AS CNRL_RESIDUAL_LIKEHOOD
+			, A.AFTER_RISK_RESIDUAL_IMPACT		AS CNRL_RESIDUAL_IMPACT
+			, A.AFTER_RISK_RESIDUAL_RATIONG		AS CNRL_RESIDUAL_RATING
+			, A.CNRL_IMPRVM_NM					AS CNRL_IMPRVM_NM
+			, A.CNRL_IMPRVM_DC					AS CNRL_IMPRVM_CN
+            <choose>
+                <when test=' elcProcsStep != null and elcProcsStep == 2 ' >
+                    , '' AS SUB_ID, '' AS SUB_NO, '' AS SUB_NM
+                </when>
+                <otherwise>
+                    , SU.OBJECT_ID AS SUB_ID, SU.OBJECT_NO AS SUB_NO, SU.OBJECT_NM AS SUB_NM
+                </otherwise>
+            </choose>
+            , MJ.OBJECT_ID AS MJR_ID
+            , MJ.OBJECT_NO AS MJR_NO
+            , MJ.OBJECT_NM AS MJR_NM
+            , MA.OBJECT_ID AS MEGA_ID
+            , MA.OBJECT_NO AS MEGA_NO
+            , MA.OBJECT_NM AS MEGA_NM
+        FROM TB_CW_EVL_ELC_RCM_CNRL A
+        INNER JOIN TB_CW_EVL_RCM_MAPNG CM
+            ON  A.EVL_ID = CM.EVL_ID
+            AND A.CNRL_ID = CM.OBJECT_ID
+        <choose>
+            <when test=' elcRiskUseAt != "false" ' >      
+		        INNER JOIN TB_CW_EVL_RCM_MAPNG RM
+		            ON  A.EVL_ID = RM.EVL_ID
+		            AND CM.UPPER_MAPNG_ID = RM.MAPNG_ID
+		        INNER JOIN TB_CW_EVL_ELC_RCM_RISK R
+		            ON  A.EVL_ID = R.EVL_ID
+		            AND RM.OBJECT_ID = R.RISK_ID
+		        <choose>
+		            <when test=' elcProcsStep != null and elcProcsStep == 2 ' >
+		                INNER JOIN TB_CW_EVL_RCM_MAPNG MJ
+		                    ON  A.EVL_ID = MJ.EVL_ID
+		                    AND RM.UPPER_MAPNG_ID = MJ.MAPNG_ID
+		            </when>
+		            <otherwise>
+		                INNER JOIN TB_CW_EVL_RCM_MAPNG SU
+		                    ON  A.EVL_ID = SU.EVL_ID
+		                    AND RM.UPPER_MAPNG_ID = SU.MAPNG_ID
+		                INNER JOIN TB_CW_EVL_RCM_MAPNG MJ
+		                    ON  A.EVL_ID = MJ.EVL_ID
+		                    AND SU.UPPER_MAPNG_ID = MJ.MAPNG_ID
+		            </otherwise>
+		        </choose>
+        	</when>
+        	<otherwise>
+		        <choose>
+		            <when test=' elcProcsStep != null and elcProcsStep == 2 ' >
+		                INNER JOIN TB_CW_EVL_RCM_MAPNG MJ
+		                    ON  A.EVL_ID = MJ.EVL_ID
+		                    AND CM.UPPER_MAPNG_ID = MJ.MAPNG_ID
+		            </when>
+		            <otherwise>
+		                INNER JOIN TB_CW_EVL_RCM_MAPNG SU
+		                    ON  A.EVL_ID = SU.EVL_ID
+		                    AND CM.UPPER_MAPNG_ID = SU.MAPNG_ID
+		                INNER JOIN TB_CW_EVL_RCM_MAPNG MJ
+		                    ON  A.EVL_ID = MJ.EVL_ID
+		                    AND SU.UPPER_MAPNG_ID = MJ.MAPNG_ID
+		            </otherwise>
+		        </choose>
+        	</otherwise> 
+        </choose>
+        INNER JOIN TB_CW_EVL_RCM_MAPNG MA
+            ON  A.EVL_ID = MA.EVL_ID
+            AND MJ.UPPER_MAPNG_ID = MA.MAPNG_ID
+		LEFT OUTER JOIN TB_CO_CODE AA
+            ON A.CNRL_TY01_CD_ID = AA.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AB
+            ON A.CNRL_TY02_CD_ID = AB.CODE_ID 
+        LEFT OUTER JOIN TB_CO_CODE AC
+            ON A.CNRL_TY03_CD_ID = AC.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AD
+            ON A.TEST_CYCLE_CD_ID = AD.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AE
+            ON A.OFFICE_TY_CD_ID = AE.CODE_ID  
+        LEFT OUTER JOIN TB_CO_CODE AF
+            ON A.CNRL_PURPS_CD_ID = AF.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AG
+            ON A.CNRL_CYCLE_CD_ID = AG.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AH
+            ON A.DELNG_TY_CD_ID = AH.CODE_ID  
+        LEFT OUTER JOIN TB_CO_CODE AI
+            ON A.CNRL_TY_CD_ID = AI.CODE_ID  
+        WHERE A.EVL_ID = #{evlId}
+        ORDER BY A.CNRL_NO ASC
+    </select>
+
+
+    <select id="opinionList" resultMap="rcmSttusMap">
+        SELECT T.OBJECT_ID
+			 , T.OBJECT_NO
+			 , T.OBJECT_NM
+			 , T.OBJECT_LEVEL
+			 , T.OBJECT_KND_CD_ID
+			 , T.UPPER_OBJECT_ID
+			 , T.EVL_ID
+			 , EC.CNRL_NO
+			 , EC.CNRL_CN
+			 , EC.OFFICE_TY_CD_ID
+			 , EC.KEY_CNRL_AT
+			 , EC.MRC_CNRL_AT
+			 , EC.IPE_CNRL_AT
+			 , EC.REFRN_NO
+			 , E.CHRG_USER_ID
+			 , E.CHRG_USER_BGNDE
+			 , E.CHRG_DEPT_ID
+			 , E.CHRG_DEPT_BGNDE
+			 , E.EVL_OPINION
+			 , U.USER_NM                   AS CHRG_USER_NM
+			 , D.DEPT_NM                   AS CHRG_DEPT_NM
+			 , E.STTUS_CD_ID               AS CHRG_STTUS_CD_ID
+			 , ISNULL(C1.CODE_NM, '대기')       AS CHRG_STTUS_CD_NM
+			 , CASE WHEN ECU.CNRL_ID IS NOT NULL THEN 'Y'
+			   END                         AS UPDT_AT
+			 , CASE WHEN P.OBJECT_ID IS NOT NULL THEN 'Y'
+			   END                         AS UPRPD_AT
+		     , ROWNUM                      AS ROW_SN
+		FROM (  /** RCM Mapng Tree 구조 */
+		        SELECT A.EVL_ID
+		               , A.OBJECT_ID
+		               , A.OBJECT_NO
+		               , A.OBJECT_NM
+		               , A.OBJECT_LEVEL
+		               , A.OBJECT_KND_CD_ID
+						<choose>
+							<when test=' elcRiskUseAt != "false" '>
+		               			, (CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN B.UPPER_OBJECT_ID ELSE A.UPPER_OBJECT_ID END ) AS UPPER_OBJECT_ID
+							</when>
+							<otherwise>
+								, A.UPPER_OBJECT_ID AS UPPER_OBJECT_ID
+							</otherwise>
+						</choose>
+		        FROM TB_CW_EVL_RCM_MAPNG A
+		        LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG B
+		            ON A.EVL_ID = B.EVL_ID
+		            AND A.UPPER_OBJECT_ID = B.OBJECT_ID
+		        WHERE A.EVL_ID = #{evlId}
+		            AND A.OBJECT_KND_CD_ID != 'CTW_001_004'
+		        ) T
+			LEFT OUTER JOIN TB_CW_EVL_EXC E
+			    ON  T.EVL_ID                = E.EVL_ID
+			    AND T.OBJECT_ID             = E.OBJECT_ID
+			    AND E.CHRG_USER_TY_CD_ID    = 'CTW_105_001'
+			LEFT OUTER JOIN TB_CW_EVL_ELC_RCM_PROCS EP
+			    ON  E.EVL_ID                = EP.EVL_ID
+			    AND T.OBJECT_ID             = EP.PROCS_ID
+			LEFT OUTER JOIN TB_CW_EVL_ELC_RCM_RISK ER
+			    ON  E.EVL_ID                = ER.EVL_ID
+			    AND T.OBJECT_ID             = ER.RISK_ID
+			LEFT OUTER JOIN TB_CW_EVL_ELC_RCM_CNRL EC
+			    ON  E.EVL_ID                = EC.EVL_ID
+			    AND T.OBJECT_ID             = EC.CNRL_ID
+			LEFT OUTER JOIN TB_CW_UPRPD_ELC_CNRL_UPDT ECU
+			    ON  E.EVL_ID                = ECU.EVL_ID
+			    AND T.OBJECT_ID             = ECU.CNRL_ID
+			LEFT OUTER JOIN TB_CW_UPRPD P
+			    ON  E.EVL_ID                = P.EVL_ID
+			    AND T.OBJECT_ID             = P.OBJECT_ID
+			LEFT OUTER JOIN TB_CO_USER_HIST U
+			    ON  E.CHRG_USER_ID          = U.USER_ID
+			    AND E.CHRG_USER_BGNDE       = U.HIST_BGNDE
+			LEFT OUTER JOIN TB_CO_DEPT_HIST D
+			    ON  E.CHRG_DEPT_ID          = D.DEPT_ID
+			    AND E.CHRG_DEPT_BGNDE       = D.HIST_BGNDE
+			LEFT OUTER JOIN TB_CO_CODE C1
+			    ON  E.STTUS_CD_ID           = C1.CODE_ID
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+		    AND 1=1
+		    /** 핵심통제여부 */
+		    <if test=' srchKeyCnrlAt == "Y"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND EC.KEY_CNRL_AT = 'Y'))
+		    </if>
+		    <if test=' srchKeyCnrlAt == "N"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND EC.KEY_CNRL_AT = 'N'))
+		    </if>
+		    <if test=' srchKeyCnrlAt == "NULL"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND EC.KEY_CNRL_AT IS NULL))
+		    </if>
+		    /** 설계평가 수정된 통제 */
+		    <if test=' srchUpdtAt == "Y"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND ECU.CNRL_ID IS NOT NULL))
+		    </if>
+		    /** 운영평가 비효과적(미비점 요청) 통제 */
+		    <if test=' srchUprpdAt == "Y"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND P.CNRL_ID IS NOT NULL))
+		    </if>
+		    /** 운영평가 효과적 통제 */
+		    <if test=' srchUprpdAt == "N"'>
+		        AND (T.OBJECT_KND_CD_ID != 'CTW_001_005' OR (T.OBJECT_KND_CD_ID = 'CTW_001_005' AND P.CNRL_ID IS NULL))
+		    </if>
+		</trim>
+        ORDER BY T.OBJECT_ID
+    </select>
+
+
+    <select id="atchfileList" resultType="EgovMap">
+        SELECT T.OBJECT_ID
+		      , T.OBJECT_NO
+		      , T.OBJECT_NM
+		      , T.OBJECT_LEVEL
+		      , T.OBJECT_KND_CD_ID
+		      , T.UPPER_OBJECT_ID
+		      , T.EVL_ID
+		      , EC.CNRL_NO
+		      , EC.CNRL_CN
+		      , EC.OFFICE_TY_CD_ID
+		      , EC.KEY_CNRL_AT
+		      , EC.MRC_CNRL_AT
+		      , EC.IPE_CNRL_AT
+		      , EC.REFRN_NO
+		      , E.CHRG_USER_ID
+		      , E.CHRG_USER_BGNDE
+		      , E.CHRG_DEPT_ID
+		      , E.CHRG_DEPT_BGNDE
+		      , E.CHRG_USER_TY_CD_ID
+		      , C2.CODE_NM	AS CHRG_USER_TY_CD_NM
+		      , E.UNITY_ID
+		      , U.USER_NM                   AS CHRG_USER_NM
+		      , U.DEPT_NM                   AS CHRG_DEPT_NM
+		      , CONVERT ( VARCHAR , E.UPD_DT , 23 ) AS RGS_DE 
+		      , E.STTUS_CD_ID               AS CHRG_STTUS_CD_ID
+		      , ISNULL(C1.CODE_NM, '대기')       AS CHRG_STTUS_CD_NM
+		      , ROWNUM                      AS ROW_SN
+		FROM (  /** RCM Mapng Tree 구조 */
+		        SELECT A.EVL_ID
+		               , A.OBJECT_ID
+		               , A.OBJECT_NO
+		               , A.OBJECT_NM
+		               , A.OBJECT_LEVEL
+		               , A.OBJECT_KND_CD_ID
+						<choose>
+							<when test=' elcRiskUseAt != "false" '>
+		               			, (CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN B.UPPER_OBJECT_ID ELSE A.UPPER_OBJECT_ID END) AS UPPER_OBJECT_ID
+							</when>
+							<otherwise>
+								, A.UPPER_OBJECT_ID AS UPPER_OBJECT_ID
+							</otherwise>
+						</choose>
+		        FROM TB_CW_EVL_RCM_MAPNG A
+		        LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG B
+		            ON A.EVL_ID = B.EVL_ID
+		            AND A.UPPER_OBJECT_ID = B.OBJECT_ID
+		        WHERE A.EVL_ID = #{evlId}
+		            AND A.OBJECT_KND_CD_ID != 'CTW_001_004'
+		        ) T
+			LEFT OUTER JOIN TB_CW_EVL_EXC E
+			    ON  T.EVL_ID                = E.EVL_ID
+			    AND T.OBJECT_ID             = E.OBJECT_ID
+			   --AND E.CHRG_USER_TY_CD_ID    = 'CTW_105_001'
+			LEFT OUTER JOIN TB_CW_EVL_ELC_RCM_CNRL EC
+			    ON  T.EVL_ID                = EC.EVL_ID
+			    AND T.OBJECT_ID             = EC.CNRL_ID
+			LEFT OUTER JOIN TB_CW_EVL B
+			    ON  T.EVL_ID                = B.EVL_ID
+			LEFT OUTER JOIN TB_CO_USER_HIST U
+			    ON  E.CHRG_USER_ID          = U.USER_ID
+			    AND E.CHRG_USER_BGNDE       = U.HIST_BGNDE
+			LEFT OUTER JOIN TB_CO_CODE C1
+			    ON  E.STTUS_CD_ID           = C1.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE C2
+			    ON  E.CHRG_USER_TY_CD_ID    = C2.CODE_ID
+		ORDER BY T.OBJECT_ID
+    </select>
+
+</mapper>

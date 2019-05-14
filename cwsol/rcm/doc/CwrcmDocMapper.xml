@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.rcm.doc.serviceimpl.CwrcmDocMapper">
+
+	<select id="list" resultType="EgovMap">
+		WITH V1 (MAPNG_ID , UPPER_MAPNG_ID , OBJECT_ID , MEGA_ID) AS (
+			SELECT MAPNG_ID , UPPER_MAPNG_ID , OBJECT_ID , OBJECT_ID AS MEGA_ID 
+			FROM TB_CW_RCM_MAPNG      		
+			WHERE UPPER_OBJECT_ID IS NULL 
+			
+			UNION ALL 
+			
+			SELECT M.MAPNG_ID , M.UPPER_MAPNG_ID , M.OBJECT_ID , ROOT.MEGA_ID 
+			FROM TB_CW_RCM_MAPNG M , V1 ROOT 
+			WHERE M.UPPER_MAPNG_ID = ROOT.MAPNG_ID
+		)
+		SELECT
+              SA.PROCS_ID
+            , SA.PROCS_NO
+            , SA.PROCS_NM
+            <if test=" kndCdIdList != null and kndCdIdList.size > 0 "> 
+				<foreach collection="kndCdIdList" item="item" open="" close="" separator=""  index="index" >
+					, SUM(CASE WHEN SC.FILE_KND_CD_ID = #{item.codeId} THEN 1 ELSE 0 END) AS FILE_KND_CNT${index}
+				</foreach>
+			</if>
+			, SUM(RISK_AT) AS RISK_CNT
+            , SUM(CNRL_AT) AS CNRL_CNT 
+            , SUM(KEY_CNRL_AT) AS KEY_CNRL_CNT
+        FROM TB_CW_RCM_PROCS SA
+        INNER JOIN (
+            SELECT 
+                  V.MEGA_ID AS ROOT_PROCS_ID
+                , B.UNITY_ID
+                , A.OBJECT_KND_CD_ID
+                , (CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_004' THEN 1 ELSE 0 END) AS RISK_AT
+                , (CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN 1 ELSE 0 END) AS CNRL_AT
+                , (CASE WHEN C.KEY_CNRL_AT = 'Y' THEN 1 ELSE 0 END) AS KEY_CNRL_AT     
+            FROM V1 V 
+            INNER JOIN  TB_CW_RCM_MAPNG A
+            	ON V.OBJECT_ID = A.OBJECT_ID
+            LEFT OUTER JOIN TB_CW_RCM_DOC B
+                ON A.OBJECT_ID = B.PROCS_ID
+            LEFT OUTER JOIN TB_CW_RCM_CNRL C
+                ON A.OBJECT_ID = C.CNRL_ID 
+      	) SB
+            ON SA.PROCS_ID = SB.ROOT_PROCS_ID
+         LEFT OUTER JOIN TB_CO_FILE SC
+            ON SB.UNITY_ID = SC.UNITY_ID
+            AND SC.DEL_AT = 'N'
+        GROUP BY SA.PROCS_ID, SA.PROCS_NO, SA.PROCS_NM
+        ORDER BY SA.PROCS_ID ASC
+	</select>
+	
+	<select id="view" resultType="CwrcmDocVO">
+		SELECT 
+			  A.PROCS_ID
+			, B.UNITY_ID
+		FROM TB_CW_RCM_PROCS A
+        LEFT OUTER JOIN TB_CW_RCM_DOC B
+            ON A.PROCS_ID = B.PROCS_ID
+		WHERE A.PROCS_ID = #{procsId}
+	</select>
+
+	<insert id="save">
+		MERGE INTO TB_CW_RCM_DOC T1
+		USING (VALUES (1)) AS Source (Number) 
+		ON ( T1.PROCS_ID = #{procsId}  )
+		WHEN MATCHED THEN
+			UPDATE SET
+				UNITY_ID  = #{unityId}
+			   ,UPD_DT = GETDATE()
+			   ,UPD_USER_ID = #{suserId} 
+		WHEN NOT MATCHED THEN 
+			INSERT (
+				PROCS_ID, UNITY_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+			) VALUES (
+				#{procsId}, #{unityId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+			)
+	</insert>
+	
+	<delete id="delete">
+	<![CDATA[
+	BEGIN
+		DELETE FROM TB_CW_RCM_DOC
+		WHERE PROCS_ID = #{procsId};
+		
+		/** 규준문서 이력 종료 */    
+    	UPDATE TB_CW_RCM_DOC_HIST
+		   SET ENDTMSTMP = #{endtmstmp}
+		      ,UPD_DT = GETDATE()
+		      ,UPD_USER_ID = #{suserId} 
+		 WHERE PROCS_ID = #{procsId}
+		   AND ENDTMSTMP = '99991231235959999999';
+	END;
+	]]>	
+	</delete>
+	
+	<!-- 규준문서 전체 삭제 -->
+	<delete id="deleteAll">
+	<![CDATA[
+	BEGIN
+		DELETE FROM TB_CW_RCM_DOC;
+		
+		/** 규준문서 이력 종료 */    
+    	UPDATE TB_CW_RCM_DOC_HIST
+		   SET ENDTMSTMP = #{endtmstmp}
+		      ,UPD_DT = GETDATE()
+		      ,UPD_USER_ID = #{suserId} 
+		 WHERE ENDTMSTMP = '99991231235959999999';
+	END;
+	]]>	
+	</delete>
+	
+	<!-- 프로세스별 첨부파일 리스트 -->
+	<select id="docFilelist" resultType="EgovMap">
+		<choose>
+			<when test=' srchLwprtAt  != null and srchLwprtAt == "Y" '>
+				WITH V1 ( OBJECT_ID ,MAPNG_ID , UPPER_MAPNG_ID ) AS (
+					SELECT OBJECT_ID ,MAPNG_ID , UPPER_MAPNG_ID 
+					FROM TB_CW_RCM_MAPNG 
+					WHERE OBJECT_ID =  #{procsId}
+					
+					UNION ALL 
+					
+					SELECT M.OBJECT_ID , M.MAPNG_ID , M.UPPER_MAPNG_ID 
+					FROM TB_CW_RCM_MAPNG M , V1 ROOT 
+					WHERE ROOT.MAPNG_ID = M.UPPER_MAPNG_ID 
+					
+				)
+			</when>
+		</choose>
+		SELECT 
+		      A.UNITY_ID
+		    , A.PROCS_ID
+		    , B.PROCS_NO
+		    , B.PROCS_NM
+		    , B.PROCS_KND_CD_ID
+		    , BA.CODE_NM AS PROCS_KND_CD_NM    
+		    , C.FILE_ID
+		    , C.FILE_SN
+		    , C.FILE_EXTSN
+		    , C.FILE_PATH
+		    , C.FILE_NM
+		    , C.FILE_ORGINL_NM
+		    , C.FILE_SIZE
+		    , C.FILE_KND_CD_ID
+		    , CA.CODE_NM AS FILE_KND_CD_NM
+		    , C.RGS_DT
+		    , C.RGS_USER_ID
+		    , CB.USER_NM AS RGS_USER_NM    
+		FROM TB_CW_RCM_DOC A
+		INNER JOIN TB_CW_RCM_PROCS B
+		    ON A.PROCS_ID = B.PROCS_ID
+		INNER JOIN TB_CO_FILE C
+		    ON A.UNITY_ID = C.UNITY_ID
+		    AND C.DEL_AT = 'N'    
+		LEFT OUTER JOIN TB_CO_CODE BA
+		    ON B.PROCS_KND_CD_ID = BA.CODE_ID
+		LEFT OUTER JOIN TB_CO_CODE CA
+		    ON C.FILE_KND_CD_ID = CA.CODE_ID    
+		LEFT OUTER JOIN TB_CO_USER CB   
+		    ON C.RGS_USER_ID = CB.USER_ID		    
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test=' srchFileKndCdId != null and srchFileKndCdId != "" '>
+				AND C.FILE_KND_CD_ID = #{srchFileKndCdId}
+			</if> 
+			<choose>
+	            <when test=' srchLwprtAt  != null and srchLwprtAt == "Y" '>
+	            	AND A.PROCS_ID IN (
+	            			SELECT 
+	                            DISTINCT OBJECT_ID
+	                        FROM V1
+	            		)
+	            </when>
+	            <otherwise>	AND A.PROCS_ID = #{procsId}	</otherwise>
+			</choose>
+		</trim>
+		ORDER BY A.PROCS_ID ASC, C.RGS_DT DESC 
+	</select>
+	
+	<insert id="insertRcmDocHist">
+	<![CDATA[
+	BEGIN
+		/** 규준문서 이력 종료/시작 */    
+    	UPDATE TB_CW_RCM_DOC_HIST
+		   SET ENDTMSTMP = #{endtmstmp}
+		      ,UPD_DT = GETDATE()
+		      ,UPD_USER_ID = #{suserId} 
+		 WHERE PROCS_ID = #{procsId}
+		   AND ENDTMSTMP = '99991231235959999999';
+    
+		INSERT INTO TB_CW_RCM_DOC_HIST (
+				  PROCS_ID, BGNTMSTMP, ENDTMSTMP, UNITY_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+			) VALUES (
+				  #{procsId}, #{bgntmstmp}, '99991231235959999999', #{unityId}
+				, GETDATE(), #{suserId}, GETDATE(), #{suserId}, '규준문서 등록'
+			);
+	END;
+	]]>
+	</insert>
+	
+	<select id="selectDocHistList" resultType="EgovMap">
+		SELECT 
+              A.UNITY_ID
+            , A.BGNTMSTMP
+            , A.ENDTMSTMP
+            , SUBSTRING(A.BGNTMSTMP,1,4) + '-' + SUBSTRING(A.BGNTMSTMP,5,2) + '-' + SUBSTRING(A.BGNTMSTMP,7,2) + ' ' + SUBSTRING(A.BGNTMSTMP,9,2) + ':' + SUBSTRING(A.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(A.BGNTMSTMP,13,2) BGNTMSTMP_DE
+            , SUBSTRING(A.BGNTMSTMP,1,4) + '-' + SUBSTRING(A.BGNTMSTMP,5,2) + '-' + SUBSTRING(A.BGNTMSTMP,7,2) + ' ' + SUBSTRING(A.BGNTMSTMP,9,2) + ':' + SUBSTRING(A.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(A.BGNTMSTMP,13,2) + ' - ' + A.RM AS BGNTMSTMP_RM
+            , (CASE WHEN A.ENDTMSTMP = '99991231235959999999' THEN '-' 
+                   ELSE SUBSTRING(A.ENDTMSTMP,1,4) + '-' + SUBSTRING(A.ENDTMSTMP,5,2) + '-' + SUBSTRING(A.ENDTMSTMP,7,2) + ' ' + SUBSTRING(A.ENDTMSTMP,9,2) + ':' + SUBSTRING(A.ENDTMSTMP,11,2 ) + ':' + SUBSTRING(A.ENDTMSTMP,13,2) END) ENDTMSTMP_DE
+            , A.PROCS_ID
+            , B.PROCS_NO
+            , B.PROCS_NM
+            , B.PROCS_KND_CD_ID
+            , BA.CODE_NM AS PROCS_KND_CD_NM
+        	, (SELECT BGNTMSTMP FROM TB_CW_RCM_DOC_HIST WHERE PROCS_ID = A.PROCS_ID AND ENDTMSTMP = '99991231235959999999') AS SRCH_STDR_BGNTMSTMP
+		    , (SELECT COUNT(PROCS_ID) FROM TB_CW_RCM_DOC_HIST WHERE PROCS_ID = A.PROCS_ID) AS HIST_CNT 
+        FROM TB_CW_RCM_DOC_HIST A
+        LEFT OUTER JOIN TB_CW_RCM_PROCS_HIST B
+            ON A.PROCS_ID = B.PROCS_ID
+            AND A.BGNTMSTMP = B.BGNTMSTMP
+         LEFT OUTER JOIN TB_CO_CODE BA
+            ON B.PROCS_KND_CD_ID = BA.CODE_ID
+		WHERE A.PROCS_ID = #{procsId}
+        ORDER BY A.BGNTMSTMP DESC
+	</select>
+	
+	<select id="selectDocHistView" resultType="EgovMap">
+		SELECT 
+              A.UNITY_ID
+            , A.BGNTMSTMP
+            , A.ENDTMSTMP
+            , SUBSTRING(A.BGNTMSTMP,1,4) + '-' + SUBSTRING(A.BGNTMSTMP,5,2) + '-' + SUBSTRING(A.BGNTMSTMP,7,2) + ' ' + SUBSTRING(A.BGNTMSTMP,9,2) + ':' + SUBSTRING(A.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(A.BGNTMSTMP,13,2) BGNTMSTMP_DE
+            , SUBSTRING(A.BGNTMSTMP,1,4) + '-' + SUBSTRING(A.BGNTMSTMP,5,2) + '-' + SUBSTRING(A.BGNTMSTMP,7,2) + ' ' + SUBSTRING(A.BGNTMSTMP,9,2) + ':' + SUBSTRING(A.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(A.BGNTMSTMP,13,2) + ' - ' + A.RM AS BGNTMSTMP_RM
+            , (CASE WHEN A.ENDTMSTMP = '99991231235959999999' THEN '-' 
+                   ELSE SUBSTRING(A.ENDTMSTMP,1,4) + '-' + SUBSTRING(A.ENDTMSTMP,5,2) + '-' + SUBSTRING(A.ENDTMSTMP,7,2) + ' ' + SUBSTRING(A.ENDTMSTMP,9,2) + ':' + SUBSTRING(A.ENDTMSTMP,11,2 ) + ':' + SUBSTRING(A.ENDTMSTMP,13,2) END) ENDTMSTMP_DE
+            , A.PROCS_ID
+            , B.PROCS_NO
+            , B.PROCS_NM
+            , B.PROCS_KND_CD_ID
+            , BA.CODE_NM AS PROCS_KND_CD_NM    
+            , C.FILE_ID
+            , C.FILE_SN
+            , C.FILE_EXTSN
+            , C.FILE_PATH
+            , C.FILE_NM
+            , C.FILE_ORGINL_NM
+            , C.FILE_SIZE
+            , C.FILE_KND_CD_ID
+            , CA.CODE_NM AS FILE_KND_CD_NM
+            , C.RGS_DT
+            , C.RGS_USER_ID
+            , CB.USER_NM AS RGS_USER_NM    
+            , (SELECT BGNTMSTMP FROM TB_CW_RCM_DOC_HIST WHERE PROCS_ID = A.PROCS_ID AND ENDTMSTMP = '99991231235959999999') AS SRCH_STDR_BGNTMSTMP
+		    , (SELECT COUNT(PROCS_ID) FROM TB_CW_RCM_DOC_HIST WHERE PROCS_ID = A.PROCS_ID) AS HIST_CNT 
+        FROM TB_CW_RCM_DOC_HIST A
+        LEFT OUTER JOIN TB_CW_RCM_PROCS B
+            ON A.PROCS_ID = B.PROCS_ID
+        INNER JOIN TB_CO_FILE C
+            ON A.UNITY_ID = C.UNITY_ID
+            AND C.DEL_AT = 'N'    
+         LEFT OUTER JOIN TB_CO_CODE BA
+            ON B.PROCS_KND_CD_ID = BA.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE CA
+            ON C.FILE_KND_CD_ID = CA.CODE_ID    
+        LEFT OUTER JOIN TB_CO_USER CB   
+            ON C.RGS_USER_ID = CB.USER_ID    
+		WHERE A.PROCS_ID = #{procsId}
+		 <if test=' srchStdrBgntmstmp != null and srchStdrBgntmstmp != "" '>
+        	AND A.BGNTMSTMP = #{srchStdrBgntmstmp}
+		</if>
+        <if test=' srchCmprBgntmstmp != null and srchCmprBgntmstmp != "" '>
+        	AND A.BGNTMSTMP = #{srchCmprBgntmstmp}
+		</if>
+	</select>
+	
+	
+	
+</mapper>

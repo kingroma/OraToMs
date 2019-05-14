@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.rcm.mng.serviceimpl.CwrcmMapngUserMapper">
+	
+	<resultMap id="listEgovMap" type="EgovMap">
+  		<result property="stdChckId"  column="OBJECT_ID" />
+  		<result property="planId"	  column="CHRG_GROUP_SN" />
+  		<result property="chrgTy01"	  column="CHRG_TY_01" />
+  		<result property="chrgTy02"	  column="CHRG_TY_02" />
+ 		<collection property="evlList"  column="{srchObjectId=OBJECT_ID, srchChrgGroupSn=CHRG_GROUP_SN, srchChrgTyCdId=CHRG_TY_01}" ofType="EgovMap" select="selectUserlist" />
+ 		<collection property="testList" column="{srchObjectId=OBJECT_ID, srchChrgGroupSn=CHRG_GROUP_SN, srchChrgTyCdId=CHRG_TY_02}" ofType="EgovMap" select="selectUserlist" />
+  	</resultMap>
+	<resultMap id="histListEgovMap" type="EgovMap">
+  		<result property="stdChckId"  column="OBJECT_ID" />
+  		<result property="bgntmstmp"  column="BGNTMSTMP" />
+  		<result property="planId"	  column="CHRG_GROUP_SN" />
+  		<result property="chrgTy01"	  column="CHRG_TY_01" />
+  		<result property="chrgTy02"	  column="CHRG_TY_02" />
+ 		<collection property="evlList"  column="{srchObjectId=OBJECT_ID, srchChrgGroupSn=CHRG_GROUP_SN, srchChrgTyCdId=CHRG_TY_01, srchStdrBgntmstmp=BGNTMSTMP}" ofType="EgovMap" select="selectUserHistList" />
+ 		<collection property="testList" column="{srchObjectId=OBJECT_ID, srchChrgGroupSn=CHRG_GROUP_SN, srchChrgTyCdId=CHRG_TY_02, srchStdrBgntmstmp=BGNTMSTMP}" ofType="EgovMap" select="selectUserHistList" />
+  	</resultMap>
+
+	<select id="list" resultMap="listEgovMap">   
+		SELECT DISTINCT 
+              A.OBJECT_ID 
+            , A.CHRG_GROUP_SN
+            , 'CTW_105_001' AS CHRG_TY_01
+            , 'CTW_105_002' AS CHRG_TY_02
+		FROM TB_CW_RCM_MAPNG_USER A
+		WHERE A.OBJECT_ID = #{srchObjectId}
+		ORDER BY A.OBJECT_ID ASC, A.CHRG_GROUP_SN ASC
+	</select>
+	
+	<select id="selectUserlist" resultType="EgovMap">   
+		SELECT 
+		      A.OBJECT_ID 
+		    , A.MAPNG_CHRG_SN 
+		    , A.CHRG_GROUP_SN 
+		    , A.CHRG_TY_CD_ID 
+		    , B.CODE_NM AS CHRG_TY_CD_NM 
+		    , A.CHRG_RM
+		    , A.CHRG_USER_ID
+		    , A.CHRG_USER_BGNDE
+		    , AC.HIST_BGNDE
+		    , AB.USER_CD
+		    , AB.USER_NM
+		    , AB.DEPT_ID
+		    , AB.DEPT_CD
+		    , AB.DEPT_NM
+		    , (CASE WHEN AC.STTUS_CD_ID = 'COM_003_001' THEN 'N' ELSE 'Y' END) AS RETIRE_AT   /** 퇴사여부 */ 
+		    , (CASE WHEN AB.DEPT_ID = AC.DEPT_ID THEN 'N' ELSE 'Y' END) AS DEPT_CH_AT         /** 부서변경 여부 */    
+		FROM TB_CW_RCM_MAPNG_USER A
+		LEFT OUTER JOIN TB_CO_CODE B
+			ON A.CHRG_TY_CD_ID = B.CODE_ID
+		LEFT OUTER JOIN TB_CO_USER_HIST AB
+		    ON A.CHRG_USER_ID = AB.USER_ID
+		    AND A.CHRG_USER_BGNDE = AB.HIST_BGNDE
+		LEFT OUTER JOIN TB_CO_USER_HIST AC      /** 최신정보 */
+		    ON A.CHRG_USER_ID = AC.USER_ID
+		    AND AC.HIST_ENDDE = '99991231'
+		WHERE A.OBJECT_ID = #{srchObjectId}
+			AND A.CHRG_GROUP_SN = #{srchChrgGroupSn}
+			<if test=' srchChrgTyCdId != null and srchChrgTyCdId != "" '>
+				AND A.CHRG_TY_CD_ID = #{srchChrgTyCdId}
+			</if>
+		ORDER BY A.OBJECT_ID ASC, A.MAPNG_CHRG_SN ASC
+	</select>
+	
+	<insert id="insert">
+	<![CDATA[
+		BEGIN
+			INSERT INTO TB_CW_RCM_MAPNG_USER (
+				OBJECT_ID, MAPNG_CHRG_SN, CHRG_GROUP_SN, CHRG_TY_CD_ID, CHRG_USER_ID, CHRG_USER_BGNDE, CHRG_RM
+				, CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+			) VALUES (
+				#{objectId}, #{mapngChrgSn}, #{chrgGroupSn}, #{chrgTyCdId}, #{chrgUserId}, #{chrgUserBgnde}, #{chrgRm}
+				, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+			);
+			
+			INSERT INTO TB_CW_RCM_MAPNG_USER_HIST (
+				OBJECT_ID, MAPNG_CHRG_SN, CHRG_GROUP_SN, BGNTMSTMP, ENDTMSTMP
+				, CHRG_TY_CD_ID, CHRG_USER_ID, CHRG_USER_BGNDE, CHRG_RM, CMPNY_CD_ID
+				, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+			) VALUES (
+				#{objectId}, #{mapngChrgSn}, #{chrgGroupSn}, #{bgntmstmp}, '99991231235959999999'
+				, #{chrgTyCdId}, #{chrgUserId}, #{chrgUserBgnde}, #{chrgRm}, #{cmpnyCdId}
+				, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 담당자 등록'
+			);
+		END;
+		]]>
+	</insert>
+
+	<delete id="delete">
+	<![CDATA[
+		BEGIN
+			DELETE FROM TB_CW_RCM_MAPNG_USER
+			WHERE OBJECT_ID = #{objectId};
+			
+			/** 매핑 유저 이력 종료 */
+			UPDATE TB_CW_RCM_MAPNG_USER_HIST
+			   SET ENDTMSTMP = #{endtmstmp}
+			     , UPD_DT = GETDATE()
+			     , UPD_USER_ID = #{suserId} 
+			 WHERE OBJECT_ID = #{objectId}
+			   AND ENDTMSTMP = '99991231235959999999';
+		END;
+		]]>
+	</delete>
+
+	<delete id="deleteAll">
+		<![CDATA[
+		BEGIN
+			/** 매핑 유저 테이블 전체 삭제 */
+			DELETE FROM TB_CW_RCM_MAPNG_USER;
+
+			/** 매핑 유저 이력 종료 */
+			UPDATE TB_CW_RCM_MAPNG_USER_HIST
+		   	   SET ENDTMSTMP = #{endtmstmp}
+		      	 , UPD_DT = GETDATE()
+		         , UPD_USER_ID = #{suserId} 
+		     WHERE ENDTMSTMP = '99991231235959999999';
+		END;
+		]]>
+	</delete>
+	
+	<select id="selectHistList" resultMap="histListEgovMap">   
+		SELECT DISTINCT 
+              A.OBJECT_ID 
+            , A.BGNTMSTMP   
+            , A.CHRG_GROUP_SN
+            , 'CTW_105_001' AS CHRG_TY_01
+            , 'CTW_105_002' AS CHRG_TY_02
+		FROM TB_CW_RCM_MAPNG_USER_HIST A
+		WHERE A.OBJECT_ID = #{srchObjectId}
+			<if test=' srchStdrBgntmstmp != null and srchStdrBgntmstmp != "" '>
+        		AND A.BGNTMSTMP = #{srchStdrBgntmstmp}
+			</if>
+        	<if test=' srchCmprBgntmstmp != null and srchCmprBgntmstmp != "" '>
+        		AND A.BGNTMSTMP = #{srchCmprBgntmstmp}
+			</if>
+		ORDER BY A.OBJECT_ID ASC, A.CHRG_GROUP_SN ASC
+	</select>
+	
+	<select id="selectUserHistList" resultType="EgovMap">   
+		SELECT 
+		      A.OBJECT_ID 
+		    , A.MAPNG_CHRG_SN 
+		    , A.CHRG_GROUP_SN 
+		    , A.CHRG_TY_CD_ID 
+		    , B.CODE_NM AS CHRG_TY_CD_NM 
+		    , A.CHRG_RM
+		    , A.CHRG_USER_ID
+		    , A.CHRG_USER_BGNDE
+		    , AC.HIST_BGNDE
+		    , AB.USER_CD
+		    , AB.USER_NM
+		    , AB.DEPT_ID
+		    , AB.DEPT_CD
+		    , AB.DEPT_NM
+		    , (CASE WHEN AC.STTUS_CD_ID = 'COM_003_001' THEN 'N' ELSE 'Y' END) AS RETIRE_AT   /** 퇴사여부 */ 
+		    , (CASE WHEN AB.DEPT_ID = AC.DEPT_ID THEN 'N' ELSE 'Y' END) AS DEPT_CH_AT         /** 부서변경 여부 */    
+		FROM TB_CW_RCM_MAPNG_USER_HIST A
+		LEFT OUTER JOIN TB_CO_CODE B
+			ON A.CHRG_TY_CD_ID = B.CODE_ID
+		LEFT OUTER JOIN TB_CO_USER_HIST AB
+		    ON A.CHRG_USER_ID = AB.USER_ID
+		    AND A.CHRG_USER_BGNDE = AB.HIST_BGNDE
+		LEFT OUTER JOIN TB_CO_USER_HIST AC      /** 최신정보 */
+		    ON A.CHRG_USER_ID = AC.USER_ID
+		    AND AC.HIST_ENDDE = '99991231'
+		WHERE A.OBJECT_ID = #{srchObjectId}
+			AND A.CHRG_GROUP_SN = #{srchChrgGroupSn}
+			<if test=' srchChrgTyCdId != null and srchChrgTyCdId != "" '>
+				AND A.CHRG_TY_CD_ID = #{srchChrgTyCdId}
+			</if>
+			<if test=' srchStdrBgntmstmp != null and srchStdrBgntmstmp != "" '>
+        		AND A.BGNTMSTMP = #{srchStdrBgntmstmp}
+			</if>
+	        <if test=' srchCmprBgntmstmp != null and srchCmprBgntmstmp != "" '>
+	        	AND A.BGNTMSTMP = #{srchCmprBgntmstmp}
+			</if>
+		ORDER BY A.OBJECT_ID ASC, A.MAPNG_CHRG_SN ASC
+	</select>
+</mapper>

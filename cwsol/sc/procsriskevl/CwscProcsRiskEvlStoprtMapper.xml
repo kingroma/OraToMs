@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.sc.procsriskevl.serviceimpl.CwscProcsRiskEvlStoprtMapper">
+
+ 	<!-- 목록 -->
+ 	<select id="list" resultType="EgovMap">
+		SELECT  DISTINCT 
+				A.PROCS_RISK_EVL_ID
+		      , A.FSYR
+		      , A.PROCS_RISK_EVL_SJ
+		      , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_BGNDE , 112 ) , 23 ) AS EVL_BGNDE
+		      , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_ENDDE , 112 ) , 23 ) AS EVL_ENDDE
+		      , A.RM
+		      , A.UNITY_ID
+		      , A.STTUS_CD_ID
+		      , C.CODE_NM 	AS STTUS_CD_NM
+		      , A.RGS_DT
+		      , A.RGS_USER_ID
+		      , A.UPD_DT
+		      , A.UPD_USER_ID
+		FROM TB_CW_SC_PROCS_RISK_EVL A
+		LEFT OUTER JOIN TB_CO_CODE C
+			ON 	A.STTUS_CD_ID = C.CODE_ID
+		LEFT OUTER JOIN TB_CW_SC_PROCS_RISK_EVLUSER EU
+			ON 	A.PROCS_RISK_EVL_ID = EU.PROCS_RISK_EVL_ID
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test=' srchFsyr != null and srchFsyr != "" '>
+				AND A.FSYR = #{srchFsyr} 
+			</if>		
+			<if test=' srchSttusCdId != null and srchSttusCdId != "" '>
+				AND A.STTUS_CD_ID = #{srchSttusCdId} 
+			</if>		
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+		            <when test="srchTy == 'sj'" > 			AND	UPPER(A.PROCS_RISK_EVL_SJ) LIKE '%' + UPPER(#{srchWrd}) + '%' 			</when>
+				</choose>
+			</if>
+			AND EU.EVL_CHRG_USER_ID = #{suserId}			
+		 </trim>
+		 ORDER BY A.RGS_DT DESC
+	</select>
+
+	<!-- 상세조회 -->
+	<select id="view" resultType="CwscProcsRiskEvlVO">
+		SELECT  A.PROCS_RISK_EVL_ID
+		      , A.FSYR
+		      , A.PROCS_RISK_EVL_SJ
+		      , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_BGNDE , 112 ) , 23 ) AS EVL_BGNDE
+		      , CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_ENDDE , 112 ) , 23 ) AS EVL_ENDDE
+		      , A.RM
+		      , A.UNITY_ID
+		      , A.STTUS_CD_ID
+		      , A.RGS_DT
+		      , A.RGS_USER_ID
+		      , A.UPD_DT
+		      , A.UPD_USER_ID
+		FROM TB_CW_SC_PROCS_RISK_EVL A
+		WHERE  A.PROCS_RISK_EVL_ID = #{procsRiskEvlId} 
+	</select>
+
+
+	<!-- 프로세스 위험평가 검색 목록 -->
+	<select id="selectProcsRiskEvlList" resultType="EgovMap">
+		SELECT  A.PROCS_RISK_EVL_ID	AS CODE_ID
+		      , A.PROCS_RISK_EVL_SJ	AS CODE_NM
+		FROM TB_CW_SC_PROCS_RISK_EVL A
+			LEFT OUTER JOIN TB_CO_CODE C
+				ON A.STTUS_CD_ID = C.CODE_ID
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test=' srchFsyr != null and srchFsyr != "" '>
+				AND A.FSYR = #{srchFsyr} 
+			</if>		
+			<if test=' srchSttusCdId != null and srchSttusCdId != "" '>
+				AND A.STTUS_CD_ID = #{srchSttusCdId} 
+			</if>		
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+		            <when test="srchTy == 'sj'" > 			AND	UPPER(A.PROCS_RISK_EVL_SJ) LIKE '%' + UPPER(#{srchWrd}) + '%' 			</when>
+				</choose>
+			</if>
+		 </trim>
+	</select>
+</mapper>

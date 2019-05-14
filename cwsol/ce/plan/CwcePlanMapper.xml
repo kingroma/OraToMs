@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.ce.plan.serviceimpl.CwcePlanMapper">
+	<select id="list" resultType="EgovMap">
+		SELECT    A.EVL_ID 
+				, A.EVL_TY_CD_ID 
+				, C1.CODE_NM AS EVL_TY_CD_NM 
+				, A.EVL_KND_CD_ID 
+				, C2.CODE_NM AS EVL_KND_CD_NM 
+				, A.EVL_SJ 
+				, A.ACCNUT_YY 
+				, A.ACCNUT_SE_CD_ID 
+				, C3.CODE_NM AS ACCNUT_SE_CD_NM
+				, CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_BGNDE , 112 ) , 23 ) AS EVL_BGNDE 
+				, CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_ENDDE , 112 ) , 23 ) AS EVL_ENDDE
+				, CASE WHEN CONVERT ( VARCHAR , GETDATE() , 112 )  BETWEEN A.EVL_BGNDE AND A.EVL_ENDDE THEN 'Y'
+                       ELSE 'N' 
+                  END AS CRRSPND_AT
+				, A.EVL_CN 
+				, A.EVL_FUTR_PLAN 
+				, A.STTUS_CD_ID 
+				, C4.CODE_NM AS STTUS_CD_NM
+				, A.SANCTN_ID 
+				, A.UNITY_ID 
+				, A.RGS_DT 
+				, A.RGS_USER_ID 
+				, A.UPD_DT 
+				, A.UPD_USER_ID 
+				, CASE WHEN A.STTUS_CD_ID = 'CTW_101_001' 
+				        THEN CASE WHEN (SELECT COUNT(MAPNG_ID) 
+			                            FROM TB_CW_EVL_RCM_MAPNG 
+			                            WHERE EVL_ID = A.EVL_ID) = 0 THEN 'N'	<!-- RCM 매핑 건이 없는 경우 -->
+				        		  WHEN (SELECT COUNT(ERM.OBJECT_ID) 
+                                        FROM TB_CW_EVL_RCM_MAPNG ERM
+                                            LEFT OUTER JOIN TB_CW_EVL_EXC EE
+                                              ON ERM.EVL_ID = EE.EVL_ID
+                                               AND ERM.OBJECT_ID = EE.OBJECT_ID
+                                        WHERE ERM.EVL_ID = A.EVL_ID
+                                            AND ERM.OBJECT_KND_CD_ID = 'CTW_001_005'
+                                            AND EE.CHRG_USER_ID IS NULL) = 0 AND A.EVL_TY_CD_ID = 'CTW_102_002' THEN 'D'	<!-- 조직형이고, RCM 매핑이 되어있고, 통제항목에 테스터와 평가자가 모두 지정된 경우 평가 승인자 지정으로 -->
+                                  ELSE 'Y' END	<!-- RCM 매핑이 되어 있는 경우 담당자 지정으로 -->
+   				  END STEP_AT
+		FROM TB_CW_EVL A
+			LEFT OUTER JOIN TB_CO_CODE C1
+				ON A.EVL_TY_CD_ID = C1.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE C2
+				ON A.EVL_KND_CD_ID = C2.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE C3
+				ON A.ACCNUT_SE_CD_ID = C3.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE C4
+				ON A.STTUS_CD_ID = C4.CODE_ID
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			AND A.EVL_KND_CD_ID IN ('CTW_103_001', 'CTW_103_002')
+			<if test=' srchBgnde != null and srchBgnde != "" '>
+				<![CDATA[  AND A.EVL_BGNDE >= REPLACE(#{srchBgnde},'-','')  ]]>
+			</if>
+			<if test=' srchEndde != null and srchEndde != "" '>
+				<![CDATA[  AND A.EVL_ENDDE <= REPLACE(#{srchEndde},'-','')  ]]>
+			</if>	
+			
+			<if test=' srchAccnutYy != null and srchAccnutYy != "" '>
+				AND A.ACCNUT_YY = #{srchAccnutYy} 
+			</if>
+			<if test=' srchAccnutSeCdId != null and srchAccnutSeCdId != "" '>
+				AND A.ACCNUT_SE_CD_ID = #{srchAccnutSeCdId} 
+			</if>
+			<if test=' srchEvlTyCdId != null and srchEvlTyCdId != "" '>
+				AND A.EVL_TY_CD_ID = #{srchEvlTyCdId} 
+			</if>
+			<if test=' srchEvlKndCdId != null and srchEvlKndCdId != "" '>
+				AND A.EVL_KND_CD_ID = #{srchEvlKndCdId} 
+			</if>
+			<if test=' srchSttusCdId != null and srchSttusCdId != "" '>
+				AND A.STTUS_CD_ID = #{srchSttusCdId} 
+			</if>		
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+		            <when test="srchTy == 'sj'" > 			AND	UPPER(A.EVL_SJ) LIKE '%' + UPPER(#{srchWrd}) + '%' 			</when>
+		            <when test="srchTy == 'cn'" > 			AND	UPPER(A.EVL_CN) LIKE '%' + UPPER(#{srchWrd}) + '%' 			</when>
+		            <when test="srchTy == 'futrplan'" > 	AND	UPPER(A.EVL_FUTR_PLAN) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+				</choose>
+			</if>
+		 </trim>
+		 ORDER BY A.EVL_ID DESC
+	</select>
+	
+	<select id="view" resultType="CwcePlanVO">
+		SELECT    A.EVL_ID 
+				, A.EVL_TY_CD_ID 
+				, C1.CODE_NM AS EVL_TY_CD_NM
+				, A.EVL_KND_CD_ID 
+				, C2.CODE_NM AS EVL_KND_CD_NM
+				, A.EVL_SJ 
+				, A.ACCNUT_YY 
+				, A.ACCNUT_SE_CD_ID 
+				, C3.CODE_NM AS ACCNUT_SE_CD_NM
+				, CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_BGNDE , 112 ) , 23 ) AS EVL_BGNDE 
+				, CONVERT ( VARCHAR , CONVERT ( DATE , A.EVL_ENDDE , 112 ) , 23 ) AS EVL_ENDDE 
+				, A.EVL_CN 
+				, A.EVL_FUTR_PLAN 
+				, A.EVL_TRGET_BASIS
+				, A.STTUS_CD_ID 
+				, C4.CODE_NM AS STTUS_CD_NM
+				, A.SANCTN_ID 
+				, A.UNITY_ID 
+				, A.RGS_DT 
+				, A.RGS_USER_ID 
+				, A.UPD_DT 
+				, A.UPD_USER_ID 
+		FROM TB_CW_EVL A
+			LEFT OUTER JOIN TB_CO_CODE C1
+				ON A.EVL_TY_CD_ID = C1.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE C2
+				ON A.EVL_KND_CD_ID = C2.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE C3
+				ON A.ACCNUT_SE_CD_ID = C3.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE C4
+				ON A.STTUS_CD_ID = C4.CODE_ID
+		WHERE A.EVL_ID = #{evlId}
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO TB_CW_EVL (
+			  EVL_ID, EVL_TY_CD_ID, EVL_KND_CD_ID, EVL_SJ 
+			, ACCNUT_YY, ACCNUT_SE_CD_ID 
+			, EVL_BGNDE, EVL_ENDDE
+			, EVL_CN, EVL_FUTR_PLAN, EVL_TRGET_BASIS
+			, STTUS_CD_ID, SANCTN_ID, UNITY_ID, CMPNY_CD_ID 
+			, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID 
+		) VALUES (
+			  #{evlId}, #{evlTyCdId}, #{evlKndCdId}, #{evlSj}
+			, REPLACE(#{accnutYy},'-',''), #{accnutSeCdId}
+			, REPLACE(#{evlBgnde},'-',''), REPLACE(#{evlEndde},'-','')
+			, #{evlCn}, #{evlFutrPlan}, #{evlTrgetBasis}
+			, #{sttusCdId}, #{sanctnId}, #{unityId}, #{cmpnyCdId}
+			, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE TB_CW_EVL SET
+			  EVL_SJ			= #{evlSj}
+			, ACCNUT_YY	    	= REPLACE(#{accnutYy},'-','')
+			, ACCNUT_SE_CD_ID	= #{accnutSeCdId}
+			, EVL_BGNDE 		= REPLACE(#{evlBgnde},'-','')
+			, EVL_ENDDE			= REPLACE(#{evlEndde},'-','')
+			, EVL_CN			= #{evlCn}
+			, EVL_FUTR_PLAN		= #{evlFutrPlan}
+			, EVL_TRGET_BASIS 	= #{evlTrgetBasis}
+			, STTUS_CD_ID  		= #{sttusCdId}		
+			, SANCTN_ID	   		= #{sanctnId}
+			, UNITY_ID			= #{unityId}	
+			, UPD_DT 	  		= GETDATE()
+			, UPD_USER_ID 		= #{suserId}   
+		WHERE EVL_ID = #{evlId}
+	</update>
+
+	<!-- 결재상태 변경 -->
+	<update id="updateSttus">
+		UPDATE TB_CW_EVL SET
+			  STTUS_CD_ID  		= #{sttusCdId}		
+		<if test=' sttusCdId != null and sttusCdId =="CTW_101_005" '>
+			, PLAN_DCSN_TMSTMP  = CONVERT(VARCHAR,GETDATE(),112) + REPLACE(CONVERT(VARCHAR,GETDATE(),14),':','') + '000'
+		</if>
+		WHERE EVL_ID = #{evlId}
+	</update>
+
+    <!-- 제출기간 변경 -->
+    <update id="updatePeriod">
+        UPDATE TB_CW_EVL SET
+               EVL_BGNDE        = REPLACE(#{evlBgnde},'-','')
+             , EVL_ENDDE        = REPLACE(#{evlEndde},'-','')
+         WHERE EVL_ID           = #{evlId}
+    </update>
+    
+	<delete id="delete">
+	    BEGIN
+           DELETE FROM TB_CW_EVL                WHERE EVL_ID = #{evlId};
+           DELETE FROM TB_CW_EVL_RCM_MAPNG      WHERE EVL_ID = #{evlId};
+           DELETE FROM TB_CW_EVL_RCM_PROCS      WHERE EVL_ID = #{evlId};
+           DELETE FROM TB_CW_EVL_RCM_RISK       WHERE EVL_ID = #{evlId};
+           DELETE FROM TB_CW_EVL_RCM_CNRL       WHERE EVL_ID = #{evlId};
+           DELETE FROM TB_CW_EVL_RCM_DOC        WHERE EVL_ID = #{evlId};
+           DELETE FROM TB_CW_EVL_CNRL_DOC       WHERE EVL_ID = #{evlId};
+           DELETE FROM TB_CW_EVL_EXC            WHERE EVL_ID = #{evlId};
+           DELETE FROM TB_CW_EVL_DEPT_CONFM     WHERE EVL_ID = #{evlId};
+	    END;
+	</delete>
+	
+	<!-- 평가목록 조회 --> 
+	<select id="selectEvlList" resultType="EgovMap">
+		SELECT    A.EVL_ID AS CODE_ID
+				, A.EVL_SJ AS CODE_NM
+		FROM TB_CW_EVL A
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			AND A.EVL_KND_CD_ID IN ('CTW_103_001', 'CTW_103_002')
+			AND A.STTUS_CD_ID IN ('CTW_101_005', 'CTW_101_006') 
+			<if test=' srchAccnutYy != null and srchAccnutYy != "" '>
+				<![CDATA[	AND A.ACCNUT_YY > #{srchAccnutYy} -3	]]>
+			</if>
+		 </trim>
+		 ORDER BY A.EVL_ID DESC
+	</select>
+</mapper>

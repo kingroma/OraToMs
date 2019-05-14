@@ -1,0 +1,706 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.ce.reprt.serviceimpl.CwceReprtMapper">
+	<!-- RCM MAP  -->
+	<resultMap id="reprtMap" type="CwceReprtVO" >
+  		<result property="evlReprtId" 		column="EVL_REPRT_ID"  />
+  		<result property="sanctnId" 		column="SANCTN_ID"  />
+  		<collection property="typeList" 	column="{evlReprtId=EVL_REPRT_ID}" select="evlList" />
+  	</resultMap>
+
+	<select id="list" resultMap="reprtMap">
+		SELECT
+                A.EVL_REPRT_ID
+              , A.REPRT_FSYR
+              , A.REPRT_FSSE_CD_ID
+		      , E.CODE_NM			AS REPRT_FSSE_CD_NM
+      		  , A.REPRT_RECPTN
+		      , A.REPRT_SJ
+		      , A.REPRT_KND_CD_ID
+		      , B.CODE_NM			AS REPRT_KND_CD_NM
+		      , A.REPRT_CN
+		      , A.STTUS_CD_ID
+		      , C.CODE_NM			AS STTUS_CD_NM
+		      , A.SANCTN_ID
+		      , A.UNITY_ID
+              , A.RGS_DT
+              , A.RGS_USER_ID
+              , CONVERT ( VARCHAR , A.UPD_DT , 23 ) AS UPD_DE 
+              , A.UPD_USER_ID
+              , AU.USER_NM AS UPD_USER_NM
+              , (AU.USER_NM + (
+                    SELECT CASE WHEN COUNT(SANCTN_ID) > 1 THEN '외 ' + (COUNT(SANCTN_ID)-1) + '명' ELSE '' END
+                    FROM TB_CO_SANCTN_USER
+                    WHERE SANCTN_ID = A.SANCTN_ID
+               )) AS USER_NM_STR
+        FROM TB_CW_EVL_REPRT A
+        LEFT OUTER JOIN TB_CO_CODE B
+            ON A.REPRT_KND_CD_ID = B.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE C
+            ON A.STTUS_CD_ID = C.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE E
+            ON A.REPRT_FSSE_CD_ID = E.CODE_ID
+        LEFT OUTER JOIN TB_CO_USER AU
+            ON A.UPD_USER_ID = AU.USER_ID
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test=' srchReprtKndCdId != null and srchReprtKndCdId != "" '>
+				AND A.REPRT_KND_CD_ID = #{srchReprtKndCdId}
+			</if>
+			<if test=' srchSttusCdId != null and srchSttusCdId != "" '>
+				AND A.STTUS_CD_ID = #{srchSttusCdId}
+			</if>
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+		            <when test="srchTy == 'sj'" > 	AND	UPPER(A.REPRT_SJ) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+		            <when test="srchTy == 'cn'" > 	AND	UPPER(A.REPRT_CN) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+		            <when test="srchTy == 'user'" > AND	UPPER(AU.USER_NM) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+				</choose>
+			</if>
+            <if test=' srchUseAt == "Y" '>
+                AND A.STTUS_CD_ID = 'COM_021_005'
+            </if>
+		 </trim>
+		 ORDER BY A.EVL_REPRT_ID DESC
+	</select>
+
+	<select id="view" resultType="CwceReprtVO">
+		SELECT  A.EVL_REPRT_ID
+              , A.REPRT_FSYR
+              , A.REPRT_FSSE_CD_ID
+		      , C2.CODE_NM			AS REPRT_FSSE_CD_NM
+      		  , A.REPRT_RECPTN
+		      , A.REPRT_SJ
+		      , A.REPRT_KND_CD_ID
+		      , C1.CODE_NM			AS REPRT_KND_CD_NM
+		      , A.REPRT_CN
+		      , A.STTUS_CD_ID
+		      , A.SANCTN_ID
+		      , A.UNITY_ID
+		      , A.RGS_DT
+		      , A.RGS_USER_ID
+		      , A.UPD_DT
+		      , CONVERT ( VARCHAR , A.UPD_DT , 23 ) AS UPD_DE 
+		      , A.UPD_USER_ID
+		      , U.USER_NM AS UPD_USER_NM
+			  , CONVERT ( VARCHAR(4) , S.SANCTN_COMPT_DT , 112 )+'년 '+ CONVERT ( VARCHAR(2) , S.SANCTN_COMPT_DT , 0 ) + '월 ' +CONVERT ( VARCHAR(2) , S.SANCTN_COMPT_DT , 3 )+'일' AS SANCTN_COMPT_DE
+			  , (CASE WHEN (SELECT COUNT(BEFORE_REPRT_ID) FROM TB_CW_EVL_REPRT_BEFORE_LIST WHERE EVL_REPRT_ID = #{evlReprtId}) > 0 THEN 'Y' ELSE 'N' END) AS BEFORE_REPRT_AT
+		FROM TB_CW_EVL_REPRT A
+			LEFT OUTER JOIN TB_CO_CODE C1
+				ON  A.REPRT_KND_CD_ID = C1.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE C2
+            ON A.REPRT_FSSE_CD_ID = C2.CODE_ID
+			LEFT OUTER JOIN TB_CO_SANCTN S
+				ON  A.SANCTN_ID = S.SANCTN_ID
+			LEFT OUTER JOIN TB_CO_USER U
+				ON  A.UPD_USER_ID = U.USER_ID
+		WHERE A.EVL_REPRT_ID = #{evlReprtId}
+	</select>
+
+	<insert id="insert">
+		INSERT INTO TB_CW_EVL_REPRT (
+			  EVL_REPRT_ID, REPRT_FSYR, REPRT_FSSE_CD_ID, REPRT_RECPTN
+			, REPRT_SJ, REPRT_KND_CD_ID, REPRT_CN
+			, STTUS_CD_ID, SANCTN_ID, UNITY_ID
+			, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES  (
+			  #{evlReprtId}, #{reprtFsyr}, #{reprtFsseCdId}, #{reprtRecptn}
+			, #{reprtSj}, #{reprtKndCdId}, #{reprtCn}
+			, #{sttusCdId}, #{sanctnId}, #{unityId}
+			, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		)
+	</insert>
+
+	<update id="update">
+		UPDATE TB_CW_EVL_REPRT SET
+			  REPRT_SJ          			= #{reprtSj}
+			, REPRT_FSYR        			= #{reprtFsyr}
+			, REPRT_FSSE_CD_ID				= #{reprtFsseCdId}
+			, REPRT_RECPTN      			= #{reprtRecptn}
+			, REPRT_KND_CD_ID   			= #{reprtKndCdId}
+			, REPRT_CN          			= #{reprtCn}
+			, STTUS_CD_ID  					= #{sttusCdId}
+			, SANCTN_ID	   					= #{sanctnId}
+			, UNITY_ID						= #{unityId}
+			, UPD_DT 	  					= GETDATE()
+			, UPD_USER_ID 					= #{suserId}
+		WHERE EVL_REPRT_ID 					= #{evlReprtId}
+	</update>
+
+	<update id="updateSttus">
+		UPDATE TB_CW_EVL_REPRT SET
+			  STTUS_CD_ID  		= #{sttusCdId}
+			, UPD_DT 	  		= GETDATE()
+			, UPD_USER_ID 		= #{suserId}
+		WHERE EVL_REPRT_ID 		= #{evlReprtId}
+	</update>
+
+	<delete id="delete">
+   		DELETE FROM TB_CW_EVL_REPRT	WHERE EVL_REPRT_ID = #{evlReprtId}
+	</delete>
+
+
+<!--                    START:중요한 취약점                                                          -->
+<!-- 중요한 취약점 목록 -->
+	<select id="imprtncFrgltyPointList" resultType="EgovMap">
+		SELECT  E.EVL_ID
+			  , ROW_NUMBER() OVER(PARTITION BY E.EVL_ID ORDER BY E.EVL_KND_CD_ID, E.EVL_ENDDE, E.EVL_ID, M.OBJECT_LEVEL, M.OBJECT_ID) AS SORT_SN
+			  , E.EVL_SJ
+			  , C1.CODE_NM	AS EVL_KND_CD_NM
+	          , U.UPRPD_CL_CD_ID		-- 중요한 취약점
+	          , ISNULL(C.CNRL_ID, EC.CNRL_ID) AS CNRL_ID
+	          , M.OBJECT_ID
+	          , M.OBJECT_NO
+	          , M.OBJECT_NM
+	          , C.CNRL_CN
+	          , C.KEY_CNRL_AT
+	          , C.MRC_CNRL_AT
+	          , C.IPE_CNRL_AT
+		FROM TB_CW_EVL E
+       		LEFT OUTER JOIN TB_CO_CODE C1
+       			ON 	E.EVL_KND_CD_ID = C1.CODE_ID
+       		INNER JOIN TB_CW_UPRPD U
+       			ON 	E.EVL_ID = U.EVL_ID
+            AND U.UPRPD_CL_CD_ID = 'CTW_202_001'
+			LEFT OUTER JOIN TB_CW_EVL_EXC EE
+				ON	U.EVL_ID 			= EE.EVL_ID
+				AND U.OBJECT_ID 		= EE.OBJECT_ID
+				AND U.CHRG_USER_ID 		= EE.CHRG_USER_ID
+				AND U.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL C
+	        	ON  E.EVL_ID = C.EVL_ID
+	        	AND U.OBJECT_ID = C.CNRL_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_ELC_RCM_CNRL EC
+	        	ON  E.EVL_ID = EC.EVL_ID
+	        	AND U.OBJECT_ID = EC.CNRL_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_PROCS P
+	        	ON  E.EVL_ID = P.EVL_ID
+	        	AND U.OBJECT_ID = P.PROCS_ID
+	        LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+	        	ON 	E.EVL_ID = M.EVL_ID
+	        	AND U.OBJECT_ID = M.OBJECT_ID
+ 		WHERE E.EVL_ID IN (SELECT EVL_ID FROM TB_CW_EVL_REPRT_EVLLIST WHERE EVL_REPRT_ID = #{evlReprtId})
+        	AND EE.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005', 'CTW_106_007')
+   		ORDER BY E.EVL_KND_CD_ID, E.EVL_ENDDE, E.EVL_ID, M.OBJECT_LEVEL, M.OBJECT_ID
+	</select>
+
+
+<!-- 중요한 취약점 개선대책 목록 -->
+	<select id="frgltyPointImprvmCntrplnList" resultType="EgovMap">
+		SELECT  E.EVL_ID
+			  , ROW_NUMBER() OVER(PARTITION BY E.EVL_ID ORDER BY E.EVL_ID, U.UPRPD_TY_CD_ID, M.OBJECT_ID) AS SORT_SN
+			  , E.EVL_SJ
+			  , C1.CODE_NM	AS EVL_KND_CD_NM
+	          , U.UPRPD_TY_CD_ID		-- 미비점 개선 유형
+			  , C2.CODE_NM	AS UPRPD_TY_CD_NM
+	          , U.OBJECT_ID
+	          , M.OBJECT_NO
+	          , M.OBJECT_NM
+	          , ISNULL(C.CNRL_CN, EC.CNRL_CN) AS CNRL_CN
+	          , ISNULL(C.KEY_CNRL_AT, EC.KEY_CNRL_AT) AS KEY_CNRL_AT
+	          , ISNULL(C.MRC_CNRL_AT, EC.MRC_CNRL_AT) AS MRC_CNRL_AT
+	          , ISNULL(C.IPE_CNRL_AT, EC.IPE_CNRL_AT) AS IPE_CNRL_AT
+	          , U.UPRPD_CN
+	          , U.UPRPD_IMPRVM_PLAN
+	          , UE.EXC_CN
+	          , UE.STTUS_CD_ID
+	          , C3.CODE_NM	AS STTUS_CD_NM
+              , (CASE WHEN UE.STTUS_CD_ID = 'COM_023_007' THEN UE.EXC_COMPT_CD_ID ELSE '' END) AS EXC_COMPT_CD_ID
+              , (CASE WHEN UE.STTUS_CD_ID = 'COM_023_007' THEN C4.CODE_NM ELSE '미수행' END) AS EXC_COMPT_CD_NM
+              , AO.AUDIT_OPINION
+		FROM TB_CW_EVL E
+       		INNER JOIN TB_CW_UPRPD U
+       			ON 	E.EVL_ID = U.EVL_ID
+           	 	AND U.UPRPD_CL_CD_ID = 'CTW_202_001'
+       		LEFT OUTER JOIN TB_CW_UPRPD_EXC UE
+       			ON 	E.EVL_ID = UE.EVL_ID
+            	AND U.OBJECT_ID = UE.OBJECT_ID
+            	AND UE.OBJECT_ID IS NOT NULL
+			LEFT OUTER JOIN TB_CW_EVL_EXC EE
+				ON	U.EVL_ID 			= EE.EVL_ID
+				AND U.OBJECT_ID 		= EE.OBJECT_ID
+				AND U.CHRG_USER_ID 		= EE.CHRG_USER_ID
+				AND U.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+            LEFT OUTER JOIN TB_CW_EVL_AUDIT_OPINION AO
+            	ON 	E.EVL_ID = AO.EVL_ID
+            	AND	U.OBJECT_ID = AO.OBJECT_ID
+            	AND U.CHRG_USER_ID = AO.CHRG_USER_ID
+            	AND U.CHRG_USER_TY_CD_ID = AO.CHRG_USER_TY_CD_ID
+            	AND AO.STTUS_CD_ID = 'CTW_117_002'
+            LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+            	ON 	E.EVL_ID = M.EVL_ID
+            	AND U.OBJECT_ID = M.OBJECT_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL C
+	        	ON  E.EVL_ID = C.EVL_ID
+	        	AND U.OBJECT_ID = C.CNRL_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_ELC_RCM_CNRL EC
+	        	ON  E.EVL_ID = EC.EVL_ID
+	        	AND U.OBJECT_ID = EC.CNRL_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_PROCS P
+	        	ON  E.EVL_ID = P.EVL_ID
+	        	AND U.OBJECT_ID = P.PROCS_ID
+       		LEFT OUTER JOIN TB_CO_CODE C1
+       			ON 	E.EVL_KND_CD_ID = C1.CODE_ID
+       		LEFT OUTER JOIN TB_CO_CODE C2
+       			ON 	U.UPRPD_TY_CD_ID = C2.CODE_ID
+       		LEFT OUTER JOIN TB_CO_CODE C3
+       			ON 	UE.STTUS_CD_ID = C3.CODE_ID
+       		LEFT OUTER JOIN TB_CO_CODE C4
+       			ON 	UE.EXC_COMPT_CD_ID = C4.CODE_ID
+ 		WHERE E.EVL_ID IN (SELECT EVL_ID FROM TB_CW_EVL_REPRT_EVLLIST WHERE EVL_REPRT_ID = #{evlReprtId})
+			AND EE.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005', 'CTW_106_007')
+ 		ORDER BY E.EVL_ID, U.UPRPD_TY_CD_ID, M.OBJECT_ID
+	</select>
+
+
+<!--                    START:유의한 미비점                                                          -->
+<!-- 유의한 미비점 목록 -->
+	<select id="atentUprpdPointList" resultType="EgovMap">
+		SELECT  E.EVL_ID
+			  , ROW_NUMBER() OVER(PARTITION BY E.EVL_ID ORDER BY E.EVL_KND_CD_ID, E.EVL_ENDDE, E.EVL_ID) AS SORT_SN
+			  , E.EVL_SJ
+			  , C1.CODE_NM	AS EVL_KND_CD_NM
+	          , U.UPRPD_CL_CD_ID		-- 유의한 미비점
+	          , ISNULL(C.CNRL_ID, EC.CNRL_ID) AS CNRL_ID
+	          , M.OBJECT_ID
+	          , M.OBJECT_NO
+	          , M.OBJECT_NM
+	          , ISNULL(C.CNRL_CN, EC.CNRL_CN) AS CNRL_CN
+	          , ISNULL(C.KEY_CNRL_AT, EC.KEY_CNRL_AT) AS KEY_CNRL_AT
+	          , ISNULL(C.MRC_CNRL_AT, EC.MRC_CNRL_AT) AS MRC_CNRL_AT
+	          , ISNULL(C.IPE_CNRL_AT, EC.IPE_CNRL_AT) AS IPE_CNRL_AT
+		FROM TB_CW_EVL E
+       		LEFT OUTER JOIN TB_CO_CODE C1
+       			ON 	E.EVL_KND_CD_ID = C1.CODE_ID
+       		INNER JOIN TB_CW_UPRPD U
+       			ON 	E.EVL_ID = U.EVL_ID
+            	AND U.UPRPD_CL_CD_ID = 'CTW_202_002'
+       		LEFT OUTER JOIN TB_CW_UPRPD_EXC UE
+       			ON 	A.EVL_ID = UE.EVL_ID
+            	AND U.OBJECT_ID = UE.OBJECT_ID
+            	AND UE.OBJECT_ID IS NOT NULL
+			LEFT OUTER JOIN TB_CW_EVL_EXC EE
+				ON	U.EVL_ID 			= EE.EVL_ID
+				AND U.OBJECT_ID 		= EE.OBJECT_ID
+				AND U.CHRG_USER_ID 		= EE.CHRG_USER_ID
+				AND U.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+	        	ON  E.EVL_ID = M.EVL_ID
+	        	AND U.OBJECT_ID = M.OBJECT_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL C
+	        	ON  E.EVL_ID = C.EVL_ID
+	        	AND U.OBJECT_ID = C.CNRL_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL EC
+	        	ON  E.EVL_ID = EC.EVL_ID
+	        	AND U.OBJECT_ID = EC.CNRL_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_PROCS P
+	        	ON  E.EVL_ID = P.EVL_ID
+	        	AND U.OBJECT_ID = P.PROCS_ID
+ 		WHERE E.EVL_ID IN (SELECT EVL_ID FROM TB_CW_EVL_REPRT_EVLLIST WHERE EVL_REPRT_ID = #{evlReprtId})
+			AND EE.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005', 'CTW_106_007')
+   		ORDER BY E.EVL_KND_CD_ID, E.EVL_ENDDE, E.EVL_ID
+	</select>
+
+
+<!-- 유의한 미비점 개선대책 목록 -->
+	<select id="uprpdPointImprvmCntrplnList" resultType="EgovMap">
+		SELECT  E.EVL_ID
+			  , ROW_NUMBER() OVER(PARTITION BY E.EVL_ID ORDER BY E.EVL_ID, U.UPRPD_TY_CD_ID, UE.OBJECT_ID) AS SORT_SN
+			  , E.EVL_SJ
+			  , C1.CODE_NM	AS EVL_KND_CD_NM
+	          , U.UPRPD_TY_CD_ID		-- 미비점 개선 유형
+			  , C2.CODE_NM	AS UPRPD_TY_CD_NM
+	          , ISNULL(C.CNRL_ID, EC.CNRL_ID) AS CNRL_ID
+	          , M.OBJECT_ID
+	          , M.OBJECT_NO
+	          , M.OBJECT_NM
+	          , ISNULL(C.CNRL_CN, EC.CNRL_CN) AS CNRL_CN
+	          , ISNULL(C.KEY_CNRL_AT, EC.KEY_CNRL_AT) AS KEY_CNRL_AT
+	          , ISNULL(C.MRC_CNRL_AT, EC.MRC_CNRL_AT) AS MRC_CNRL_AT
+	          , ISNULL(C.IPE_CNRL_AT, EC.IPE_CNRL_AT) AS IPE_CNRL_AT
+	          , U.UPRPD_CN
+	          , U.UPRPD_IMPRVM_PLAN
+	          , UE.EXC_CN
+	          , UE.STTUS_CD_ID
+	          , C3.CODE_NM	AS STTUS_CD_NM
+              , (CASE WHEN UE.STTUS_CD_ID = 'COM_023_007' THEN UE.EXC_COMPT_CD_ID ELSE '' END) AS EXC_COMPT_CD_ID
+              , (CASE WHEN UE.STTUS_CD_ID = 'COM_023_007' THEN C4.CODE_NM ELSE '미수행' END) AS EXC_COMPT_CD_NM
+              , AO.AUDIT_OPINION
+		FROM TB_CW_EVL E
+       		INNER JOIN TB_CW_UPRPD U
+       			ON 	E.EVL_ID = U.EVL_ID
+            	AND U.UPRPD_CL_CD_ID = 'CTW_202_002'
+       		LEFT OUTER JOIN TB_CW_UPRPD_EXC UE
+       			ON 	E.EVL_ID = UE.EVL_ID
+            	AND U.OBJECT_ID = UE.OBJECT_ID
+            	AND UE.OBJECT_ID IS NOT NULL
+			LEFT OUTER JOIN TB_CW_EVL_EXC EE
+				ON	U.EVL_ID 			= EE.EVL_ID
+				AND U.OBJECT_ID 		= EE.OBJECT_ID
+				AND U.CHRG_USER_ID 		= EE.CHRG_USER_ID
+				AND U.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+            LEFT OUTER JOIN TB_CW_EVL_AUDIT_OPINION AO
+            	ON 	E.EVL_ID = AO.EVL_ID
+            	AND	U.OBJECT_ID = AO.OBJECT_ID
+            	AND U.CHRG_USER_ID = AO.CHRG_USER_ID
+            	AND U.CHRG_USER_TY_CD_ID = AO.CHRG_USER_TY_CD_ID
+            	AND AO.STTUS_CD_ID = 'CTW_117_002'
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+	        	ON  E.EVL_ID = M.EVL_ID
+	        	AND U.OBJECT_ID = M.OBJECT_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL C
+	        	ON  E.EVL_ID = C.EVL_ID
+	        	AND U.OBJECT_ID = C.CNRL_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL EC
+	        	ON  E.EVL_ID = EC.EVL_ID
+	        	AND U.OBJECT_ID = EC.CNRL_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_PROCS P
+	        	ON  E.EVL_ID = P.EVL_ID
+	        	AND U.OBJECT_ID = P.PROCS_ID
+       		LEFT OUTER JOIN TB_CO_CODE C1
+       			ON 	E.EVL_KND_CD_ID = C1.CODE_ID
+       		LEFT OUTER JOIN TB_CO_CODE C2
+       			ON 	U.UPRPD_TY_CD_ID = C2.CODE_ID
+       		LEFT OUTER JOIN TB_CO_CODE C3
+       			ON 	UE.STTUS_CD_ID = C3.CODE_ID
+       		LEFT OUTER JOIN TB_CO_CODE C4
+       			ON 	UE.EXC_COMPT_CD_ID = C4.CODE_ID
+ 		WHERE E.EVL_ID IN (SELECT EVL_ID FROM TB_CW_EVL_REPRT_EVLLIST WHERE EVL_REPRT_ID = #{evlReprtId})
+			AND EE.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005', 'CTW_106_007')
+ 		ORDER BY E.EVL_ID, U.UPRPD_TY_CD_ID, UE.OBJECT_ID
+	</select>
+
+<!--                    END:유의한 미비점                                                              -->
+
+
+<!-- START:지난보고서, 중요한 취약점/유의한 미비점 -->
+<!-- 지난보고서, 중요한 취약점/유의한 미비점  	  -->
+	<select id="beforeReprtImprvmCntrplnList" resultType="EgovMap">
+		SELECT  E.EVL_ID
+			  , ROW_NUMBER() OVER(PARTITION BY E.EVL_ID ORDER BY E.EVL_ID, U.UPRPD_TY_CD_ID, UE.OBJECT_ID) AS SORT_SN
+			  , E.EVL_SJ
+			  , C1.CODE_NM	AS EVL_KND_CD_NM
+	          , U.UPRPD_TY_CD_ID		-- 미비점 개선 유형
+			  , C2.CODE_NM	AS UPRPD_TY_CD_NM
+	          , ISNULL(C.CNRL_ID, EC.CNRL_ID) AS CNRL_ID
+	          , M.OBJECT_ID
+	          , M.OBJECT_NO
+	          , M.OBJECT_NM
+	          , ISNULL(C.CNRL_CN, EC.CNRL_CN) AS CNRL_CN
+	          , ISNULL(C.KEY_CNRL_AT, EC.KEY_CNRL_AT) AS KEY_CNRL_AT
+	          , ISNULL(C.MRC_CNRL_AT, EC.MRC_CNRL_AT) AS MRC_CNRL_AT
+	          , ISNULL(C.IPE_CNRL_AT, EC.IPE_CNRL_AT) AS IPE_CNRL_AT
+	          , U.UPRPD_CN
+	          , U.UPRPD_IMPRVM_PLAN
+	          , UE.EXC_CN
+	          , UE.STTUS_CD_ID
+	          , C3.CODE_NM	AS STTUS_CD_NM
+              , (CASE WHEN UE.STTUS_CD_ID = 'COM_023_007' THEN UE.EXC_COMPT_CD_ID ELSE '' END) AS EXC_COMPT_CD_ID
+              , (CASE WHEN UE.STTUS_CD_ID = 'COM_023_007' THEN C4.CODE_NM ELSE '미수행' END) AS EXC_COMPT_CD_NM
+              , AO.AUDIT_OPINION
+		FROM TB_CW_EVL E
+       		INNER JOIN TB_CW_UPRPD U
+       			ON 	E.EVL_ID = U.EVL_ID
+            	AND U.UPRPD_CL_CD_ID IN ('CTW_202_001', 'CTW_202_002')
+       		INNER JOIN TB_CW_UPRPD_POSMANT UE
+       			ON 	E.EVL_ID = UE.EVL_ID
+            	AND U.OBJECT_ID = UE.OBJECT_ID
+            	AND UE.LAST_AT = 'Y'
+            	AND UE.OBJECT_ID IS NOT NULL
+			LEFT OUTER JOIN TB_CW_EVL_EXC EE
+				ON	U.EVL_ID 			= EE.EVL_ID
+				AND U.OBJECT_ID 		= EE.OBJECT_ID
+				AND U.CHRG_USER_ID 		= EE.CHRG_USER_ID
+				AND U.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+            LEFT OUTER JOIN TB_CW_EVL_AUDIT_OPINION AO
+            	ON 	E.EVL_ID = AO.EVL_ID
+            	AND	U.OBJECT_ID = AO.OBJECT_ID
+            	AND U.CHRG_USER_ID = AO.CHRG_USER_ID
+            	AND U.CHRG_USER_TY_CD_ID = AO.CHRG_USER_TY_CD_ID
+            	AND AO.STTUS_CD_ID = 'CTW_117_002'
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+	        	ON  E.EVL_ID = M.EVL_ID
+	        	AND U.OBJECT_ID = M.OBJECT_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL C
+	        	ON  E.EVL_ID = C.EVL_ID
+	        	AND U.OBJECT_ID = C.CNRL_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL EC
+	        	ON  E.EVL_ID = EC.EVL_ID
+	        	AND U.OBJECT_ID = EC.CNRL_ID
+	      	LEFT OUTER JOIN TB_CW_EVL_RCM_PROCS P
+	        	ON  E.EVL_ID = P.EVL_ID
+	        	AND U.OBJECT_ID = P.PROCS_ID
+       		LEFT OUTER JOIN TB_CO_CODE C1
+       			ON 	E.EVL_KND_CD_ID = C1.CODE_ID
+       		LEFT OUTER JOIN TB_CO_CODE C2
+       			ON 	U.UPRPD_TY_CD_ID = C2.CODE_ID
+       		LEFT OUTER JOIN TB_CO_CODE C3
+       			ON 	UE.STTUS_CD_ID = C3.CODE_ID
+       		LEFT OUTER JOIN TB_CO_CODE C4
+       			ON 	UE.EXC_COMPT_CD_ID = C4.CODE_ID
+ 		WHERE E.EVL_ID IN (	SELECT 	EVL_ID
+ 							FROM 	TB_CW_EVL_REPRT_EVLLIST
+ 							WHERE 	EVL_REPRT_ID IN (	SELECT BEFORE_REPRT_ID
+ 														FROM TB_CW_EVL_REPRT_BEFORE_LIST
+ 														WHERE EVL_REPRT_ID = #{evlReprtId}	)
+ 							)
+			AND EE.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005', 'CTW_106_007')
+ 		ORDER BY E.EVL_ID, U.UPRPD_TY_CD_ID, UE.OBJECT_ID
+	</select>
+
+<!-- END:지난보고서, 중요한 취약점/유의한 미비점                      -->
+
+<!-- 평가별  감사 최종 의견 목록 -->
+	<select id="auditOpinionList" resultType="EgovMap">
+	    SELECT E.EVL_ID
+			 , E.EVL_SJ
+			 , C1.CODE_NM	AS EVL_KND_CD_NM
+       		 , E.ACCNUT_YY
+			 , C2.CODE_NM	AS ACCNUT_SE_CD_NM
+      		 , A.AUDIT_LAST_OPINION
+    	FROM TB_CW_EVL_REPRT R
+        LEFT OUTER JOIN TB_CW_EVL_REPRT_EVLLIST RE
+        	ON R.EVL_REPRT_ID = RE.EVL_REPRT_ID
+        LEFT OUTER JOIN TB_CW_EVL E
+        	ON RE.EVL_ID = E.EVL_ID
+        LEFT OUTER JOIN TB_CW_EVL_AUDIT A
+        	ON RE.EVL_ID = A.EVL_ID
+       	LEFT OUTER JOIN TB_CO_CODE C1
+       		ON 	E.EVL_KND_CD_ID = C1.CODE_ID
+       	LEFT OUTER JOIN TB_CO_CODE C2
+       		ON 	E.ACCNUT_SE_CD_ID = C2.CODE_ID
+        WHERE R.EVL_REPRT_ID = #{evlReprtId}
+        ORDER BY E.EVL_KND_CD_ID, E.ACCNUT_SE_CD_ID, A.EVL_ID
+	</select>
+
+<!-- 개별 감사의견 목록 -->
+	<select id="objectAuditOpinionList" resultType="EgovMap">
+     	SELECT A.EVL_ID
+		     , C1.CODE_NM	AS EVL_KND_CD_NM
+		     , E.EVL_SJ
+		     , UP.UPRPD_CL_CD_ID
+		     , M.OBJECT_LEVEL
+		     , M.OBJECT_NO
+		     , ISNULL(P.PROCS_NM, C.CNRL_CN) AS OBJECT_NM
+		     , A.AUDIT_OPINION
+		FROM TB_CW_EVL_AUDIT_OPINION A
+		LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+		    ON  A.EVL_ID = M.EVL_ID
+		    AND A.OBJECT_ID = M.OBJECT_ID
+		LEFT OUTER JOIN TB_CW_EVL_RCM_PROCS P
+		    ON  M.EVL_ID = P.EVL_ID
+		    AND M.OBJECT_ID = P.PROCS_ID
+		LEFT OUTER JOIN TB_CW_EVL_RCM_CNRL C
+		    ON  M.EVL_ID = C.EVL_ID
+		    AND M.OBJECT_ID = C.CNRL_ID
+		LEFT OUTER JOIN TB_CW_EVL E
+		    ON  A.EVL_ID = E.EVL_ID
+		LEFT OUTER JOIN TB_CW_UPRPD UP
+		    ON  A.EVL_ID = UP.EVL_ID
+		    AND A.OBJECT_ID = UP.OBJECT_ID
+      	LEFT OUTER JOIN TB_CO_CODE C1
+     		ON 	E.EVL_KND_CD_ID = C1.CODE_ID
+ 		WHERE A.EVL_ID IN (SELECT EVL_ID FROM TB_CW_EVL_REPRT_EVLLIST WHERE EVL_REPRT_ID = #{evlReprtId})
+ 		<!-- ELC 제외 -->
+ 		  AND E.EVL_KND_CD_ID IN ('CTW_103_001', 'CTW_103_002')
+		  AND A.STTUS_CD_ID = 'CTW_117_002'
+		  AND ISNULL(UP.UPRPD_CL_CD_ID, 'NO UPRPD') NOT IN ('CTW_202_001', 'CTW_202_002')
+		ORDER BY A.EVL_ID, M.OBJECT_LEVEL, M.OBJECT_NO, M.OBJECT_ID
+	</select>
+
+<!-- 평가 리스트 -->
+	<select id="evlList" resultType="EgovMap">
+		SELECT  A.EVL_REPRT_ID
+		      , A.EVL_ID
+		      , E.EVL_SJ
+		      , E.EVL_KND_CD_ID
+		      , C1.CODE_NM			AS EVL_KND_CD_NM
+		      , E.ACCNUT_YY
+		      , E.ACCNUT_SE_CD_ID
+		      , E.EVL_CN
+		      , C2.CODE_NM			AS ACCNUT_SE_CD_NM
+		      , CONVERT ( VARCHAR , CONVERT ( DATE , E.EVL_BGNDE , 112 ) , 23 ) AS EVL_BGNDE
+		      , CONVERT ( VARCHAR , CONVERT ( DATE , E.EVL_ENDDE , 112 ) , 23 ) AS EVL_ENDDE
+		      , C.EVL_CNCLSN
+		      , E.UNITY_ID AS EVL_PLAN_UNITY_ID
+		      , C.UNITY_ID AS EVL_CNCLSN_UNITY_ID
+              , (	SELECT (CASE WHEN COUNT(U.OBJECT_ID) = 0 THEN 'N' ELSE 'Y' END)
+                	FROM TB_CW_UPRPD U
+                	LEFT OUTER JOIN TB_CW_UPRPD_EXC UE
+                		ON 	U.EVL_ID = UE.EVL_ID
+                		AND U.OBJECT_ID = UE.OBJECT_ID
+					LEFT OUTER JOIN TB_CW_EVL_EXC EE
+						ON	U.EVL_ID 			= EE.EVL_ID
+						AND U.OBJECT_ID 		= EE.OBJECT_ID
+						AND U.CHRG_USER_ID 		= EE.CHRG_USER_ID
+						AND U.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+                	WHERE 	U.EVL_ID = A.EVL_ID
+                		AND	UE.OBJECT_ID IS NOT NULL
+           				AND EE.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005', 'CTW_106_007')
+                		AND	U.UPRPD_CL_CD_ID = 'CTW_202_001')	AS FRGLTY_AT	--취약점 존재여부
+              , (	SELECT (CASE WHEN COUNT(U.OBJECT_ID) = 0 THEN 'N' ELSE 'Y' END)
+                	FROM TB_CW_UPRPD U
+                	LEFT OUTER JOIN TB_CW_UPRPD_EXC UE
+                		ON 	U.EVL_ID = UE.EVL_ID
+                		AND U.OBJECT_ID = UE.OBJECT_ID
+					LEFT OUTER JOIN TB_CW_EVL_EXC EE
+						ON	U.EVL_ID 			= EE.EVL_ID
+						AND U.OBJECT_ID 		= EE.OBJECT_ID
+						AND U.CHRG_USER_ID 		= EE.CHRG_USER_ID
+						AND U.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+                	WHERE 	U.EVL_ID = A.EVL_ID
+                		AND	UE.OBJECT_ID IS NOT NULL
+           				AND EE.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005', 'CTW_106_007')
+                		AND	U.UPRPD_CL_CD_ID = 'CTW_202_002')	AS ATENT_AT	--유의한 미비점 존재여부
+              , (	SELECT (CASE WHEN COUNT(U.OBJECT_ID) = 0 THEN 'N' ELSE 'Y' END)
+                	FROM TB_CW_UPRPD U
+                	LEFT OUTER JOIN TB_CW_UPRPD_EXC UE
+                		ON 	U.EVL_ID = UE.EVL_ID
+                		AND U.OBJECT_ID = UE.OBJECT_ID
+					LEFT OUTER JOIN TB_CW_EVL_EXC EE
+						ON	U.EVL_ID 			= EE.EVL_ID
+						AND U.OBJECT_ID 		= EE.OBJECT_ID
+						AND U.CHRG_USER_ID 		= EE.CHRG_USER_ID
+						AND U.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+                	WHERE 	U.EVL_ID = A.EVL_ID
+                		AND	UE.OBJECT_ID IS NOT NULL
+           				AND EE.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005', 'CTW_106_007')
+                		AND	U.UPRPD_CL_CD_ID = 'CTW_202_003')	AS SIMPL_AT	--단순한 미비점 존재여부
+              , (	SELECT (CASE WHEN COUNT(AO.OBJECT_ID) = 0 THEN 'N' ELSE 'Y' END)
+                	FROM TB_CW_EVL_AUDIT_OPINION AO
+                	WHERE 	AO.EVL_ID = A.EVL_ID
+                		AND	AO.STTUS_CD_ID = 'CTW_107_002')	AS AUDIT_AT	-- 감사의견
+		FROM TB_CW_EVL_REPRT_EVLLIST A
+			LEFT OUTER JOIN TB_CW_EVL E
+				ON  A.EVL_ID = E.EVL_ID
+			LEFT OUTER JOIN TB_CW_EVL_COMPT C
+				ON  A.EVL_ID = C.EVL_ID
+			LEFT OUTER JOIN TB_CO_CODE C1
+				ON  E.EVL_KND_CD_ID = C1.CODE_ID
+			LEFT OUTER JOIN TB_CO_CODE C2
+				ON  E.ACCNUT_SE_CD_ID = C2.CODE_ID
+	 	WHERE A.EVL_REPRT_ID = #{evlReprtId}
+		ORDER BY A.EVL_ID ASC
+	</select>
+
+	<insert id="insertEvllist">
+		INSERT INTO TB_CW_EVL_REPRT_EVLLIST (
+			  EVL_REPRT_ID, EVL_ID
+		) VALUES  (
+			  #{evlReprtId}, #{evlId}
+		)
+	</insert>
+
+	<delete id="deleteEvllist">
+           DELETE FROM TB_CW_EVL_REPRT_EVLLIST
+           WHERE EVL_REPRT_ID = #{evlReprtId}
+	</delete>
+
+<!-- 이전 보고 리스트 -->
+	<select id="beforeReprtList" resultType="EgovMap">
+		SELECT
+                A.EVL_REPRT_ID
+              , A.BEFORE_REPRT_ID
+              , B.REPRT_FSYR
+              , B.REPRT_FSSE_CD_ID
+		      , E.CODE_NM			AS REPRT_FSSE_CD_NM
+      		  , B.REPRT_RECPTN
+		      , B.REPRT_SJ
+		      , B.REPRT_KND_CD_ID
+		      , C.CODE_NM			AS REPRT_KND_CD_NM
+		      , B.REPRT_CN
+		      , B.STTUS_CD_ID
+		      , D.CODE_NM			AS STTUS_CD_NM
+		      , B.SANCTN_ID
+		      , B.UNITY_ID
+              , B.RGS_DT
+              , B.RGS_USER_ID
+              , CONVERT ( VARCHAR , B.UPD_DT , 23 ) AS UPD_DE 
+              , B.UPD_USER_ID
+              , AU.USER_NM AS UPD_USER_NM
+              , (AU.USER_NM + (
+                    SELECT CASE WHEN COUNT(SANCTN_ID) > 1 THEN '외 ' + (COUNT(SANCTN_ID)-1) + '명' ELSE '' END
+                    FROM TB_CO_SANCTN_USER
+                    WHERE SANCTN_ID = B.SANCTN_ID
+               )) AS USER_NM_STR
+        FROM TB_CW_EVL_REPRT_BEFORE_LIST A
+        LEFT OUTER JOIN TB_CW_EVL_REPRT B
+            ON A.BEFORE_REPRT_ID = B.EVL_REPRT_ID
+        LEFT OUTER JOIN TB_CO_CODE C
+            ON B.REPRT_KND_CD_ID = C.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE D
+            ON B.STTUS_CD_ID = D.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE E
+            ON B.REPRT_FSSE_CD_ID = E.CODE_ID
+        LEFT OUTER JOIN TB_CO_USER AU
+            ON B.UPD_USER_ID = AU.USER_ID
+	 	WHERE A.EVL_REPRT_ID = #{evlReprtId}
+		ORDER BY A.EVL_REPRT_ID ASC
+	</select>
+
+	<insert id="insertBeforeReprtList">
+		INSERT INTO TB_CW_EVL_REPRT_BEFORE_LIST (
+			  EVL_REPRT_ID, BEFORE_REPRT_ID
+		) VALUES  (
+			  #{evlReprtId}, #{beforeReprtId}
+		)
+	</insert>
+
+	<delete id="deleteBeforeReprtList">
+           DELETE FROM TB_CW_EVL_REPRT_BEFORE_LIST
+           WHERE EVL_REPRT_ID = #{evlReprtId}
+	</delete>
+
+	<!-- 평가 취약점 존재여부 -->
+	<select id="chckFrgltyAt" resultType="string">
+		SELECT 	CASE WHEN SUM((CASE WHEN U.UPRPD_CL_CD_ID = 'CTW_202_001' THEN 1 ELSE 0 END)) > 0 THEN 'Y'
+					 ELSE 'N'
+					 END FRGLTY_AT
+		FROM TB_CW_EVL_REPRT_EVLLIST A
+			LEFT OUTER JOIN TB_CW_EVL E
+				ON  A.EVL_ID = E.EVL_ID
+       		LEFT OUTER JOIN TB_CO_CODE C1
+       			ON 	E.EVL_KND_CD_ID = C1.CODE_ID
+			LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+				ON  A.EVL_ID = M.EVL_ID
+       		LEFT OUTER JOIN TB_CW_UPRPD U
+       			ON 	A.EVL_ID = U.EVL_ID
+       			AND M.OBJECT_ID = U.OBJECT_ID
+          	LEFT OUTER JOIN TB_CW_UPRPD_EXC UE
+            	ON 	A.EVL_ID = UE.EVL_ID
+            	AND U.OBJECT_ID = UE.OBJECT_ID
+			LEFT OUTER JOIN TB_CW_EVL_EXC EE
+				ON	U.EVL_ID 			= EE.EVL_ID
+				AND U.OBJECT_ID 		= EE.OBJECT_ID
+				AND U.CHRG_USER_ID 		= EE.CHRG_USER_ID
+				AND U.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+ 		WHERE A.EVL_REPRT_ID = #{evlReprtId}
+           	AND EE.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005', 'CTW_106_007')
+	</select>
+
+	<!-- 평가 유의한 미비점 존재여부 -->
+	<select id="chckAtentAt" resultType="string">
+		SELECT 	CASE WHEN SUM((CASE WHEN U.UPRPD_CL_CD_ID = 'CTW_202_002' THEN 1 ELSE 0 END)) > 0 THEN 'Y'
+					 ELSE 'N'
+					 END ATENT_AT
+		FROM TB_CW_EVL_REPRT_EVLLIST A
+			LEFT OUTER JOIN TB_CW_EVL E
+				ON  A.EVL_ID = E.EVL_ID
+       		LEFT OUTER JOIN TB_CO_CODE C1
+       			ON 	E.EVL_KND_CD_ID = C1.CODE_ID
+			LEFT OUTER JOIN TB_CW_EVL_RCM_MAPNG M
+				ON  A.EVL_ID = M.EVL_ID
+       		LEFT OUTER JOIN TB_CW_UPRPD U
+       			ON 	A.EVL_ID = U.EVL_ID
+       			AND M.OBJECT_ID = U.OBJECT_ID
+          	LEFT OUTER JOIN TB_CW_UPRPD_EXC UE
+            	ON 	A.EVL_ID = UE.EVL_ID
+            	AND U.OBJECT_ID = UE.OBJECT_ID
+			LEFT OUTER JOIN TB_CW_EVL_EXC EE
+				ON	U.EVL_ID 			= EE.EVL_ID
+				AND U.OBJECT_ID 		= EE.OBJECT_ID
+				AND U.CHRG_USER_ID 		= EE.CHRG_USER_ID
+				AND U.CHRG_USER_TY_CD_ID = EE.CHRG_USER_TY_CD_ID
+ 		WHERE A.EVL_REPRT_ID = #{evlReprtId}
+           	AND EE.STTUS_CD_ID IN ('CTW_106_003', 'CTW_106_005', 'CTW_106_007')
+	</select>
+</mapper>

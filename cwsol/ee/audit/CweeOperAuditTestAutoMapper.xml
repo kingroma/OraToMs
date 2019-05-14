@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.ee.audit.serviceimpl.CweeOperAuditTestAutoMapper">
+
+   <!-- 자동추출 결과 목록 -->
+    <select id="list" resultType="EgovMap">
+        SELECT  
+        	  A.EVL_ID
+			, A.OBJECT_ID
+			, A.CHRG_USER_ID
+			, A.CHRG_USER_TY_CD_ID
+		    , A.SORT_SN
+		    , A.SAMPLE_SN
+		    , A.SAMPLE_UNITY_ID
+		    , A.SAMPLE_TEST_OPINION
+		    , A.SAMPLE_RESULT
+		    , B.CODE_NM AS SAMPLE_RESULT_NM
+		    ${sql}
+		    , A.RGS_DT
+		    , A.RGS_USER_ID
+		    , A.UPD_DT
+		    , A.UPD_USER_ID
+		    , A.PRUF_UNITY_ID
+		FROM TB_CW_EVL_AUDIT_AUTO_RESULT A
+		LEFT OUTER JOIN TB_CO_CODE B
+			ON A.SAMPLE_RESULT = B.CODE_ID
+		WHERE 1=1
+			AND A.EVL_ID = #{evlId} 
+            AND A.OBJECT_ID = #{objectId}
+            AND A.CHRG_USER_ID = #{chrgUserId}
+            AND A.CHRG_USER_TY_CD_ID = 'CTW_105_002'
+		ORDER BY A.SORT_SN
+    </select>
+    
+    <!-- 자동추출 샘플 입력 -->
+    <insert id="insert">
+        INSERT INTO TB_CW_EVL_AUDIT_AUTO_RESULT (
+                EVL_ID, OBJECT_ID, CHRG_USER_ID, CHRG_USER_TY_CD_ID, SORT_SN, SAMPLE_SN, SAMPLE_UNITY_ID, SAMPLE_TEST_OPINION, SAMPLE_RESULT, PRUF_UNITY_ID
+              , COLUMN_1, COLUMN_2, COLUMN_3, COLUMN_4, COLUMN_5, COLUMN_6, COLUMN_7, COLUMN_8, COLUMN_9, COLUMN_10
+		      , COLUMN_11, COLUMN_12, COLUMN_13, COLUMN_14, COLUMN_15, COLUMN_16, COLUMN_17, COLUMN_18, COLUMN_19, COLUMN_20
+		      , COLUMN_21, COLUMN_22, COLUMN_23, COLUMN_24, COLUMN_25, COLUMN_26, COLUMN_27, COLUMN_28, COLUMN_29, COLUMN_30
+		      , COLUMN_31, COLUMN_32, COLUMN_33, COLUMN_34, COLUMN_35, COLUMN_36, COLUMN_37, COLUMN_38, COLUMN_39, COLUMN_40
+		      , COLUMN_41, COLUMN_42, COLUMN_43, COLUMN_44, COLUMN_45, COLUMN_46, COLUMN_47, COLUMN_48, COLUMN_49, COLUMN_50
+		      , COLUMN_51, COLUMN_52, COLUMN_53, COLUMN_54, COLUMN_55, COLUMN_56, COLUMN_57, COLUMN_58, COLUMN_59, COLUMN_60
+		      , COLUMN_61, COLUMN_62, COLUMN_63, COLUMN_64, COLUMN_65, COLUMN_66, COLUMN_67, COLUMN_68, COLUMN_69, COLUMN_70
+		      , COLUMN_71, COLUMN_72, COLUMN_73, COLUMN_74, COLUMN_75, COLUMN_76, COLUMN_77, COLUMN_78, COLUMN_79, COLUMN_80
+		      , COLUMN_81, COLUMN_82, COLUMN_83, COLUMN_84, COLUMN_85, COLUMN_86, COLUMN_87, COLUMN_88, COLUMN_89, COLUMN_90
+		      , COLUMN_91, COLUMN_92, COLUMN_93, COLUMN_94, COLUMN_95, COLUMN_96, COLUMN_97, COLUMN_98, COLUMN_99
+		      , RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+        ) SELECT #{evlId}, #{objectId}, #{chrgUserId}, #{chrgUserTyCdId}, #{sortSn}, SN, UNITY_ID, #{sampleTestOpinion}, #{sampleResult}, #{unityId}
+              , COLUMN_1, COLUMN_2, COLUMN_3, COLUMN_4, COLUMN_5, COLUMN_6, COLUMN_7, COLUMN_8, COLUMN_9, COLUMN_10
+		      , COLUMN_11, COLUMN_12, COLUMN_13, COLUMN_14, COLUMN_15, COLUMN_16, COLUMN_17, COLUMN_18, COLUMN_19, COLUMN_20
+		      , COLUMN_21, COLUMN_22, COLUMN_23, COLUMN_24, COLUMN_25, COLUMN_26, COLUMN_27, COLUMN_28, COLUMN_29, COLUMN_30
+		      , COLUMN_31, COLUMN_32, COLUMN_33, COLUMN_34, COLUMN_35, COLUMN_36, COLUMN_37, COLUMN_38, COLUMN_39, COLUMN_40
+		      , COLUMN_41, COLUMN_42, COLUMN_43, COLUMN_44, COLUMN_45, COLUMN_46, COLUMN_47, COLUMN_48, COLUMN_49, COLUMN_50
+		      , COLUMN_51, COLUMN_52, COLUMN_53, COLUMN_54, COLUMN_55, COLUMN_56, COLUMN_57, COLUMN_58, COLUMN_59, COLUMN_60
+		      , COLUMN_61, COLUMN_62, COLUMN_63, COLUMN_64, COLUMN_65, COLUMN_66, COLUMN_67, COLUMN_68, COLUMN_69, COLUMN_70
+		      , COLUMN_71, COLUMN_72, COLUMN_73, COLUMN_74, COLUMN_75, COLUMN_76, COLUMN_77, COLUMN_78, COLUMN_79, COLUMN_80
+		      , COLUMN_81, COLUMN_82, COLUMN_83, COLUMN_84, COLUMN_85, COLUMN_86, COLUMN_87, COLUMN_88, COLUMN_89, COLUMN_90
+		      , COLUMN_91, COLUMN_92, COLUMN_93, COLUMN_94, COLUMN_95, COLUMN_96, COLUMN_97, COLUMN_98, COLUMN_99
+		      , GETDATE(), #{suserId}, GETDATE(), #{suserId}
+			FROM TB_CW_SAMPLE_DATA
+			WHERE SAMPLE_ID = #{sampleId}
+			AND SN = #{sn}
+    </insert>
+    
+    <!-- 자동추출 샘플 삭제 -->
+    <delete id="delete">
+        DELETE FROM TB_CW_EVL_AUDIT_AUTO_RESULT 
+        WHERE EVL_ID = #{evlId} 
+            AND OBJECT_ID = #{objectId}
+            AND CHRG_USER_ID = #{chrgUserId}
+            AND CHRG_USER_TY_CD_ID = #{chrgUserTyCdId}
+    </delete>
+    
+    <!-- 자동추출 샘플 항목 입력 -->
+    <insert id="insertIem">
+    	INSERT INTO TB_CW_EVL_AUDIT_AUTO_IEM (
+    		  EVL_ID
+			, OBJECT_ID
+			, CHRG_USER_ID
+			, CHRG_USER_TY_CD_ID
+			, COLUMN_NM
+			, IEM_NM
+			, INDICT_AT
+			, IEM_SN
+			, RGS_DT
+			, RGS_USER_ID
+			, UPD_DT
+			, UPD_USER_ID
+    	) SELECT 
+	    	  #{evlId}
+			, #{objectId}
+			, #{chrgUserId}
+			, #{chrgUserTyCdId}
+			, COLUMN_NM
+			, IEM_NM
+			, INDICT_AT
+			, IEM_SN
+			, GETDATE()
+			, #{suserId}
+			, GETDATE()
+			, #{suserId}
+		FROM TB_CW_SAMPLE_IEM
+		WHERE SAMPLE_ID = #{sampleId}
+    </insert>
+    
+    <!-- 자동추출 샘플 항목 삭제 -->
+    <delete id="deleteIem">
+    	DELETE FROM TB_CW_EVL_AUDIT_AUTO_IEM 
+        WHERE EVL_ID = #{evlId} 
+            AND OBJECT_ID = #{objectId}
+            AND CHRG_USER_ID = #{chrgUserId}
+            AND CHRG_USER_TY_CD_ID = #{chrgUserTyCdId}
+    </delete>
+    
+    
+    <!-- 항목 목록 -->
+	<select id="iemList" resultType="EgovMap">
+		SELECT  
+			  EVL_ID
+			, OBJECT_ID
+			, CHRG_USER_ID
+			, CHRG_USER_TY_CD_ID
+		    , A.COLUMN_NM
+		    , A.IEM_NM
+		    , A.INDICT_AT
+		    , A.IEM_SN
+		    , A.RGS_DT
+		    , A.RGS_USER_ID
+		    , A.UPD_DT
+		    , A.UPD_USER_ID
+		FROM TB_CW_EVL_AUDIT_AUTO_IEM A
+		WHERE 1=1
+			AND A.EVL_ID = #{evlId} 
+            AND A.OBJECT_ID = #{objectId}
+            AND A.CHRG_USER_ID = #{chrgUserId}
+            AND A.CHRG_USER_TY_CD_ID = 'CTW_105_002'
+			AND A.INDICT_AT = 'Y'
+		ORDER BY A.IEM_SN
+	</select>
+	
+	<!-- 자동추출 샘플 결과 수정 -->
+	<update id="update">
+		UPDATE TB_CW_EVL_AUDIT_AUTO_RESULT 
+			SET 
+			  SAMPLE_TEST_OPINION  = #{sampleTestOpinion}
+			, SAMPLE_RESULT        = #{sampleResult}
+			, PRUF_UNITY_ID        = #{unityId}
+		WHERE EVL_ID = #{evlId} 
+            AND OBJECT_ID = #{objectId}
+            AND CHRG_USER_ID = #{chrgUserId}
+            AND CHRG_USER_TY_CD_ID = #{chrgUserTyCdId}
+            AND SORT_SN = #{sortSn}
+	</update>
+</mapper>

@@ -1,0 +1,566 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.rcm.coso.serviceimpl.CwrcmCosoMapper">
+
+	<resultMap id="cnrlMap" type="CwrcmCosoVO" >
+		<result property="entityId" 		column="ENTITY_ID"   	 	/> 
+		<result property="bgntmstmp" 		column="BGNTMSTMP"   	 	/> 
+  		<collection property="cnrlList" 	column="{entityId=ENTITY_ID,bgntmstmp=BGNTMSTMP}" select="cnrlList" />
+  	</resultMap>
+  	
+	<select id="list" resultMap="cnrlMap">
+		<choose>
+			<when test='srchWrd == null or srchWrd == ""'>
+				<!-- SIBLINGS 으로 인한 ROWNUM2 와 LPAD -->
+				WITH V1 ( ENTITY_ID , UPPER_ENTITY_ID , ENTITY_LEVEL , ROWNUM2 ) AS ( 
+					SELECT ENTITY_ID , UPPER_ENTITY_ID , ENTITY_LEVEL  ,  REPLICATE('0',5 - LEN(ENTITY_ID)) + CONVERT(VARCHAR, ENTITY_ID ) +  REPLICATE('0',3 - LEN(ENTITY_LEVEL)) + CONVERT(VARCHAR, ENTITY_LEVEL )  AS ROWNUM2
+					FROM TB_CW_COSO_ENTITY_HIST
+					WHERE ENTITY_LEVEL = 1 
+					
+					UNION ALL 
+					SELECT E.ENTITY_ID , E.UPPER_ENTITY_ID , E.ENTITY_LEVEL  , ( ROOT.ROWNUM2 + '_' +  REPLICATE('0',5 - LEN(E.ENTITY_ID)) + CONVERT(VARCHAR, E.ENTITY_ID ) +  REPLICATE('0',3 - LEN(E.ENTITY_LEVEL)) + CONVERT(VARCHAR, E.ENTITY_LEVEL ) )  AS ROWNUM2
+					FROM TB_CW_COSO_ENTITY_HIST E , V1 ROOT 
+					WHERE ROOT.ENTITY_ID = E.UPPER_ENTITY_ID
+				)
+				SELECT T.* FROM (
+					SELECT DISTINCT
+							A.ENTITY_ID
+					      , A.BGNTMSTMP
+					      , A.ENDTMSTMP
+					      , A.ENTITY_CD_ID
+					      , A.ENTITY_NM
+					      , A.ENTITY_LEVEL
+					      , A.ENTITY_KND_CD_ID
+					      , A.UPPER_ENTITY_ID
+					      , A.EXCEL_NO
+					      , A.SORT_SN
+					      , A.USE_AT
+					      , A.DEL_AT
+					      , A.RGS_DT
+					      , A.RGS_USER_ID
+					      , A.UPD_DT
+					      , A.UPD_USER_ID
+					      , V.ROWNUM2
+					FROM V1 V
+					INNER JOIN TB_CW_COSO_ENTITY_HIST A
+						ON V.ENTITY_ID = A.ENTITY_ID
+					WHERE A.ENDTMSTMP = '99991231235959999999'
+						AND A.DEL_AT = 'N'
+					) T
+				ORDER BY ROWNUM2 ASC 
+			</when>
+			<otherwise>
+				WITH V0 ( ENTITY_ID , UPPER_ENTITY_ID , ENTITY_LEVEL ) AS ( 
+					SELECT ENTITY_ID , UPPER_ENTITY_ID , ENTITY_LEVEL  
+					FROM TB_CW_COSO_ENTITY_HIST
+					WHERE ENTITY_NM LIKE '%'+#{srchWrd}+'%'
+					
+					UNION ALL 
+					SELECT E.ENTITY_ID , E.UPPER_ENTITY_ID , E.ENTITY_LEVEL  
+					FROM TB_CW_COSO_ENTITY_HIST E , V0 ROOT 
+					WHERE ROOT.UPPER_ENTITY_ID = E.ENTITY_ID
+				)
+				, V1 ( ENTITY_ID , UPPER_ENTITY_ID , ENTITY_LEVEL , ROWNUM2 ) AS ( 
+					SELECT ENTITY_ID , UPPER_ENTITY_ID , ENTITY_LEVEL  ,  REPLICATE('0',5 - LEN(ENTITY_ID)) + CONVERT(VARCHAR, ENTITY_ID ) +  REPLICATE('0',3 - LEN(ENTITY_LEVEL)) + CONVERT(VARCHAR, ENTITY_LEVEL )  AS ROWNUM2
+					FROM V0
+					WHERE ENTITY_LEVEL = '1'
+					
+					UNION ALL 
+					SELECT E.ENTITY_ID , E.UPPER_ENTITY_ID , E.ENTITY_LEVEL  , ( ROOT.ROWNUM2 + '_' +  REPLICATE('0',5 - LEN(E.ENTITY_ID)) + CONVERT(VARCHAR, E.ENTITY_ID ) +  REPLICATE('0',3 - LEN(E.ENTITY_LEVEL)) + CONVERT(VARCHAR, E.ENTITY_LEVEL ) )  AS ROWNUM2
+					FROM V0 E , V1 ROOT 
+					WHERE ROOT.ENTITY_ID = E.UPPER_ENTITY_ID
+				) 
+				SELECT T.* FROM (
+					SELECT DISTINCT
+							A.ENTITY_ID
+					      , A.BGNTMSTMP
+					      , A.ENDTMSTMP
+					      , A.ENTITY_CD_ID
+					      , A.ENTITY_NM
+					      , A.ENTITY_LEVEL
+					      , A.ENTITY_KND_CD_ID
+					      , A.UPPER_ENTITY_ID
+					      , A.EXCEL_NO
+					      , A.SORT_SN
+					      , A.USE_AT
+					      , A.DEL_AT
+					      , A.RGS_DT
+					      , A.RGS_USER_ID
+					      , A.UPD_DT
+					      , A.UPD_USER_ID
+					      , V.ROWNUM2
+					FROM V1 V
+					INNER JOIN TB_CW_COSO_ENTITY_HIST A
+						ON V.ENTITY_ID = A.ENTITY_ID
+					WHERE A.ENDTMSTMP = '99991231235959999999'
+						AND A.DEL_AT = 'N'
+					) T
+				ORDER BY ROWNUM2 ASC 
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="cnrlList" resultType="EgovMap">
+		SELECT TOT.* FROM (
+			/** PLC 통제 정보 */
+			SELECT
+			      B.CNRL_ID
+			    , B.CNRL_NO
+			    , B.CNRL_NM
+			    , ISNULL(B.KEY_CNRL_AT, 'N') AS KEY_CNRL_AT
+			    , ISNULL(B.MRC_CNRL_AT, 'N') AS MRC_CNRL_AT
+			    , ISNULL(B.IPE_CNRL_AT, 'N') AS IPE_CNRL_AT
+				, BA.CODE_NM 		AS CNRL_TY01
+				, BB.CODE_NM 		AS CNRL_TY02
+			    , BC.CODE_NM 		AS CNRL_TY03
+				, A.RCM_SE
+			FROM TB_CW_COSO_ENTITY_MAPPING A
+			INNER JOIN TB_CW_COSO_ENTITY_HIST CH
+				ON A.ENTITY_ID = CH.ENTITY_ID
+				AND A.BGNTMSTMP = CH.BGNTMSTMP
+			INNER JOIN TB_CW_RCM_CNRL_HIST B
+		   		ON A.CNRL_ID = B.CNRL_ID
+		   		AND A.BGNTMSTMP BETWEEN B.BGNTMSTMP AND B.ENDTMSTMP		/** 해당 시점의 통제 정보 조회 */
+	        LEFT OUTER JOIN TB_CO_CODE BA
+	            ON B.CNRL_TY01_CD_ID = BA.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE BB
+	            ON B.CNRL_TY02_CD_ID = BB.CODE_ID 
+	        LEFT OUTER JOIN TB_CO_CODE BC
+	            ON B.CNRL_TY03_CD_ID = BC.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE BD
+	            ON B.TEST_CYCLE_CD_ID = BD.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE BE
+	            ON B.OFFICE_TY_CD_ID = BE.CODE_ID
+	        WHERE 1=1
+	        	AND A.RCM_SE = 'P'
+	        	AND A.ENTITY_ID = #{entityId}
+	        	AND CH.BGNTMSTMP = #{bgntmstmp}
+	        	
+	        UNION ALL
+	        
+	        /** ELC 통제 정보 */
+	        SELECT
+			      B.CNRL_ID
+			    , B.CNRL_NO
+			    , B.CNRL_NM
+			    , ISNULL(B.KEY_CNRL_AT, 'N') AS KEY_CNRL_AT
+			    , ISNULL(B.MRC_CNRL_AT, 'N') AS MRC_CNRL_AT
+			    , ISNULL(B.IPE_CNRL_AT, 'N') AS IPE_CNRL_AT
+				, BA.CODE_NM 		AS CNRL_TY01
+				, BB.CODE_NM 		AS CNRL_TY02
+			    , BC.CODE_NM 		AS CNRL_TY03
+				, A.RCM_SE
+			FROM TB_CW_COSO_ENTITY_MAPPING A
+			INNER JOIN TB_CW_COSO_ENTITY_HIST CH
+				ON A.ENTITY_ID = CH.ENTITY_ID
+				AND A.BGNTMSTMP = CH.BGNTMSTMP
+			INNER JOIN TB_CW_ELC_RCM_CNRL_HIST B
+		   		ON A.CNRL_ID = B.CNRL_ID
+		   		AND A.BGNTMSTMP BETWEEN B.BGNTMSTMP AND B.ENDTMSTMP		/** 해당 시점의 통제 정보 조회 */
+	        LEFT OUTER JOIN TB_CO_CODE BA
+	            ON B.CNRL_TY01_CD_ID = BA.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE BB
+	            ON B.CNRL_TY02_CD_ID = BB.CODE_ID 
+	        LEFT OUTER JOIN TB_CO_CODE BC
+	            ON B.CNRL_TY03_CD_ID = BC.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE BD
+	            ON B.TEST_CYCLE_CD_ID = BD.CODE_ID
+	        LEFT OUTER JOIN TB_CO_CODE BE
+	            ON B.OFFICE_TY_CD_ID = BE.CODE_ID
+	        WHERE 1=1
+	        	AND A.RCM_SE = 'E'
+	        	AND A.ENTITY_ID = #{entityId}
+	        	AND CH.BGNTMSTMP = #{bgntmstmp}
+		) TOT
+		ORDER BY TOT.CNRL_ID
+	</select>
+	
+	<select id="duplchk" resultType="int">
+		SELECT COUNT(*) 
+		FROM TB_CW_COSO_ENTITY A
+		WHERE ENTITY_CD_ID = #{entityCdId}
+			AND UPPER_ENTITY_ID = #{upperEntityId}
+	</select>
+	
+	<!-- PLC 통제 목록 -->
+	<select id="plcCnrlList" resultType="EgovMap">
+		<choose>
+			<when test=' (srchKeyCnrlAt != null and srchKeyCnrlAt != "") 
+						+ (srchCnrlTy03CdId != null and srchCnrlTy03CdId != "") 
+						'>
+				WITH V1 ( OBJECT_ID , MAPNG_ID , UPPER_MAPNG_ID ) AS (
+					SELECT OBJECT_ID , MAPNG_ID , UPPER_MAPNG_ID 
+					FROM TB_CW_RCM_MAPNG
+					WHERE OBJECT_ID IN (
+						SELECT
+							DISTINCT M.OBJECT_ID
+						FROM TB_CW_RCM_MAPNG M
+						LEFT OUTER JOIN TB_CW_RCM_PROCS P
+							ON M.OBJECT_ID = P.PROCS_ID
+						LEFT OUTER JOIN TB_CW_RCM_CNRL C
+							ON M.OBJECT_ID = C.CNRL_ID
+					<trim prefix="WHERE" prefixOverrides="AND|OR ">
+						<if test=' srchKeyCnrlAt != null and srchKeyCnrlAt != "" '>
+							AND ISNULL(C.KEY_CNRL_AT, 'N')  = #{srchKeyCnrlAt} 
+						</if>
+						<if test=' srchCnrlTy03CdId != null and srchCnrlTy03CdId != "" '>
+							AND C.CNRL_TY03_CD_ID = #{srchCnrlTy03CdId} 
+						</if>
+					</trim>
+					) -- IN 
+											
+					UNION ALL 
+	
+					SELECT M.OBJECT_ID , M.MAPNG_ID , M.UPPER_MAPNG_ID 
+					FROM TB_CW_RCM_MAPNG M , V1 ROOT 
+					WHERE M.MAPNG_ID = ROOT.UPPER_MAPNG_ID 
+				)
+			</when>
+		</choose>
+		SELECT TT.*
+		FROM (
+			SELECT	T.OBJECT_ID
+	          	  , T.OBJECT_NO
+	          	  , T.OBJECT_NM
+	          	  , T.OBJECT_LEVEL
+	          	  , T.OBJECT_KND_CD_ID
+	              , T.UPPER_OBJECT_ID
+	              , T.OBJECT_ID + '_' + ISNULL(T.UPPER_OBJECT_ID, 'TOP') AS MAPNG_ID
+	              , C.CNRL_NO
+	              , C.CNRL_CN
+	              , CASE WHEN CM.CNRL_ID IS NOT NULL THEN 'Y'
+	                     ELSE 'N'
+	                END AS CONTROL_CHECK_AT
+	              , C.OFFICE_TY_CD_ID
+	              , ISNULL(C.KEY_CNRL_AT, 'N')								AS KEY_CNRL_AT
+	              , ISNULL(C.MRC_CNRL_AT, 'N')								AS MRC_CNRL_AT
+	              , ISNULL(C.IPE_CNRL_AT, 'N')								AS IPE_CNRL_AT
+	              , (CASE WHEN C.CNRL_TY03_CD_ID = 'CTW_004_001' THEN 'Y' ELSE 'N' END) 	AS ATMC_AT
+	              , C.REFRN_NO
+	              , C.SAMPLE_SIZE
+	              , C.CNRL_TY01_CD_ID
+                     , CA.CODE_NM AS CNRL_TY01_CD_NM
+                     , C.CNRL_TY02_CD_ID
+                     , CB.CODE_NM AS CNRL_TY02_CD_NM
+                     , C.CNRL_TY03_CD_ID
+                     , CC.CODE_NM AS CNRL_TY03_CD_NM
+			FROM	(	
+					/** RCM Mapng Tree 구조 */
+	            	SELECT DISTINCT
+	            		  A.MAPNG_ID
+						, A.OBJECT_ID
+					    , A.OBJECT_NO
+					    , A.OBJECT_NM
+					    , A.OBJECT_LEVEL
+					    , A.OBJECT_KND_CD_ID
+					    , A.UPPER_MAPNG_ID
+						, (CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN (SELECT UPPER_OBJECT_ID FROM TB_CW_RCM_MAPNG WHERE OBJECT_ID = A.UPPER_OBJECT_ID) ELSE A.UPPER_OBJECT_ID END ) AS UPPER_OBJECT_ID
+					FROM 
+						<choose>
+							<when test=' (srchKeyCnrlAt != null and srchKeyCnrlAt != "") 
+										+ (srchCnrlTy03CdId != null and srchCnrlTy03CdId != "") 
+										'>
+							    (
+								    	SELECT M.* FROM V1 V 
+								    	INNER JOIN TB_CW_RCM_MAPNG M
+								    		ON V.OBJECT_ID = M.OBJECT_ID 
+							    ) A
+						    </when>
+						    <otherwise>
+								TB_CW_RCM_MAPNG A
+					    	</otherwise>
+					    </choose>
+					WHERE 	A.OBJECT_KND_CD_ID != 'CTW_001_004'
+	      		 	) T
+	        LEFT OUTER JOIN TB_CW_RCM_CNRL C
+	        	ON 	T.OBJECT_ID				= C.CNRL_ID
+	        LEFT OUTER JOIN TB_CW_RCM_PROCS EP
+	        	ON	T.OBJECT_ID				= EP.PROCS_ID
+	        LEFT OUTER JOIN TB_CW_RCM_RISK ER
+	        	ON T.OBJECT_ID				= ER.RISK_ID
+	        LEFT OUTER JOIN TB_CO_CODE CA
+                ON C.CNRL_TY01_CD_ID 		= CA.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE CB
+                ON C.CNRL_TY02_CD_ID 		= CB.CODE_ID 
+            LEFT OUTER JOIN TB_CO_CODE CC
+                ON C.CNRL_TY03_CD_ID 		= CC.CODE_ID
+            LEFT OUTER JOIN (
+                SELECT T1.CNRL_ID 
+                FROM TB_CW_COSO_ENTITY_MAPPING T1
+                INNER JOIN TB_CW_COSO_ENTITY_HIST T2
+                	ON T1.ENTITY_ID = T2.ENTITY_ID
+                	AND T1.BGNTMSTMP = T2.BGNTMSTMP
+                	AND T2.ENDTMSTMP = '99991231235959999999'
+                	AND T2.DEL_AT = 'N'
+                	AND T1.RCM_SE = 'P'
+                WHERE T1.ENTITY_ID = #{entityId}
+            ) CM 
+            	ON T.OBJECT_ID = CM.CNRL_ID
+	    ) TT
+	    ORDER BY TT.OBJECT_ID
+	</select>
+	
+	<!-- ELC 통제 목록 -->
+	<select id="elcCnrlList" resultType="EgovMap">
+	<choose>
+		<when test=' (srchKeyCnrlAt != null and srchKeyCnrlAt != "") 
+					+ (srchCnrlTy03CdId != null and srchCnrlTy03CdId != "") 
+					'>
+			WITH V1 ( OBJECT_ID , MAPNG_ID , UPPER_MAPNG_ID ) AS (
+				SELECT OBJECT_ID , MAPNG_ID , UPPER_MAPNG_ID 
+				FROM TB_CW_ELC_RCM_MAPNG
+				WHERE OBJECT_ID IN (
+					SELECT
+						DISTINCT M.OBJECT_ID
+					FROM TB_CW_ELC_RCM_MAPNG M
+					LEFT OUTER JOIN TB_CW_ELC_RCM_PROCS P
+						ON M.OBJECT_ID = P.PROCS_ID
+					LEFT OUTER JOIN TB_CW_ELC_RCM_CNRL C
+						ON M.OBJECT_ID = C.CNRL_ID
+					<trim prefix="WHERE" prefixOverrides="AND|OR ">
+						<if test=' srchKeyCnrlAt != null and srchKeyCnrlAt != "" '>
+							AND ISNULL(C.KEY_CNRL_AT, 'N')  = #{srchKeyCnrlAt} 
+						</if>
+						<if test=' srchCnrlTy03CdId != null and srchCnrlTy03CdId != "" '>
+							AND C.CNRL_TY03_CD_ID = #{srchCnrlTy03CdId} 
+						</if>
+					</trim>
+				) -- IN 
+											
+				UNION ALL 
+	
+				SELECT M.OBJECT_ID , M.MAPNG_ID , M.UPPER_MAPNG_ID 
+				FROM TB_CW_ELC_RCM_MAPNG M , V1 ROOT 
+				WHERE M.MAPNG_ID = ROOT.UPPER_MAPNG_ID 
+			)
+		   	</when>
+		</choose>
+		SELECT TT.*
+		FROM (
+			SELECT	T.OBJECT_ID
+	          	  , T.OBJECT_NO
+	          	  , T.OBJECT_NM
+	          	  , T.OBJECT_LEVEL
+	          	  , T.OBJECT_KND_CD_ID
+	              , T.UPPER_OBJECT_ID
+	              , T.OBJECT_ID + '_' + ISNULL(T.UPPER_OBJECT_ID, 'TOP') AS MAPNG_ID
+	              , C.CNRL_NO
+	              , C.CNRL_CN
+	              , CASE WHEN CM.CNRL_ID IS NOT NULL THEN 'Y'
+	                     ELSE 'N'
+	                END AS CONTROL_CHECK_AT
+	              , C.OFFICE_TY_CD_ID
+	              , ISNULL(C.KEY_CNRL_AT, 'N')								AS KEY_CNRL_AT
+	              , ISNULL(C.MRC_CNRL_AT, 'N')								AS MRC_CNRL_AT
+	              , ISNULL(C.IPE_CNRL_AT, 'N')								AS IPE_CNRL_AT
+	              , (CASE WHEN C.CNRL_TY03_CD_ID = 'CTW_004_001' THEN 'Y' ELSE 'N' END) 	AS ATMC_AT
+	              , C.REFRN_NO
+	              , C.SAMPLE_SIZE
+	              , C.CNRL_TY01_CD_ID
+                     , CA.CODE_NM AS CNRL_TY01_CD_NM
+                     , C.CNRL_TY02_CD_ID
+                     , CB.CODE_NM AS CNRL_TY02_CD_NM
+                     , C.CNRL_TY03_CD_ID
+                     , CC.CODE_NM AS CNRL_TY03_CD_NM
+			FROM	(	
+					/** RCM Mapng Tree 구조 */
+	            	SELECT DISTINCT
+	            		  A.MAPNG_ID
+						, A.OBJECT_ID
+					    , A.OBJECT_NO
+					    , A.OBJECT_NM
+					    , A.OBJECT_LEVEL
+					    , A.OBJECT_KND_CD_ID
+					    , A.UPPER_MAPNG_ID
+						, (CASE WHEN A.OBJECT_KND_CD_ID = 'CTW_001_005' THEN (SELECT UPPER_OBJECT_ID FROM TB_CW_ELC_RCM_MAPNG WHERE OBJECT_ID = A.UPPER_OBJECT_ID) ELSE A.UPPER_OBJECT_ID END) AS UPPER_OBJECT_ID
+					FROM 
+						<choose>
+							<when test=' (srchKeyCnrlAt != null and srchKeyCnrlAt != "") 
+										+ (srchCnrlTy03CdId != null and srchCnrlTy03CdId != "") 
+										'>
+							    (
+								   	SELECT M.* FROM V1 V 
+								   	INNER JOIN TB_CW_ELC_RCM_MAPNG M
+								   		ON V.OBJECT_ID = M.OBJECT_ID 
+							    ) A
+						    </when>
+						    <otherwise>
+								TB_CW_ELC_RCM_MAPNG A
+					    	</otherwise>
+					    </choose>
+					WHERE 	A.OBJECT_KND_CD_ID != 'CTW_001_004'
+	      		 	) T
+	        LEFT OUTER JOIN TB_CW_ELC_RCM_CNRL C
+	        	ON 	T.OBJECT_ID				= C.CNRL_ID
+	        LEFT OUTER JOIN TB_CW_ELC_RCM_PROCS EP
+	        	ON	T.OBJECT_ID				= EP.PROCS_ID
+	        LEFT OUTER JOIN TB_CW_ELC_RCM_RISK ER
+	        	ON T.OBJECT_ID				= ER.RISK_ID
+	        LEFT OUTER JOIN TB_CO_CODE CA
+                ON C.CNRL_TY01_CD_ID 		= CA.CODE_ID
+            LEFT OUTER JOIN TB_CO_CODE CB
+                ON C.CNRL_TY02_CD_ID 		= CB.CODE_ID 
+            LEFT OUTER JOIN TB_CO_CODE CC
+                ON C.CNRL_TY03_CD_ID 		= CC.CODE_ID
+            LEFT OUTER JOIN (
+                SELECT T1.CNRL_ID 
+                FROM TB_CW_COSO_ENTITY_MAPPING T1
+                INNER JOIN TB_CW_COSO_ENTITY_HIST T2
+                	ON T1.ENTITY_ID = T2.ENTITY_ID
+                	AND T1.BGNTMSTMP = T2.BGNTMSTMP
+                	AND T2.ENDTMSTMP = '99991231235959999999'
+                	AND T2.DEL_AT = 'N'
+                	AND T1.RCM_SE = 'E'
+                WHERE T1.ENTITY_ID = #{entityId}
+            ) CM 
+            	ON T.OBJECT_ID = CM.CNRL_ID
+	    ) TT
+	    ORDER BY TT.OBJECT_ID
+	</select>
+	
+	<insert id="insert">
+		<![CDATA[
+		BEGIN
+			INSERT INTO TB_CW_COSO_ENTITY (
+				ENTITY_ID, ENTITY_CD_ID, ENTITY_NM, ENTITY_LEVEL, ENTITY_KND_CD_ID, UPPER_ENTITY_ID
+				, SORT_SN, USE_AT, DEL_AT, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+			)VALUES (
+				#{entityId}, #{entityCdId}, #{entityNm}, #{entityLevel}, #{entityKndCdId}, #{upperEntityId}
+				, #{sortSn}, #{useAt}, #{delAt}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+			);
+			
+			INSERT INTO TB_CW_COSO_ENTITY_HIST (
+				ENTITY_ID, ENTITY_CD_ID, BGNTMSTMP, ENDTMSTMP, ENTITY_NM, ENTITY_LEVEL, ENTITY_KND_CD_ID, UPPER_ENTITY_ID
+				, SORT_SN, USE_AT, DEL_AT, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+			) VALUES (
+				#{entityId}, #{entityCdId}, #{bgntmstmp}, '99991231235959999999', #{entityNm}, #{entityLevel}, #{entityKndCdId}, #{upperEntityId}
+				, #{sortSn}, #{useAt}, #{delAt}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+			);
+		END;
+		]]>
+	</insert>
+	
+	<insert id="update">
+		BEGIN
+			UPDATE TB_CW_COSO_ENTITY 
+				SET   ENTITY_NM            = #{entityNm}
+					, ENTITY_LEVEL         = #{entityLevel}
+					, SORT_SN              = #{sortSn}
+					, USE_AT               = #{useAt}
+					, DEL_AT               = #{delAt}
+					, UPD_DT               = GETDATE()
+					, UPD_USER_ID          = #{suserId}
+			WHERE ENTITY_ID = #{entityId}
+			;
+			
+			UPDATE TB_CW_COSO_ENTITY_HIST 
+				SET   ENDTMSTMP            = #{endtmstmp}
+					, UPD_DT               = GETDATE()
+					, UPD_USER_ID          = #{suserId}
+			WHERE ENTITY_ID = #{entityId}
+			AND BGNTMSTMP = #{bgntmstmp}	/** 기존 시작타임스탬프 */
+			;
+			
+			INSERT INTO TB_CW_COSO_ENTITY_HIST (
+				ENTITY_ID, ENTITY_CD_ID, BGNTMSTMP, ENDTMSTMP, ENTITY_NM, ENTITY_LEVEL, ENTITY_KND_CD_ID, UPPER_ENTITY_ID
+				, SORT_SN, USE_AT, DEL_AT, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+			) VALUES (
+				#{entityId}, #{entityCdId}, #{endtmstmp}, '99991231235959999999', #{entityNm}, #{entityLevel}, #{entityKndCdId}, #{upperEntityId}
+				, #{sortSn}, #{useAt}, #{delAt}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+			);
+		END;
+	</insert>
+	
+	<delete id="delete">
+		BEGIN
+			DELETE TB_CW_COSO_ENTITY 
+			WHERE ENTITY_ID = #{entityId}
+			;
+			
+			UPDATE TB_CW_COSO_ENTITY_HIST 
+				SET   ENDTMSTMP            = #{endtmstmp}
+					, UPD_DT               = GETDATE()
+					, UPD_USER_ID          = #{suserId}
+			WHERE ENTITY_ID = #{entityId}
+			;
+		END;
+	</delete>
+	
+	<!-- 관련 통제 등록 -->
+	<insert id="insertCnrl">
+		INSERT INTO TB_CW_COSO_ENTITY_MAPPING (
+			  ENTITY_ID
+			, CNRL_ID
+			, BGNTMSTMP
+			, RCM_SE
+		) VALUES (
+			  #{entityId}
+			, #{cnrlId}
+			, #{endtmstmp}	/** 신규 타임스탬프 */
+			, #{rcmSe}
+		)
+	</insert>
+
+	<select id="cosoHistList" resultType="EgovMap">
+		SELECT    T.*
+				, CASE WHEN T.BGNTMSTMP = T.MIN_BGNTMSTMP 
+						THEN CHAR_BGNTMSTMP + ' 등록' 
+						ELSE CHAR_BGNTMSTMP + ' 수정' 
+					END HIST_NM 
+		FROM (
+			SELECT  A.ENTITY_ID
+			      , A.ENTITY_CD_ID
+			      , A.BGNTMSTMP
+			      , A.ENDTMSTMP
+			      , A.ENTITY_NM
+			      , A.ENTITY_LEVEL
+			      , A.ENTITY_KND_CD_ID
+			      , B.ENTITY_NM AS UPPER_ENTITY_NM
+			      , B.ENTITY_CD_ID AS UPPER_ENTITY_ID
+			      , A.EXCEL_NO
+			      , A.SORT_SN
+			      , A.USE_AT
+			      , A.DEL_AT
+			      , A.RGS_DT
+			      , A.RGS_USER_ID
+			      , A.UPD_DT
+			      , A.UPD_USER_ID
+			      , TO_CHAR(TO_TIMESTAMP(A.BGNTMSTMP, 'YYYYMMDDHH24MISSFF6'), 'YYYY/MM/DD HH24:MI:SS') AS CHAR_BGNTMSTMP
+			      , (SELECT MIN(BGNTMSTMP) FROM TB_CW_COSO_ENTITY_HIST WHERE ENTITY_ID = #{entityId}) MIN_BGNTMSTMP
+			FROM TB_CW_COSO_ENTITY_HIST A
+			LEFT OUTER JOIN TB_CW_COSO_ENTITY_HIST B
+				ON A.UPPER_ENTITY_ID = B.ENTITY_ID
+				AND A.BGNTMSTMP BETWEEN B.BGNTMSTMP AND B.ENDTMSTMP
+			WHERE A.ENTITY_ID = #{entityId}
+		) T
+		ORDER BY CONVERT ( NUMERIC , T.BGNTMSTMP) DESC
+	</select>
+	
+	<!-- 하위 coso 리스트 -->
+	<select id="lwprtCosoList" resultType="EgovMap">   
+	   SELECT 
+            A.ENTITY_ID
+          , A.ENTITY_CD_ID
+	      , '[' + A.ENTITY_CD_ID + '] ' + A.ENTITY_NM AS ENTITY_NM
+	      , A.ENTITY_CD_ID
+	      , A.ENTITY_LEVEL
+	      , A.ENTITY_KND_CD_ID
+	      , A.UPPER_ENTITY_ID
+	      , A.EXCEL_NO
+	      , A.SORT_SN
+	      , A.USE_AT
+	      , A.DEL_AT
+	      , A.RGS_DT
+	      , A.RGS_USER_ID
+	      , A.UPD_DT
+	      , A.UPD_USER_ID
+       FROM TB_CW_COSO_ENTITY A
+       WHERE A.USE_AT = 'Y' 
+			AND A.DEL_AT = 'N'
+		<choose>
+			<when test=' srchUpperEntityId != null and srchUpperEntityId != "" '>	AND	A.UPPER_ENTITY_ID = #{srchUpperEntityId}	</when>
+            <otherwise>	AND A.UPPER_ENTITY_ID IS NULL	</otherwise>
+		</choose>
+		ORDER BY A.SORT_SN	
+	</select>
+</mapper>

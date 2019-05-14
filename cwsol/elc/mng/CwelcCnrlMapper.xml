@@ -1,0 +1,1236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.cas.cwsol.elc.mng.serviceimpl.CwelcCnrlMapper">
+
+	<select id="list" resultType="EgovMap">
+		<if test=' srchUpperObjectId != null and srchUpperObjectId != "" '>
+			WITH V1 ( OBJECT_ID ,MAPNG_ID , UPPER_MAPNG_ID ) AS (
+				SELECT OBJECT_ID ,MAPNG_ID , UPPER_MAPNG_ID 
+				FROM TB_CW_ELC_RCM_MAPNG 
+				WHERE UPPER_OBJECT_ID =  #{srchUpperObjectId}
+				
+				UNION ALL 
+				
+				SELECT M.OBJECT_ID , M.MAPNG_ID , M.UPPER_MAPNG_ID 
+				FROM TB_CW_ELC_RCM_MAPNG M , V1 ROOT 
+				WHERE ROOT.MAPNG_ID = M.UPPER_MAPNG_ID 
+				
+			)
+		</if>
+		SELECT
+			  A.CNRL_ID
+			, A.CNRL_NO
+			, A.CNRL_NM
+			, A.CNRL_CN
+			, ISNULL(A.KEY_CNRL_AT, 'N') 		AS KEY_CNRL_AT
+			, A.REFRN_NO
+			, A.CNRL_RELATE_REF
+			, A.CNRL_EXC_UPPER_DEPT
+			, A.CNRL_EXC_DEPT
+			, A.CNRL_EXCBER
+			, A.CNRL_RSPNSBL_UPPER_DEPT
+			, A.CNRL_RSPNSBL_DEPT
+			, A.CNRL_RSPNBER
+			, A.RELATE_REGLTN_NM
+			, A.CNRL_RELATE_DOC
+			, A.CNRL_RELATE_SYS
+			, A.CNRL_RM
+			, A.CNRL_PURPS
+			, A.CNRL_PURPS_CD_ID
+			, AF.CODE_NM AS CNRL_PURPS_CD_NM
+			, A.CNRL_PURPS_FNNR_RLABLTY
+			, A.CNRL_PURPS_ASSET_PRTC
+			, A.CNRL_PURPS_INSTC_PRVN
+			, A.CNRL_TY_CD_ID
+			, AI.CODE_NM AS CNRL_TY_CD_NM
+			, A.CNRL_TY_CECK01
+			, A.CNRL_TY_CECK02
+			, A.CNRL_TY_CECK03
+			, A.CNRL_TY_CECK04
+			, A.CNRL_TY_CECK05
+			, A.CNRL_TY_CECK06
+			, A.CNRL_TY_CECK07
+			, A.CNRL_TY_CECK08
+			, A.CNRL_TY_CECK09
+			, A.CNRL_TY01_CD_ID
+			, AA.CODE_NM 					AS CNRL_TY01_CD_NM
+			, A.CNRL_TY02_CD_ID
+			, AB.CODE_NM 					AS CNRL_TY02_CD_NM
+			, A.CNRL_TY03_CD_ID
+			, AC.CODE_NM 					AS CNRL_TY03_CD_NM
+			, A.DELNG_TY_CD_ID
+			, AF.CODE_NM 					AS DELNG_TY_CD_NM
+			, A.CNRL_CTGRY
+		    , A.CNRL_CYCLE_CD_ID
+			, AG.CODE_NM 					AS CNRL_CYCLE_CD_NM
+			, A.CNRL_CYCLE01
+			, A.CNRL_CYCLE02
+			, A.CNRL_CYCLE03
+			, A.CNRL_CYCLE04
+			, A.CNRL_CYCLE05
+			, A.CNRL_CYCLE06
+			, A.CNRL_CYCLE07
+			, A.CNRL_CYCLE08
+			, A.CNRL_CYCLE09
+			, A.OFFICE_TY_CD_ID
+			, AE.CODE_NM 					AS OFFICE_TY_CD_NM
+			, ISNULL(A.DSGN_EFCT_AT, 'N') 		AS DSGN_EFCT_AT
+			, ISNULL(A.OPER_EFCT_AT, 'N') 		AS OPER_EFCT_AT
+			, A.CNRL_UPRPD_NO
+			, ISNULL(A.MRC_CNRL_AT, 'N') 		AS MRC_CNRL_AT
+			, A.MRC_CTGRY_CD_ID
+			, A.MRC_NO
+			, ISNULL(A.IPE_CNRL_AT, 'N') 		AS IPE_CNRL_AT
+			, A.IPE_CTGRY_CD_ID
+			, A.IPE_NO
+			, A.IPE_NM
+			, A.IPE_TEST_PROCSS
+			, A.COSO_NO
+			, A.TEST_CYCLE_CD_ID
+			, AD.CODE_NM 					AS TEST_CYCLE_CD_NM
+			, A.TEST_CYCLE01
+			, A.TEST_CYCLE02
+			, A.TEST_CYCLE03
+			, A.TEST_CYCLE04
+			, A.TEST_CYCLE05
+			, A.TEST_CYCLE06
+			, A.TEST_CYCLE07
+			, A.TEST_CYCLE08
+			, A.TEST_CYCLE09
+			, A.TEST_TRGET
+			, A.SAMPLE_SIZE
+			, A.TEST_PROCSS
+			, A.EXCP_CNT
+			, A.TEST_RELATE_DOC
+			, A.TEST_MTH
+			, A.TEST_MTH_QESTN
+			, A.TEST_MTH_OBSERV
+			, A.TEST_MTH_VRIFY
+			, A.TEST_MTH_ECGN
+			, A.TEST_MTH_SYS_TRACE
+			, A.ATMC_SAMPLE_AT
+			, ISNULL(A.TEST_SANCTN_AT, 'N') 	AS TEST_SANCTN_AT
+			, A.ACNT_CD
+			, A.CNRL_ACNTCTGR
+			, A.RELATE_ACNTCTGR_PBLNTF
+			, A.CNRL_CM_IEM
+			, A.ASSE_C_AT
+			, A.ASSE_E_AT
+			, A.ASSE_R_AT
+			, A.ASSE_V_AT
+			, A.ASSE_P_AT
+			, A.ASSE_S_AT
+			, A.ASSE_O_AT
+			, A.ASSE_A_AT
+			, A.ASSE_PF_AT
+			, A.TREXAMIN_PROCSS
+			, A.TREXAMIN_PRUF
+			, A.TREXAMIN_CNCLSN
+			, A.RISK_RESIDUAL_LIKEHOOD
+			, A.RISK_RESIDUAL_IMPACT
+			, A.RISK_RESIDUAL_RATIONG
+			, A.AFTER_RISK_RESIDUAL_LIKEHOOD
+			, A.AFTER_RISK_RESIDUAL_IMPACT
+			, A.AFTER_RISK_RESIDUAL_RATIONG
+			, A.CNRL_IMPRVM_NM
+			, A.CNRL_IMPRVM_DC
+			, A.FNREP_RISKEVL_CSFCTR01
+            , A.FNREP_RISKEVL_CSFCTR02
+            , A.FNREP_RISKEVL_CSFCTR03
+            , A.FNREP_RISKEVL_CSFCTR04
+            , A.FNREP_RISKEVL_CSFCTR05
+            , A.FNREP_RISKEVL_CSFCTR06
+            , A.FNREP_RISKEVL_CSFCTR07
+            , A.FNREP_RISKEVL_CSFCTR08
+            , A.FNREP_RISKEVL_CSFCTR09
+            , A.FNREP_RISKEVL_CSFCTR10
+            , A.FNREP_CNRL_RISK_CNCLSN
+            , A.FNREP_ACNT_RISK_CNCLSN
+            , A.FNREP_PROCS_RISK_CNCLSN
+            , A.FNREP_GNRLZ_EVL_CNCLSN
+				  
+			/** 엑셀다운 RCM_FIELD_NM_EN에 맞춤 */
+			, AA.CODE_NM 					AS CNRL_TY01
+			, AB.CODE_NM 					AS CNRL_TY02
+			, AC.CODE_NM 					AS CNRL_TY03
+			, ISNULL(A.KEY_CNRL_AT, 'N') 		AS KEY_CNRL
+			, ISNULL(A.MRC_CNRL_AT, 'N')		AS MRC_CNRL
+			, ISNULL(A.IPE_CNRL_AT, 'N')  		AS IPE_CNRL
+			, AG.CODE_NM        			AS CNRL_CYCLE
+			, AD.CODE_NM        			AS TEST_CYCLE
+			, AE.CODE_NM        			AS OFFICE_TY
+			, ISNULL(A.DSGN_EFCT_AT, 'N') 		AS DSGN_EFCT
+			, ISNULL(A.OPER_EFCT_AT, 'N')		AS OPER_EFCT
+			, ISNULL(A.TEST_SANCTN_AT, 'N') 	AS TEST_SANCTN
+			, A.TEST_RELATE_DOC				AS TEST_RELATION_DOC
+			, AF.CODE_NM					AS CNRL_PURPS_CHOISE
+			, AH.CODE_NM 					AS DELNG_TY
+			, AI.CODE_NM 					AS CNRL_TY
+			, (SELECT BGNTMSTMP FROM TB_CW_ELC_RCM_CNRL_HIST WHERE CNRL_ID = A.CNRL_ID AND ENDTMSTMP = '99991231235959999999') AS SRCH_STDR_BGNTMSTMP
+            , (SELECT COUNT(CNRL_ID) FROM TB_CW_ELC_RCM_CNRL_HIST WHERE CNRL_ID = A.CNRL_ID) AS HIST_CNT	
+		FROM TB_CW_ELC_RCM_CNRL A
+        LEFT OUTER JOIN TB_CO_CODE AA
+            ON A.CNRL_TY01_CD_ID = AA.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AB
+            ON A.CNRL_TY02_CD_ID = AB.CODE_ID 
+        LEFT OUTER JOIN TB_CO_CODE AC
+            ON A.CNRL_TY03_CD_ID = AC.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AD
+            ON A.TEST_CYCLE_CD_ID = AD.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AE
+            ON A.OFFICE_TY_CD_ID = AE.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AF
+            ON A.CNRL_PURPS_CD_ID = AF.CODE_ID     
+        LEFT OUTER JOIN TB_CO_CODE AG
+            ON A.CNRL_CYCLE_CD_ID = AG.CODE_ID     
+        LEFT OUTER JOIN TB_CO_CODE AH
+            ON A.DELNG_TY_CD_ID = AH.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AI
+            ON A.CNRL_TY_CD_ID = AI.CODE_ID
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+			<if test=' srchWrd != null and srchWrd != "" '>
+				<choose>
+					<when test="srchTy == 'no'" >	AND	UPPER(A.CNRL_NO) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+		            <when test="srchTy == 'nm'" > 	AND	UPPER(A.CNRL_NM) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>					
+					<when test="srchTy == 'cn'" >	AND	UPPER(A.CNRL_CN) LIKE '%' + UPPER(#{srchWrd}) + '%' 	</when>
+				</choose>
+			</if>
+			<if test=' srchUpperObjectId != null and srchUpperObjectId != "" '>
+				AND A.CNRL_ID IN (
+		            SELECT 
+		                DISTINCT OBJECT_ID
+		            FROM V1	
+		        )
+			</if>
+		</trim>
+		ORDER BY A.CNRL_NO ASC
+	</select>
+	
+	<select id="view" resultType="CwelcCnrlVO">
+		SELECT
+			  A.CNRL_ID
+			, A.CNRL_NO
+			, A.CNRL_NM
+			, A.CNRL_CN
+			, ISNULL(A.KEY_CNRL_AT, 'N') 		AS KEY_CNRL_AT
+			, A.REFRN_NO
+			, A.CNRL_RELATE_REF
+			, A.CNRL_EXC_UPPER_DEPT
+			, A.CNRL_EXC_DEPT
+			, A.CNRL_EXCBER
+			, A.CNRL_RSPNSBL_UPPER_DEPT
+			, A.CNRL_RSPNSBL_DEPT
+			, A.CNRL_RSPNBER
+			, A.RELATE_REGLTN_NM
+			, A.CNRL_RELATE_DOC
+			, A.CNRL_RELATE_SYS
+			, A.CNRL_RM
+			, A.CNRL_PURPS
+			, A.CNRL_PURPS_CD_ID
+			, AF.CODE_NM AS CNRL_PURPS_CD_NM
+			, A.CNRL_PURPS_FNNR_RLABLTY
+			, A.CNRL_PURPS_ASSET_PRTC
+			, A.CNRL_PURPS_INSTC_PRVN
+			, A.CNRL_TY_CD_ID
+			, AI.CODE_NM AS CNRL_TY_CD_NM
+			, A.CNRL_TY_CECK01
+			, A.CNRL_TY_CECK02
+			, A.CNRL_TY_CECK03
+			, A.CNRL_TY_CECK04
+			, A.CNRL_TY_CECK05
+			, A.CNRL_TY_CECK06
+			, A.CNRL_TY_CECK07
+			, A.CNRL_TY_CECK08
+			, A.CNRL_TY_CECK09
+			, A.CNRL_TY01_CD_ID
+			, AA.CODE_NM 					AS CNRL_TY01_CD_NM
+			, A.CNRL_TY02_CD_ID
+			, AB.CODE_NM 					AS CNRL_TY02_CD_NM
+			, A.CNRL_TY03_CD_ID
+			, AC.CODE_NM 					AS CNRL_TY03_CD_NM
+			, A.DELNG_TY_CD_ID
+			, AH.CODE_NM					AS DELNG_TY_CD_NM
+			, A.CNRL_CTGRY
+		    , A.CNRL_CYCLE_CD_ID
+			, AG.CODE_NM 					AS CNRL_CYCLE_CD_NM
+			, A.CNRL_CYCLE01
+			, A.CNRL_CYCLE02
+			, A.CNRL_CYCLE03
+			, A.CNRL_CYCLE04
+			, A.CNRL_CYCLE05
+			, A.CNRL_CYCLE06
+			, A.CNRL_CYCLE07
+			, A.CNRL_CYCLE08
+			, A.CNRL_CYCLE09
+			, A.OFFICE_TY_CD_ID
+			, AE.CODE_NM 					AS OFFICE_TY_CD_NM
+			, ISNULL(A.DSGN_EFCT_AT, 'N') 		AS DSGN_EFCT_AT
+			, ISNULL(A.OPER_EFCT_AT, 'N') 		AS OPER_EFCT_AT
+			, A.CNRL_UPRPD_NO
+			, ISNULL(A.MRC_CNRL_AT, 'N') 		AS MRC_CNRL_AT
+			, A.MRC_CTGRY_CD_ID
+			, A.MRC_NO
+			, ISNULL(A.IPE_CNRL_AT, 'N') 		AS IPE_CNRL_AT
+			, A.IPE_CTGRY_CD_ID
+			, A.IPE_NO
+			, A.IPE_NM
+			, A.IPE_TEST_PROCSS
+			, A.COSO_NO
+			, A.TEST_CYCLE_CD_ID
+			, AD.CODE_NM 					AS TEST_CYCLE_CD_NM
+			, A.TEST_CYCLE01
+			, A.TEST_CYCLE02
+			, A.TEST_CYCLE03
+			, A.TEST_CYCLE04
+			, A.TEST_CYCLE05
+			, A.TEST_CYCLE06
+			, A.TEST_CYCLE07
+			, A.TEST_CYCLE08
+			, A.TEST_CYCLE09
+			, A.TEST_RELATE_DOC
+			, A.TEST_TRGET
+			, A.SAMPLE_SIZE
+			, A.TEST_PROCSS
+			, A.EXCP_CNT
+			, A.TEST_MTH
+			, A.TEST_MTH_QESTN
+			, A.TEST_MTH_OBSERV
+			, A.TEST_MTH_VRIFY
+			, A.TEST_MTH_ECGN
+			, A.TEST_MTH_SYS_TRACE
+			, A.ATMC_SAMPLE_AT
+			, ISNULL(A.TEST_SANCTN_AT, 'N') 	AS TEST_SANCTN_AT
+			, A.ACNT_CD
+			, A.CNRL_ACNTCTGR
+			, A.RELATE_ACNTCTGR_PBLNTF
+			, A.CNRL_CM_IEM
+			, A.ASSE_C_AT
+			, A.ASSE_E_AT
+			, A.ASSE_R_AT
+			, A.ASSE_V_AT
+			, A.ASSE_P_AT
+			, A.ASSE_S_AT
+			, A.ASSE_O_AT
+			, A.ASSE_A_AT
+			, A.ASSE_PF_AT
+			, A.TREXAMIN_PROCSS
+			, A.TREXAMIN_PRUF
+			, A.TREXAMIN_CNCLSN
+			, A.RISK_RESIDUAL_LIKEHOOD
+			, A.RISK_RESIDUAL_IMPACT
+			, A.RISK_RESIDUAL_RATIONG
+			, A.AFTER_RISK_RESIDUAL_LIKEHOOD
+			, A.AFTER_RISK_RESIDUAL_IMPACT
+			, A.AFTER_RISK_RESIDUAL_RATIONG
+			, A.CNRL_IMPRVM_NM
+			, A.CNRL_IMPRVM_DC
+			, A.FNREP_RISKEVL_CSFCTR01
+            , A.FNREP_RISKEVL_CSFCTR02
+            , A.FNREP_RISKEVL_CSFCTR03
+            , A.FNREP_RISKEVL_CSFCTR04
+            , A.FNREP_RISKEVL_CSFCTR05
+            , A.FNREP_RISKEVL_CSFCTR06
+            , A.FNREP_RISKEVL_CSFCTR07
+            , A.FNREP_RISKEVL_CSFCTR08
+            , A.FNREP_RISKEVL_CSFCTR09
+            , A.FNREP_RISKEVL_CSFCTR10
+            , A.FNREP_CNRL_RISK_CNCLSN
+            , A.FNREP_ACNT_RISK_CNCLSN
+            , A.FNREP_PROCS_RISK_CNCLSN
+            , A.FNREP_GNRLZ_EVL_CNCLSN
+			, (SELECT COUNT(REFRN_NO) FROM TB_CW_ELC_RCM_CNRL WHERE REFRN_NO = A.CNRL_NO ) AS REFRN_NO_CNT
+			, (SELECT BGNTMSTMP FROM TB_CW_ELC_RCM_CNRL_HIST WHERE CNRL_ID = A.CNRL_ID AND ENDTMSTMP = '99991231235959999999') AS SRCH_STDR_BGNTMSTMP
+            , (SELECT COUNT(CNRL_ID) FROM TB_CW_ELC_RCM_CNRL_HIST WHERE CNRL_ID = A.CNRL_ID) AS HIST_CNT		
+		FROM TB_CW_ELC_RCM_CNRL A
+        LEFT OUTER JOIN TB_CO_CODE AA
+            ON A.CNRL_TY01_CD_ID = AA.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AB
+            ON A.CNRL_TY02_CD_ID = AB.CODE_ID 
+        LEFT OUTER JOIN TB_CO_CODE AC
+            ON A.CNRL_TY03_CD_ID = AC.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AD
+            ON A.TEST_CYCLE_CD_ID = AD.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AE
+            ON A.OFFICE_TY_CD_ID = AE.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AF
+            ON A.CNRL_PURPS_CD_ID = AF.CODE_ID     
+        LEFT OUTER JOIN TB_CO_CODE AG
+            ON A.CNRL_CYCLE_CD_ID = AG.CODE_ID     
+        LEFT OUTER JOIN TB_CO_CODE AH
+            ON A.DELNG_TY_CD_ID = AH.CODE_ID     
+        LEFT OUTER JOIN TB_CO_CODE AI
+            ON A.CNRL_TY_CD_ID = AI.CODE_ID
+		WHERE A.CNRL_ID = #{cnrlId}
+	</select>
+
+	<insert id="insert">
+	<![CDATA[
+	BEGIN
+		INSERT INTO TB_CW_ELC_RCM_CNRL (
+		      CNRL_ID, CNRL_NO, CNRL_NM, CNRL_CN
+		    , KEY_CNRL_AT
+			, REFRN_NO, CNRL_RELATE_REF
+			, CNRL_EXC_UPPER_DEPT, CNRL_EXC_DEPT, CNRL_EXCBER, CNRL_RSPNSBL_UPPER_DEPT, CNRL_RSPNSBL_DEPT, CNRL_RSPNBER
+			, RELATE_REGLTN_NM, CNRL_RELATE_DOC, CNRL_RELATE_SYS, CNRL_RM
+			, CNRL_PURPS, CNRL_PURPS_CD_ID, CNRL_PURPS_FNNR_RLABLTY, CNRL_PURPS_ASSET_PRTC, CNRL_PURPS_INSTC_PRVN
+			, CNRL_TY_CD_ID, CNRL_TY_CECK01, CNRL_TY_CECK02, CNRL_TY_CECK03, CNRL_TY_CECK04, CNRL_TY_CECK05, CNRL_TY_CECK06, CNRL_TY_CECK07, CNRL_TY_CECK08, CNRL_TY_CECK09
+			, CNRL_TY01_CD_ID, CNRL_TY03_CD_ID, CNRL_TY02_CD_ID
+			, DELNG_TY_CD_ID, CNRL_CTGRY, CNRL_CYCLE_CD_ID
+			, CNRL_CYCLE01, CNRL_CYCLE02, CNRL_CYCLE03, CNRL_CYCLE04, CNRL_CYCLE05, CNRL_CYCLE06, CNRL_CYCLE07, CNRL_CYCLE08, CNRL_CYCLE09
+			, OFFICE_TY_CD_ID, DSGN_EFCT_AT, OPER_EFCT_AT, CNRL_UPRPD_NO
+			, MRC_CNRL_AT, MRC_CTGRY_CD_ID, MRC_NO, IPE_CNRL_AT, IPE_CTGRY_CD_ID, IPE_NO, IPE_NM, IPE_TEST_PROCSS
+			, COSO_NO
+			, TEST_CYCLE_CD_ID
+			, TEST_CYCLE01, TEST_CYCLE02, TEST_CYCLE03, TEST_CYCLE04, TEST_CYCLE05, TEST_CYCLE06, TEST_CYCLE07, TEST_CYCLE08, TEST_CYCLE09
+			, TEST_RELATE_DOC, TEST_TRGET, SAMPLE_SIZE, TEST_PROCSS, EXCP_CNT
+			, TEST_MTH, TEST_MTH_QESTN, TEST_MTH_OBSERV, TEST_MTH_VRIFY, TEST_MTH_ECGN, TEST_MTH_SYS_TRACE
+			, ATMC_SAMPLE_AT, TEST_SANCTN_AT, ACNT_CD, CNRL_ACNTCTGR, RELATE_ACNTCTGR_PBLNTF, CNRL_CM_IEM
+			, ASSE_C_AT, ASSE_E_AT, ASSE_R_AT, ASSE_V_AT, ASSE_P_AT, ASSE_S_AT, ASSE_O_AT, ASSE_A_AT, ASSE_PF_AT
+			, TREXAMIN_PROCSS, TREXAMIN_PRUF, TREXAMIN_CNCLSN
+			, RISK_RESIDUAL_LIKEHOOD, RISK_RESIDUAL_IMPACT, RISK_RESIDUAL_RATIONG
+			, AFTER_RISK_RESIDUAL_LIKEHOOD, AFTER_RISK_RESIDUAL_IMPACT, AFTER_RISK_RESIDUAL_RATIONG, CNRL_IMPRVM_NM, CNRL_IMPRVM_DC
+			, FNREP_RISKEVL_CSFCTR01, FNREP_RISKEVL_CSFCTR02, FNREP_RISKEVL_CSFCTR03
+            , FNREP_RISKEVL_CSFCTR04, FNREP_RISKEVL_CSFCTR05, FNREP_RISKEVL_CSFCTR06
+            , FNREP_RISKEVL_CSFCTR07, FNREP_RISKEVL_CSFCTR08, FNREP_RISKEVL_CSFCTR09, FNREP_RISKEVL_CSFCTR10
+            , FNREP_CNRL_RISK_CNCLSN, FNREP_ACNT_RISK_CNCLSN, FNREP_PROCS_RISK_CNCLSN, FNREP_GNRLZ_EVL_CNCLSN
+		    , CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID
+		) VALUES (
+		      #{cnrlId}, #{cnrlNo}, #{cnrlNm}, #{cnrlCn}
+			, #{keyCnrlAt}
+			, #{refrnNo}, #{cnrlRelateRef}
+			, #{cnrlExcUpperDept}, #{cnrlExcDept}, #{cnrlExcber}, #{cnrlRspnsblUpperDept}, #{cnrlRspnsblDept}, #{cnrlRspnber}
+			, #{relateRegltnNm}, #{cnrlRelateDoc}, #{cnrlRelateSys}, #{cnrlRm}
+			, #{cnrlPurps}, #{cnrlPurpsCdId}, #{cnrlPurpsFnnrRlablty}, #{cnrlPurpsAssetPrtc}, #{cnrlPurpsInstcPrvn}
+			, #{cnrlTyCdId}, #{cnrlTyCeck01}, #{cnrlTyCeck02}, #{cnrlTyCeck03}, #{cnrlTyCeck04}, #{cnrlTyCeck05}, #{cnrlTyCeck06}, #{cnrlTyCeck07}, #{cnrlTyCeck08}, #{cnrlTyCeck09}
+			, #{cnrlTy01CdId}, #{cnrlTy03CdId}, #{cnrlTy02CdId}
+			, #{delngTyCdId}, #{cnrlCtgry}, #{cnrlCycleCdId}
+			, #{cnrlCycle01}, #{cnrlCycle02}, #{cnrlCycle03}, #{cnrlCycle04}, #{cnrlCycle05}, #{cnrlCycle06}, #{cnrlCycle07}, #{cnrlCycle08}, #{cnrlCycle09}
+			, #{officeTyCdId}, #{dsgnEfctAt}, #{operEfctAt}, #{cnrlUprpdNo}
+			, #{mrcCnrlAt}, #{mrcCtgryCdId}, #{mrcNo}, #{ipeCnrlAt}, #{ipeCtgryCdId}, #{ipeNo}, #{ipeNm}, #{ipeTestProcss}
+			, #{cosoNo}
+			, #{testCycleCdId}
+			, #{testCycle01}, #{testCycle02}, #{testCycle03}, #{testCycle04}, #{testCycle05}, #{testCycle06}, #{testCycle07}, #{testCycle08}, #{testCycle09}
+			, #{testRelateDoc}, #{testTrget}, #{sampleSize}, #{testProcss}, #{excpCnt}
+			, #{testMth}, #{testMthQestn}, #{testMthObserv}, #{testMthVrify}, #{testMthEcgn}, #{testMthSysTrace}
+			, #{atmcSampleAt}, #{testSanctnAt}, #{acntCd}, #{cnrlAcntctgr}, #{relateAcntctgrPblntf}, #{cnrlCmIem}
+			, #{asseCAt}, #{asseEAt}, #{asseRAt}, #{asseVAt}, #{assePAt}, #{asseSAt}, #{asseOAt}, #{asseAAt}, #{assePfAt}
+			, #{trexaminProcss}, #{trexaminPruf}, #{trexaminCnclsn}
+			, #{riskResidualLikehood}, #{riskResidualImpact}, #{riskResidualRationg}
+			, #{afterRiskResidualLikehood}, #{afterRiskResidualImpact}, #{afterRiskResidualRationg}, #{cnrlImprvmNm}, #{cnrlImprvmDc}
+			, #{fnrepRiskevlCsfctr01}, #{fnrepRiskevlCsfctr02}, #{fnrepRiskevlCsfctr03}
+            , #{fnrepRiskevlCsfctr04}, #{fnrepRiskevlCsfctr05}, #{fnrepRiskevlCsfctr06}
+            , #{fnrepRiskevlCsfctr07}, #{fnrepRiskevlCsfctr08}, #{fnrepRiskevlCsfctr09}, #{fnrepRiskevlCsfctr10}
+            , #{fnrepCnrlRiskCnclsn}, #{fnrepAcntRiskCnclsn}, #{fnrepProcsRiskCnclsn}, #{fnrepGnrlzEvlCnclsn}
+			, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}
+		);
+	
+		UPDATE TB_CW_ELC_RCM_CNRL_HIST
+	       SET ENDTMSTMP = #{endtmstmp}
+		     , UPD_DT = GETDATE()
+		     , UPD_USER_ID = #{suserId} 
+		WHERE CNRL_ID = #{cnrlId}
+		  AND ENDTMSTMP = '99991231235959999999';
+		  
+		INSERT INTO TB_CW_ELC_RCM_CNRL_HIST (
+		      CNRL_ID, BGNTMSTMP, ENDTMSTMP, CNRL_NO, CNRL_NM, CNRL_CN
+		    , KEY_CNRL_AT
+			, REFRN_NO, CNRL_RELATE_REF
+			, CNRL_EXC_UPPER_DEPT, CNRL_EXC_DEPT, CNRL_EXCBER, CNRL_RSPNSBL_UPPER_DEPT, CNRL_RSPNSBL_DEPT, CNRL_RSPNBER
+			, RELATE_REGLTN_NM, CNRL_RELATE_DOC, CNRL_RELATE_SYS, CNRL_RM
+			, CNRL_PURPS, CNRL_PURPS_CD_ID, CNRL_PURPS_FNNR_RLABLTY, CNRL_PURPS_ASSET_PRTC, CNRL_PURPS_INSTC_PRVN
+			, CNRL_TY_CD_ID, CNRL_TY_CECK01, CNRL_TY_CECK02, CNRL_TY_CECK03, CNRL_TY_CECK04, CNRL_TY_CECK05, CNRL_TY_CECK06, CNRL_TY_CECK07, CNRL_TY_CECK08, CNRL_TY_CECK09
+			, CNRL_TY01_CD_ID, CNRL_TY03_CD_ID, CNRL_TY02_CD_ID
+			, DELNG_TY_CD_ID, CNRL_CTGRY, CNRL_CYCLE_CD_ID
+			, CNRL_CYCLE01, CNRL_CYCLE02, CNRL_CYCLE03, CNRL_CYCLE04, CNRL_CYCLE05, CNRL_CYCLE06, CNRL_CYCLE07, CNRL_CYCLE08, CNRL_CYCLE09
+			, OFFICE_TY_CD_ID, DSGN_EFCT_AT, OPER_EFCT_AT, CNRL_UPRPD_NO
+			, MRC_CNRL_AT, MRC_CTGRY_CD_ID, MRC_NO, IPE_CNRL_AT, IPE_CTGRY_CD_ID, IPE_NO, IPE_NM, IPE_TEST_PROCSS
+			, COSO_NO
+			, TEST_CYCLE_CD_ID
+			, TEST_CYCLE01, TEST_CYCLE02, TEST_CYCLE03, TEST_CYCLE04, TEST_CYCLE05, TEST_CYCLE06, TEST_CYCLE07, TEST_CYCLE08, TEST_CYCLE09
+			, TEST_RELATE_DOC, TEST_TRGET, SAMPLE_SIZE, TEST_PROCSS, EXCP_CNT
+			, TEST_MTH, TEST_MTH_QESTN, TEST_MTH_OBSERV, TEST_MTH_VRIFY, TEST_MTH_ECGN, TEST_MTH_SYS_TRACE
+			, ATMC_SAMPLE_AT, TEST_SANCTN_AT, ACNT_CD, CNRL_ACNTCTGR, RELATE_ACNTCTGR_PBLNTF, CNRL_CM_IEM
+			, ASSE_C_AT, ASSE_E_AT, ASSE_R_AT, ASSE_V_AT, ASSE_P_AT, ASSE_S_AT, ASSE_O_AT, ASSE_A_AT, ASSE_PF_AT
+			, TREXAMIN_PROCSS, TREXAMIN_PRUF, TREXAMIN_CNCLSN
+			, RISK_RESIDUAL_LIKEHOOD, RISK_RESIDUAL_IMPACT, RISK_RESIDUAL_RATIONG
+			, AFTER_RISK_RESIDUAL_LIKEHOOD, AFTER_RISK_RESIDUAL_IMPACT, AFTER_RISK_RESIDUAL_RATIONG, CNRL_IMPRVM_NM, CNRL_IMPRVM_DC
+			, FNREP_RISKEVL_CSFCTR01, FNREP_RISKEVL_CSFCTR02, FNREP_RISKEVL_CSFCTR03
+            , FNREP_RISKEVL_CSFCTR04, FNREP_RISKEVL_CSFCTR05, FNREP_RISKEVL_CSFCTR06
+            , FNREP_RISKEVL_CSFCTR07, FNREP_RISKEVL_CSFCTR08, FNREP_RISKEVL_CSFCTR09, FNREP_RISKEVL_CSFCTR10
+            , FNREP_CNRL_RISK_CNCLSN, FNREP_ACNT_RISK_CNCLSN, FNREP_PROCS_RISK_CNCLSN, FNREP_GNRLZ_EVL_CNCLSN
+		    , CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+
+		) VALUES (
+		      #{cnrlId}, #{bgntmstmp}, '99991231235959999999', #{cnrlNo}, #{cnrlNm}, #{cnrlCn}
+			, #{keyCnrlAt}
+			, #{refrnNo}, #{cnrlRelateRef}
+			, #{cnrlExcUpperDept}, #{cnrlExcDept}, #{cnrlExcber}, #{cnrlRspnsblUpperDept}, #{cnrlRspnsblDept}, #{cnrlRspnber}
+			, #{relateRegltnNm}, #{cnrlRelateDoc}, #{cnrlRelateSys}, #{cnrlRm}
+			, #{cnrlPurps}, #{cnrlPurpsCdId}, #{cnrlPurpsFnnrRlablty}, #{cnrlPurpsAssetPrtc}, #{cnrlPurpsInstcPrvn}
+			, #{cnrlTyCdId}, #{cnrlTyCeck01}, #{cnrlTyCeck02}, #{cnrlTyCeck03}, #{cnrlTyCeck04}, #{cnrlTyCeck05}, #{cnrlTyCeck06}, #{cnrlTyCeck07}, #{cnrlTyCeck08}, #{cnrlTyCeck09}
+			, #{cnrlTy01CdId}, #{cnrlTy03CdId}, #{cnrlTy02CdId}
+			, #{delngTyCdId}, #{cnrlCtgry}, #{cnrlCycleCdId}
+			, #{cnrlCycle01}, #{cnrlCycle02}, #{cnrlCycle03}, #{cnrlCycle04}, #{cnrlCycle05}, #{cnrlCycle06}, #{cnrlCycle07}, #{cnrlCycle08}, #{cnrlCycle09}
+			, #{officeTyCdId}, #{dsgnEfctAt}, #{operEfctAt}, #{cnrlUprpdNo}
+			, #{mrcCnrlAt}, #{mrcCtgryCdId}, #{mrcNo}, #{ipeCnrlAt}, #{ipeCtgryCdId}, #{ipeNo}, #{ipeNm}, #{ipeTestProcss}
+			, #{cosoNo}
+			, #{testCycleCdId}
+			, #{testCycle01}, #{testCycle02}, #{testCycle03}, #{testCycle04}, #{testCycle05}, #{testCycle06}, #{testCycle07}, #{testCycle08}, #{testCycle09}
+			, #{testRelateDoc}, #{testTrget}, #{sampleSize}, #{testProcss}, #{excpCnt}
+			, #{testMth}, #{testMthQestn}, #{testMthObserv}, #{testMthVrify}, #{testMthEcgn}, #{testMthSysTrace}
+			, #{atmcSampleAt}, #{testSanctnAt}, #{acntCd}, #{cnrlAcntctgr}, #{relateAcntctgrPblntf}, #{cnrlCmIem}
+			, #{asseCAt}, #{asseEAt}, #{asseRAt}, #{asseVAt}, #{assePAt}, #{asseSAt}, #{asseOAt}, #{asseAAt}, #{assePfAt}
+			, #{trexaminProcss}, #{trexaminPruf}, #{trexaminCnclsn}
+			, #{riskResidualLikehood}, #{riskResidualImpact}, #{riskResidualRationg}
+			, #{afterRiskResidualLikehood}, #{afterRiskResidualImpact}, #{afterRiskResidualRationg}, #{cnrlImprvmNm}, #{cnrlImprvmDc}
+			, #{fnrepRiskevlCsfctr01}, #{fnrepRiskevlCsfctr02}, #{fnrepRiskevlCsfctr03}
+            , #{fnrepRiskevlCsfctr04}, #{fnrepRiskevlCsfctr05}, #{fnrepRiskevlCsfctr06}
+            , #{fnrepRiskevlCsfctr07}, #{fnrepRiskevlCsfctr08}, #{fnrepRiskevlCsfctr09}, #{fnrepRiskevlCsfctr10}
+            , #{fnrepCnrlRiskCnclsn}, #{fnrepAcntRiskCnclsn}, #{fnrepProcsRiskCnclsn}, #{fnrepGnrlzEvlCnclsn}
+			, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 통제 등록'
+		);
+	END; 
+	]]>
+	</insert>
+
+	<update id="update">
+	<![CDATA[
+	BEGIN
+		UPDATE TB_CW_ELC_RCM_CNRL SET 
+			 CNRL_NO                        = #{cnrlNo}
+			, CNRL_NM                        = #{cnrlNm}
+			, CNRL_CN                        = #{cnrlCn}
+			, KEY_CNRL_AT                    = #{keyCnrlAt}
+			, REFRN_NO                       = #{refrnNo}
+			, CNRL_RELATE_REF                = #{cnrlRelateRef}
+			, CNRL_EXC_UPPER_DEPT            = #{cnrlExcUpperDept}
+			, CNRL_EXC_DEPT                  = #{cnrlExcDept}
+			, CNRL_EXCBER                    = #{cnrlExcber}
+			, CNRL_RSPNSBL_UPPER_DEPT        = #{cnrlRspnsblUpperDept}
+			, CNRL_RSPNSBL_DEPT              = #{cnrlRspnsblDept}
+			, CNRL_RSPNBER                   = #{cnrlRspnber}
+			, RELATE_REGLTN_NM               = #{relateRegltnNm}
+			, CNRL_RELATE_DOC                = #{cnrlRelateDoc}
+			, CNRL_RELATE_SYS                = #{cnrlRelateSys}
+			, CNRL_RM                        = #{cnrlRm}
+			, CNRL_PURPS                     = #{cnrlPurps}
+			, CNRL_PURPS_CD_ID               = #{cnrlPurpsCdId}
+			, CNRL_PURPS_FNNR_RLABLTY        = #{cnrlPurpsFnnrRlablty}
+			, CNRL_PURPS_ASSET_PRTC          = #{cnrlPurpsAssetPrtc}
+			, CNRL_PURPS_INSTC_PRVN          = #{cnrlPurpsInstcPrvn}
+			, CNRL_TY_CD_ID                  = #{cnrlTyCdId}
+			, CNRL_TY_CECK01                 = #{cnrlTyCeck01}
+			, CNRL_TY_CECK02                 = #{cnrlTyCeck02}
+			, CNRL_TY_CECK03                 = #{cnrlTyCeck03}
+			, CNRL_TY_CECK04                 = #{cnrlTyCeck04}
+			, CNRL_TY_CECK05                 = #{cnrlTyCeck05}
+			, CNRL_TY_CECK06                 = #{cnrlTyCeck06}
+			, CNRL_TY_CECK07                 = #{cnrlTyCeck07}
+			, CNRL_TY_CECK08                 = #{cnrlTyCeck08}
+			, CNRL_TY_CECK09                 = #{cnrlTyCeck09}
+			, CNRL_TY01_CD_ID                = #{cnrlTy01CdId}
+			, CNRL_TY03_CD_ID                = #{cnrlTy03CdId}
+			, CNRL_TY02_CD_ID                = #{cnrlTy02CdId}
+			, DELNG_TY_CD_ID                 = #{delngTyCdId}
+			, CNRL_CTGRY                     = #{cnrlCtgry}
+			, CNRL_CYCLE_CD_ID               = #{cnrlCycleCdId}
+			, CNRL_CYCLE01               	 = #{cnrlCycle01}
+			, CNRL_CYCLE02               	 = #{cnrlCycle02}
+			, CNRL_CYCLE03               	 = #{cnrlCycle03}
+			, CNRL_CYCLE04               	 = #{cnrlCycle04}
+			, CNRL_CYCLE05               	 = #{cnrlCycle05}
+			, CNRL_CYCLE06               	 = #{cnrlCycle06}
+			, CNRL_CYCLE07               	 = #{cnrlCycle07}
+			, CNRL_CYCLE08               	 = #{cnrlCycle08}
+			, CNRL_CYCLE09               	 = #{cnrlCycle09}
+			, OFFICE_TY_CD_ID                = #{officeTyCdId}
+			, DSGN_EFCT_AT                   = #{dsgnEfctAt}
+			, OPER_EFCT_AT                   = #{operEfctAt}
+			, CNRL_UPRPD_NO                  = #{cnrlUprpdNo}
+			, MRC_CNRL_AT                    = #{mrcCnrlAt}
+			, MRC_CTGRY_CD_ID                = #{mrcCtgryCdId}
+			, MRC_NO                         = #{mrcNo}
+			, IPE_CNRL_AT                    = #{ipeCnrlAt}
+			, IPE_CTGRY_CD_ID                = #{ipeCtgryCdId}
+			, IPE_NO                         = #{ipeNo}
+			, IPE_NM                         = #{ipeNm}
+			, IPE_TEST_PROCSS                = #{ipeTestProcss}
+			, COSO_NO                        = #{cosoNo}
+			, TEST_CYCLE_CD_ID               = #{testCycleCdId}
+			, TEST_CYCLE01               	 = #{testCycle01}
+			, TEST_CYCLE02               	 = #{testCycle02}
+			, TEST_CYCLE03               	 = #{testCycle03}
+			, TEST_CYCLE04               	 = #{testCycle04}
+			, TEST_CYCLE05               	 = #{testCycle05}
+			, TEST_CYCLE06               	 = #{testCycle06}
+			, TEST_CYCLE07               	 = #{testCycle07}
+			, TEST_CYCLE08               	 = #{testCycle08}
+			, TEST_CYCLE09               	 = #{testCycle09}
+			, TEST_RELATE_DOC                = #{testRelateDoc}
+			, TEST_TRGET                     = #{testTrget}
+			, SAMPLE_SIZE                    = #{sampleSize}
+			, TEST_PROCSS                    = #{testProcss}
+			, EXCP_CNT                       = #{excpCnt}
+			, TEST_MTH                       = #{testMth}
+			, TEST_MTH_QESTN                 = #{testMthQestn}
+			, TEST_MTH_OBSERV                = #{testMthObserv}
+			, TEST_MTH_VRIFY                 = #{testMthVrify}
+			, TEST_MTH_ECGN                  = #{testMthEcgn}
+			, TEST_MTH_SYS_TRACE             = #{testMthSysTrace}
+			, ATMC_SAMPLE_AT                 = #{atmcSampleAt}
+			, TEST_SANCTN_AT                 = #{testSanctnAt}
+			, ACNT_CD                        = #{acntCd}
+			, CNRL_ACNTCTGR                  = #{cnrlAcntctgr}
+			, RELATE_ACNTCTGR_PBLNTF         = #{relateAcntctgrPblntf}
+			, CNRL_CM_IEM                    = #{cnrlCmIem}
+			, ASSE_C_AT                      = #{asseCAt}
+			, ASSE_E_AT                      = #{asseEAt}
+			, ASSE_R_AT                      = #{asseRAt}
+			, ASSE_V_AT                      = #{asseVAt}
+			, ASSE_P_AT                      = #{assePAt}
+			, ASSE_S_AT                      = #{asseSAt}
+			, ASSE_O_AT                      = #{asseOAt}
+			, ASSE_A_AT                      = #{asseAAt}
+			, ASSE_PF_AT                     = #{assePfAt}
+			, TREXAMIN_PROCSS                = #{trexaminProcss}
+			, TREXAMIN_PRUF                  = #{trexaminPruf}
+			, TREXAMIN_CNCLSN                = #{trexaminCnclsn}
+			, RISK_RESIDUAL_LIKEHOOD         = #{riskResidualLikehood}
+			, RISK_RESIDUAL_IMPACT           = #{riskResidualImpact}
+			, RISK_RESIDUAL_RATIONG          = #{riskResidualRationg}
+			, AFTER_RISK_RESIDUAL_LIKEHOOD   = #{afterRiskResidualLikehood}
+			, AFTER_RISK_RESIDUAL_IMPACT     = #{afterRiskResidualImpact}
+			, AFTER_RISK_RESIDUAL_RATIONG    = #{afterRiskResidualRationg}
+			, CNRL_IMPRVM_NM                 = #{cnrlImprvmNm}
+			, CNRL_IMPRVM_DC                 = #{cnrlImprvmDc}
+			, FNREP_RISKEVL_CSFCTR01 = #{fnrepRiskevlCsfctr01}
+            , FNREP_RISKEVL_CSFCTR02 = #{fnrepRiskevlCsfctr02}
+            , FNREP_RISKEVL_CSFCTR03 = #{fnrepRiskevlCsfctr03}
+            , FNREP_RISKEVL_CSFCTR04 = #{fnrepRiskevlCsfctr04}
+            , FNREP_RISKEVL_CSFCTR05 = #{fnrepRiskevlCsfctr05}
+            , FNREP_RISKEVL_CSFCTR06 = #{fnrepRiskevlCsfctr06}
+            , FNREP_RISKEVL_CSFCTR07 = #{fnrepRiskevlCsfctr07}
+            , FNREP_RISKEVL_CSFCTR08 = #{fnrepRiskevlCsfctr08}
+            , FNREP_RISKEVL_CSFCTR09 = #{fnrepRiskevlCsfctr09}
+            , FNREP_RISKEVL_CSFCTR10 = #{fnrepRiskevlCsfctr10}
+            , FNREP_CNRL_RISK_CNCLSN = #{fnrepCnrlRiskCnclsn}
+            , FNREP_ACNT_RISK_CNCLSN = #{fnrepAcntRiskCnclsn}
+            , FNREP_PROCS_RISK_CNCLSN = #{fnrepProcsRiskCnclsn}
+            , FNREP_GNRLZ_EVL_CNCLSN = #{fnrepGnrlzEvlCnclsn}
+			, UPD_DT 	 	            	 = GETDATE()
+			, UPD_USER_ID	            	 = #{suserId}   
+		WHERE CNRL_ID = #{cnrlId};
+		
+		UPDATE TB_CW_ELC_RCM_CNRL_HIST
+	       SET ENDTMSTMP = #{endtmstmp}
+		     , UPD_DT = GETDATE()
+		     , UPD_USER_ID = #{suserId} 
+		WHERE CNRL_ID = #{cnrlId}
+		  AND ENDTMSTMP = '99991231235959999999';
+		  
+		INSERT INTO TB_CW_ELC_RCM_CNRL_HIST (
+		      CNRL_ID, BGNTMSTMP, ENDTMSTMP, CNRL_NO, CNRL_NM, CNRL_CN
+		    , KEY_CNRL_AT
+			, REFRN_NO, CNRL_RELATE_REF
+			, CNRL_EXC_UPPER_DEPT, CNRL_EXC_DEPT, CNRL_EXCBER, CNRL_RSPNSBL_UPPER_DEPT, CNRL_RSPNSBL_DEPT, CNRL_RSPNBER
+			, RELATE_REGLTN_NM, CNRL_RELATE_DOC, CNRL_RELATE_SYS, CNRL_RM
+			, CNRL_PURPS, CNRL_PURPS_CD_ID, CNRL_PURPS_FNNR_RLABLTY, CNRL_PURPS_ASSET_PRTC, CNRL_PURPS_INSTC_PRVN
+			, CNRL_TY_CD_ID, CNRL_TY_CECK01, CNRL_TY_CECK02, CNRL_TY_CECK03, CNRL_TY_CECK04, CNRL_TY_CECK05, CNRL_TY_CECK06, CNRL_TY_CECK07, CNRL_TY_CECK08, CNRL_TY_CECK09
+			, CNRL_TY01_CD_ID, CNRL_TY03_CD_ID, CNRL_TY02_CD_ID
+			, DELNG_TY_CD_ID, CNRL_CTGRY, CNRL_CYCLE_CD_ID
+			, CNRL_CYCLE01, CNRL_CYCLE02, CNRL_CYCLE03, CNRL_CYCLE04, CNRL_CYCLE05, CNRL_CYCLE06, CNRL_CYCLE07, CNRL_CYCLE08, CNRL_CYCLE09
+			, OFFICE_TY_CD_ID, DSGN_EFCT_AT, OPER_EFCT_AT, CNRL_UPRPD_NO
+			, MRC_CNRL_AT, MRC_CTGRY_CD_ID, MRC_NO, IPE_CNRL_AT, IPE_CTGRY_CD_ID, IPE_NO, IPE_NM, IPE_TEST_PROCSS
+			, COSO_NO
+			, TEST_CYCLE_CD_ID
+			, TEST_CYCLE01, TEST_CYCLE02, TEST_CYCLE03, TEST_CYCLE04, TEST_CYCLE05, TEST_CYCLE06, TEST_CYCLE07, TEST_CYCLE08, TEST_CYCLE09
+			, TEST_RELATE_DOC, TEST_TRGET, SAMPLE_SIZE, TEST_PROCSS, EXCP_CNT
+			, TEST_MTH, TEST_MTH_QESTN, TEST_MTH_OBSERV, TEST_MTH_VRIFY, TEST_MTH_ECGN, TEST_MTH_SYS_TRACE
+			, ATMC_SAMPLE_AT, TEST_SANCTN_AT, ACNT_CD, CNRL_ACNTCTGR, RELATE_ACNTCTGR_PBLNTF, CNRL_CM_IEM
+			, ASSE_C_AT, ASSE_E_AT, ASSE_R_AT, ASSE_V_AT, ASSE_P_AT, ASSE_S_AT, ASSE_O_AT, ASSE_A_AT, ASSE_PF_AT
+			, TREXAMIN_PROCSS, TREXAMIN_PRUF, TREXAMIN_CNCLSN
+			, RISK_RESIDUAL_LIKEHOOD, RISK_RESIDUAL_IMPACT, RISK_RESIDUAL_RATIONG
+			, AFTER_RISK_RESIDUAL_LIKEHOOD, AFTER_RISK_RESIDUAL_IMPACT, AFTER_RISK_RESIDUAL_RATIONG, CNRL_IMPRVM_NM, CNRL_IMPRVM_DC
+			, FNREP_RISKEVL_CSFCTR01, FNREP_RISKEVL_CSFCTR02, FNREP_RISKEVL_CSFCTR03
+            , FNREP_RISKEVL_CSFCTR04, FNREP_RISKEVL_CSFCTR05, FNREP_RISKEVL_CSFCTR06
+            , FNREP_RISKEVL_CSFCTR07, FNREP_RISKEVL_CSFCTR08, FNREP_RISKEVL_CSFCTR09, FNREP_RISKEVL_CSFCTR10
+            , FNREP_CNRL_RISK_CNCLSN, FNREP_ACNT_RISK_CNCLSN, FNREP_PROCS_RISK_CNCLSN, FNREP_GNRLZ_EVL_CNCLSN
+		    , CMPNY_CD_ID, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+		) VALUES (
+		      #{cnrlId}, #{bgntmstmp}, '99991231235959999999', #{cnrlNo}, #{cnrlNm}, #{cnrlCn}
+			, #{keyCnrlAt}
+			, #{refrnNo}, #{cnrlRelateRef}
+			, #{cnrlExcUpperDept}, #{cnrlExcDept}, #{cnrlExcber}, #{cnrlRspnsblUpperDept}, #{cnrlRspnsblDept}, #{cnrlRspnber}
+			, #{relateRegltnNm}, #{cnrlRelateDoc}, #{cnrlRelateSys}, #{cnrlRm}
+			, #{cnrlPurps}, #{cnrlPurpsCdId}, #{cnrlPurpsFnnrRlablty}, #{cnrlPurpsAssetPrtc}, #{cnrlPurpsInstcPrvn}
+			, #{cnrlTyCdId}, #{cnrlTyCeck01}, #{cnrlTyCeck02}, #{cnrlTyCeck03}, #{cnrlTyCeck04}, #{cnrlTyCeck05}, #{cnrlTyCeck06}, #{cnrlTyCeck07}, #{cnrlTyCeck08}, #{cnrlTyCeck09}
+			, #{cnrlTy01CdId}, #{cnrlTy03CdId}, #{cnrlTy02CdId}
+			, #{delngTyCdId}, #{cnrlCtgry}, #{cnrlCycleCdId}
+			, #{cnrlCycle01}, #{cnrlCycle02}, #{cnrlCycle03}, #{cnrlCycle04}, #{cnrlCycle05}, #{cnrlCycle06}, #{cnrlCycle07}, #{cnrlCycle08}, #{cnrlCycle09}
+			, #{officeTyCdId}, #{dsgnEfctAt}, #{operEfctAt}, #{cnrlUprpdNo}
+			, #{mrcCnrlAt}, #{mrcCtgryCdId}, #{mrcNo}, #{ipeCnrlAt}, #{ipeCtgryCdId}, #{ipeNo}, #{ipeNm}, #{ipeTestProcss}
+			, #{cosoNo}
+			, #{testCycleCdId}
+			, #{testCycle01}, #{testCycle02}, #{testCycle03}, #{testCycle04}, #{testCycle05}, #{testCycle06}, #{testCycle07}, #{testCycle08}, #{testCycle09}
+			, #{testRelateDoc}, #{testTrget}, #{sampleSize}, #{testProcss}, #{excpCnt}
+			, #{testMth}, #{testMthQestn}, #{testMthObserv}, #{testMthVrify}, #{testMthEcgn}, #{testMthSysTrace}
+			, #{atmcSampleAt}, #{testSanctnAt}, #{acntCd}, #{cnrlAcntctgr}, #{relateAcntctgrPblntf}, #{cnrlCmIem}
+			, #{asseCAt}, #{asseEAt}, #{asseRAt}, #{asseVAt}, #{assePAt}, #{asseSAt}, #{asseOAt}, #{asseAAt}, #{assePfAt}
+			, #{trexaminProcss}, #{trexaminPruf}, #{trexaminCnclsn}
+			, #{riskResidualLikehood}, #{riskResidualImpact}, #{riskResidualRationg}
+			, #{afterRiskResidualLikehood}, #{afterRiskResidualImpact}, #{afterRiskResidualRationg}, #{cnrlImprvmNm}, #{cnrlImprvmDc}
+			, #{fnrepRiskevlCsfctr01}, #{fnrepRiskevlCsfctr02}, #{fnrepRiskevlCsfctr03}
+            , #{fnrepRiskevlCsfctr04}, #{fnrepRiskevlCsfctr05}, #{fnrepRiskevlCsfctr06}
+            , #{fnrepRiskevlCsfctr07}, #{fnrepRiskevlCsfctr08}, #{fnrepRiskevlCsfctr09}, #{fnrepRiskevlCsfctr10}
+            , #{fnrepCnrlRiskCnclsn}, #{fnrepAcntRiskCnclsn}, #{fnrepProcsRiskCnclsn}, #{fnrepGnrlzEvlCnclsn}
+			, #{cmpnyCdId}, GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 통제 수정'
+		);
+		
+	END; 
+	]]>		
+	</update>
+	
+	<delete id="delete">
+	<![CDATA[
+	BEGIN
+		DELETE FROM TB_CW_ELC_RCM_CNRL
+		WHERE CNRL_ID = #{cnrlId};
+		
+		UPDATE TB_CW_ELC_RCM_CNRL_HIST
+	   	   SET ENDTMSTMP = #{endtmstmp}
+	      	 , UPD_DT = GETDATE()
+	         , UPD_USER_ID = #{suserId} 
+	     WHERE ENDTMSTMP = '99991231235959999999'
+	       AND CNRL_ID = #{cnrlId};
+		
+		INSERT INTO TB_CW_ELC_RCM_CNRL_HIST (
+			CNRL_ID, BGNTMSTMP, ENDTMSTMP, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+		) VALUES (
+				#{cnrlId}, #{bgntmstmp}, '99991231235959999999', GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 통제 삭제'
+		);
+	END;
+	]]>	
+	</delete>
+
+	<delete id="deleteAll">
+	<![CDATA[
+	BEGIN
+		/** 통제 테이블 전체 삭제 */
+		DELETE FROM TB_CW_ELC_RCM_CNRL;
+
+		/** 통제 전체 이력 종료/시작 */
+		FOR list IN (
+			SELECT CNRL_ID, ROWNUM
+			  FROM TB_CW_ELC_RCM_CNRL_HIST
+			 WHERE ENDTMSTMP = '99991231235959999999'	
+		) LOOP
+		
+		IF list.ROWNUM = '1' THEN
+			UPDATE TB_CW_ELC_RCM_CNRL_HIST
+		   	   SET ENDTMSTMP = #{endtmstmp}
+		      	 , UPD_DT = GETDATE()
+		         , UPD_USER_ID = #{suserId} 
+		     WHERE ENDTMSTMP = '99991231235959999999';
+		END IF;
+		
+		INSERT INTO TB_CW_ELC_RCM_CNRL_HIST (
+			CNRL_ID, BGNTMSTMP, ENDTMSTMP, RGS_DT, RGS_USER_ID, UPD_DT, UPD_USER_ID, RM
+			) VALUES (
+				  list.CNRL_ID, #{bgntmstmp}, '99991231235959999999', GETDATE(), #{suserId}, GETDATE(), #{suserId}, 'RCM 전체 삭제'
+			);	
+		END LOOP;
+	END;
+	]]>
+	</delete>
+	
+	<select id="duplchk" resultType="int">
+		SELECT COUNT(*) FROM TB_CW_ELC_RCM_MAPNG WHERE OBJECT_NO = #{cnrlNo}
+	</select>
+	
+	<!-- 참조번호에 따른 내용 수정 -->
+	<update id="refrnInfoUpdate">
+	<![CDATA[
+	BEGIN
+		FOR list IN (
+			SELECT
+			    A.CNRL_ID, A.CNRL_NO, A.CNRL_NM
+			FROM TB_CW_ELC_RCM_CNRL A
+			WHERE A.REFRN_NO = #{cnrlNo}
+		) LOOP
+		
+		    /** 매핑의 OBJECT 명 수정 */          
+        	UPDATE TB_CW_ELC_RCM_MAPNG SET 
+				OBJECT_NM = #{cnrlNm}
+			WHERE OBJECT_ID = list.CNRL_ID;
+			
+			/** 통제 정보 수정 */				
+			UPDATE TB_CW_ELC_RCM_CNRL SET  
+				  CNRL_NM        				 = #{cnrlNm}
+				, CNRL_CN        				 = #{cnrlCn}
+				, KEY_CNRL_AT                    = #{keyCnrlAt}
+				, REFRN_NO                       = #{refrnNo}
+				, CNRL_RELATE_REF                = #{cnrlRelateRef}
+				, CNRL_EXC_UPPER_DEPT            = #{cnrlExcUpperDept}
+				, CNRL_EXC_DEPT                  = #{cnrlExcDept}
+				, CNRL_EXCBER                    = #{cnrlExcber}
+				, CNRL_RSPNSBL_UPPER_DEPT        = #{cnrlRspnsblUpperDept}
+				, CNRL_RSPNSBL_DEPT              = #{cnrlRspnsblDept}
+				, CNRL_RSPNBER                   = #{cnrlRspnber}
+				, RELATE_REGLTN_NM               = #{relateRegltnNm}
+				, CNRL_RELATE_DOC                = #{cnrlRelateDoc}
+				, CNRL_RELATE_SYS                = #{cnrlRelateSys}
+				, CNRL_RM                        = #{cnrlRm}
+				, CNRL_PURPS                     = #{cnrlPurps}
+				, CNRL_PURPS_CD_ID               = #{cnrlPurpsCdId}
+				, CNRL_PURPS_FNNR_RLABLTY        = #{cnrlPurpsFnnrRlablty}
+				, CNRL_PURPS_ASSET_PRTC          = #{cnrlPurpsAssetPrtc}
+				, CNRL_PURPS_INSTC_PRVN          = #{cnrlPurpsInstcPrvn}
+				, CNRL_TY_CD_ID                  = #{cnrlTyCdId}
+				, CNRL_TY_CECK01                 = #{cnrlTyCeck01}
+				, CNRL_TY_CECK02                 = #{cnrlTyCeck02}
+				, CNRL_TY_CECK03                 = #{cnrlTyCeck03}
+				, CNRL_TY_CECK04                 = #{cnrlTyCeck04}
+				, CNRL_TY_CECK05                 = #{cnrlTyCeck05}
+				, CNRL_TY_CECK06                 = #{cnrlTyCeck06}
+				, CNRL_TY_CECK07                 = #{cnrlTyCeck07}
+				, CNRL_TY_CECK08                 = #{cnrlTyCeck08}
+				, CNRL_TY_CECK09                 = #{cnrlTyCeck09}
+				, CNRL_TY01_CD_ID                = #{cnrlTy01CdId}
+				, CNRL_TY03_CD_ID                = #{cnrlTy03CdId}
+				, CNRL_TY02_CD_ID                = #{cnrlTy02CdId}
+				, DELNG_TY_CD_ID                 = #{delngTyCdId}
+				, CNRL_CTGRY                     = #{cnrlCtgry}
+				, CNRL_CYCLE_CD_ID               = #{cnrlCycleCdId}
+				, CNRL_CYCLE01               	 = #{cnrlCycle01}
+				, CNRL_CYCLE02               	 = #{cnrlCycle02}
+				, CNRL_CYCLE03               	 = #{cnrlCycle03}
+				, CNRL_CYCLE04               	 = #{cnrlCycle04}
+				, CNRL_CYCLE05               	 = #{cnrlCycle05}
+				, CNRL_CYCLE06               	 = #{cnrlCycle06}
+				, CNRL_CYCLE07               	 = #{cnrlCycle07}
+				, CNRL_CYCLE08               	 = #{cnrlCycle08}
+				, CNRL_CYCLE09               	 = #{cnrlCycle09}
+				, OFFICE_TY_CD_ID                = #{officeTyCdId}
+				, DSGN_EFCT_AT                   = #{dsgnEfctAt}
+				, OPER_EFCT_AT                   = #{operEfctAt}
+				, CNRL_UPRPD_NO                  = #{cnrlUprpdNo}
+				, MRC_CNRL_AT                    = #{mrcCnrlAt}
+				, MRC_CTGRY_CD_ID                = #{mrcCtgryCdId}
+				, MRC_NO                         = #{mrcNo}
+				, IPE_CNRL_AT                    = #{ipeCnrlAt}
+				, IPE_CTGRY_CD_ID                = #{ipeCtgryCdId}
+				, IPE_NO                         = #{ipeNo}
+				, IPE_NM                         = #{ipeNm}
+				, IPE_TEST_PROCSS                = #{ipeTestProcss}
+				, COSO_NO                        = #{cosoNo}
+				, TEST_CYCLE_CD_ID               = #{testCycleCdId}
+				, TEST_CYCLE01               	 = #{testCycle01}
+				, TEST_CYCLE02               	 = #{testCycle02}
+				, TEST_CYCLE03               	 = #{testCycle03}
+				, TEST_CYCLE04               	 = #{testCycle04}
+				, TEST_CYCLE05               	 = #{testCycle05}
+				, TEST_CYCLE06               	 = #{testCycle06}
+				, TEST_CYCLE07               	 = #{testCycle07}
+				, TEST_CYCLE08               	 = #{testCycle08}
+				, TEST_CYCLE09               	 = #{testCycle09}
+				, TEST_RELATE_DOC                = #{testRelateDoc}
+				, TEST_TRGET                     = #{testTrget}
+				, SAMPLE_SIZE                    = #{sampleSize}
+				, TEST_PROCSS                    = #{testProcss}
+				, EXCP_CNT                       = #{excpCnt}
+				, TEST_MTH                       = #{testMth}
+				, TEST_MTH_QESTN                 = #{testMthQestn}
+				, TEST_MTH_OBSERV                = #{testMthObserv}
+				, TEST_MTH_VRIFY                 = #{testMthVrify}
+				, TEST_MTH_ECGN                  = #{testMthEcgn}
+				, TEST_MTH_SYS_TRACE             = #{testMthSysTrace}
+				, ATMC_SAMPLE_AT                 = #{atmcSampleAt}
+				, TEST_SANCTN_AT                 = #{testSanctnAt}
+				, ACNT_CD                        = #{acntCd}
+				, CNRL_ACNTCTGR                  = #{cnrlAcntctgr}
+				, RELATE_ACNTCTGR_PBLNTF         = #{relateAcntctgrPblntf}
+				, CNRL_CM_IEM                    = #{cnrlCmIem}
+				, ASSE_C_AT                      = #{asseCAt}
+				, ASSE_E_AT                      = #{asseEAt}
+				, ASSE_R_AT                      = #{asseRAt}
+				, ASSE_V_AT                      = #{asseVAt}
+				, ASSE_P_AT                      = #{assePAt}
+				, ASSE_S_AT                      = #{asseSAt}
+				, ASSE_O_AT                      = #{asseOAt}
+				, ASSE_A_AT                      = #{asseAAt}
+				, ASSE_PF_AT                     = #{assePfAt}
+				, TREXAMIN_PROCSS                = #{trexaminProcss}
+				, TREXAMIN_PRUF                  = #{trexaminPruf}
+				, TREXAMIN_CNCLSN                = #{trexaminCnclsn}
+				, RISK_RESIDUAL_LIKEHOOD         = #{riskResidualLikehood}
+				, RISK_RESIDUAL_IMPACT           = #{riskResidualImpact}
+				, RISK_RESIDUAL_RATIONG          = #{riskResidualRationg}
+				, AFTER_RISK_RESIDUAL_LIKEHOOD   = #{afterRiskResidualLikehood}
+				, AFTER_RISK_RESIDUAL_IMPACT     = #{afterRiskResidualImpact}
+				, AFTER_RISK_RESIDUAL_RATIONG    = #{afterRiskResidualRationg}
+				, CNRL_IMPRVM_NM                 = #{cnrlImprvmNm}
+				, CNRL_IMPRVM_DC                 = #{cnrlImprvmDc}
+				, FNREP_RISKEVL_CSFCTR01 = #{fnrepRiskevlCsfctr01}
+                , FNREP_RISKEVL_CSFCTR02 = #{fnrepRiskevlCsfctr02}
+                , FNREP_RISKEVL_CSFCTR03 = #{fnrepRiskevlCsfctr03}
+                , FNREP_RISKEVL_CSFCTR04 = #{fnrepRiskevlCsfctr04}
+                , FNREP_RISKEVL_CSFCTR05 = #{fnrepRiskevlCsfctr05}
+                , FNREP_RISKEVL_CSFCTR06 = #{fnrepRiskevlCsfctr06}
+                , FNREP_RISKEVL_CSFCTR07 = #{fnrepRiskevlCsfctr07}
+                , FNREP_RISKEVL_CSFCTR08 = #{fnrepRiskevlCsfctr08}
+                , FNREP_RISKEVL_CSFCTR09 = #{fnrepRiskevlCsfctr09}
+                , FNREP_RISKEVL_CSFCTR10 = #{fnrepRiskevlCsfctr10}
+                , FNREP_CNRL_RISK_CNCLSN = #{fnrepCnrlRiskCnclsn}
+                , FNREP_ACNT_RISK_CNCLSN = #{fnrepAcntRiskCnclsn}
+                , FNREP_PROCS_RISK_CNCLSN = #{fnrepProcsRiskCnclsn}
+                , FNREP_GNRLZ_EVL_CNCLSN = #{fnrepGnrlzEvlCnclsn}
+				, UPD_DT 	 	  				 = GETDATE()
+				, UPD_USER_ID	  				 = #{suserId}   
+			WHERE REFRN_NO = #{cnrlNo};				
+    	END LOOP;
+	END; 
+	]]>
+	</update>
+	
+	<!-- 참조번호 수정 -->
+	<update id="refrnNoUpdate">
+		UPDATE TB_CW_ELC_RCM_CNRL SET 
+			  REFRN_NO = #{refrnNo}
+		WHERE REFRN_NO = #{cnrlNo}
+	</update>
+	
+	<select id="selectCnrlHistList" resultType="EgovMap">
+		SELECT
+		      A.CNRL_ID
+		    , A.BGNTMSTMP
+            , A.ENDTMSTMP
+            , SUBSTRING(A.BGNTMSTMP,1,4) + '-' + SUBSTRING(A.BGNTMSTMP,5,2) + '-' + SUBSTRING(A.BGNTMSTMP,7,2) + ' ' + SUBSTRING(A.BGNTMSTMP,9,2) + ':' + SUBSTRING(A.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(A.BGNTMSTMP,13,2) BGNTMSTMP_DE
+            , SUBSTRING(A.BGNTMSTMP,1,4) + '-' + SUBSTRING(A.BGNTMSTMP,5,2) + '-' + SUBSTRING(A.BGNTMSTMP,7,2) + ' ' + SUBSTRING(A.BGNTMSTMP,9,2) + ':' + SUBSTRING(A.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(A.BGNTMSTMP,13,2) + ' - ' + A.RM AS BGNTMSTMP_RM
+            , (CASE WHEN A.ENDTMSTMP = '99991231235959999999' THEN '-' 
+                   ELSE SUBSTRING(A.ENDTMSTMP,1,4) + '-' + SUBSTRING(A.ENDTMSTMP,5,2) + '-' + SUBSTRING(A.ENDTMSTMP,7,2) + ' ' + SUBSTRING(A.ENDTMSTMP,9,2) + ':' + SUBSTRING(A.ENDTMSTMP,11,2 ) + ':' + SUBSTRING(A.ENDTMSTMP,13,2) END) ENDTMSTMP_DE
+			, A.CNRL_NO
+			, A.CNRL_NM
+			, A.CNRL_CN
+			, ISNULL(A.KEY_CNRL_AT, 'N') 		AS KEY_CNRL_AT
+			, A.REFRN_NO
+			, A.CNRL_RELATE_REF
+			, A.CNRL_EXC_UPPER_DEPT
+			, A.CNRL_EXC_DEPT
+			, A.CNRL_EXCBER
+			, A.CNRL_RSPNSBL_UPPER_DEPT
+			, A.CNRL_RSPNSBL_DEPT
+			, A.CNRL_RSPNBER
+			, A.RELATE_REGLTN_NM
+			, A.CNRL_RELATE_DOC
+			, A.CNRL_RELATE_SYS
+			, A.CNRL_RM
+			, A.CNRL_PURPS
+			, A.CNRL_PURPS_CD_ID
+			, AF.CODE_NM AS CNRL_PURPS_CD_NM
+			, A.CNRL_PURPS_FNNR_RLABLTY
+			, A.CNRL_PURPS_ASSET_PRTC
+			, A.CNRL_PURPS_INSTC_PRVN
+			, A.CNRL_TY_CD_ID
+			, AI.CODE_NM AS CNRL_TY_CD_NM
+			, A.CNRL_TY_CECK01
+			, A.CNRL_TY_CECK02
+			, A.CNRL_TY_CECK03
+			, A.CNRL_TY_CECK04
+			, A.CNRL_TY_CECK05
+			, A.CNRL_TY_CECK06
+			, A.CNRL_TY_CECK07
+			, A.CNRL_TY_CECK08
+			, A.CNRL_TY_CECK09
+			, A.CNRL_TY01_CD_ID
+			, AA.CODE_NM 					AS CNRL_TY01_CD_NM
+			, A.CNRL_TY02_CD_ID
+			, AB.CODE_NM 					AS CNRL_TY02_CD_NM
+			, A.CNRL_TY03_CD_ID
+			, AC.CODE_NM 					AS CNRL_TY03_CD_NM
+			, A.DELNG_TY_CD_ID
+			, AH.CODE_NM					AS DELNG_TY_CD_NM
+			, A.CNRL_CTGRY
+		    , A.CNRL_CYCLE_CD_ID
+			, AG.CODE_NM 					AS CNRL_CYCLE_CD_NM
+			, A.CNRL_CYCLE01
+			, A.CNRL_CYCLE02
+			, A.CNRL_CYCLE03
+			, A.CNRL_CYCLE04
+			, A.CNRL_CYCLE05
+			, A.CNRL_CYCLE06
+			, A.CNRL_CYCLE07
+			, A.CNRL_CYCLE08
+			, A.CNRL_CYCLE09
+			, A.OFFICE_TY_CD_ID
+			, AE.CODE_NM 					AS OFFICE_TY_CD_NM
+			, ISNULL(A.DSGN_EFCT_AT, 'N') 		AS DSGN_EFCT_AT
+			, ISNULL(A.OPER_EFCT_AT, 'N') 		AS OPER_EFCT_AT
+			, A.CNRL_UPRPD_NO
+			, ISNULL(A.MRC_CNRL_AT, 'N') 		AS MRC_CNRL_AT
+			, A.MRC_CTGRY_CD_ID
+			, A.MRC_NO
+			, ISNULL(A.IPE_CNRL_AT, 'N') 		AS IPE_CNRL_AT
+			, A.IPE_CTGRY_CD_ID
+			, A.IPE_NO
+			, A.IPE_NM
+			, A.IPE_TEST_PROCSS
+			, A.COSO_NO
+			, A.TEST_CYCLE_CD_ID
+			, AD.CODE_NM 					AS TEST_CYCLE_CD_NM
+			, A.TEST_CYCLE01
+			, A.TEST_CYCLE02
+			, A.TEST_CYCLE03
+			, A.TEST_CYCLE04
+			, A.TEST_CYCLE05
+			, A.TEST_CYCLE06
+			, A.TEST_CYCLE07
+			, A.TEST_CYCLE08
+			, A.TEST_CYCLE09
+			, A.TEST_RELATE_DOC
+			, A.TEST_TRGET
+			, A.SAMPLE_SIZE
+			, A.TEST_PROCSS
+			, A.EXCP_CNT
+			, A.TEST_MTH
+			, A.TEST_MTH_QESTN
+			, A.TEST_MTH_OBSERV
+			, A.TEST_MTH_VRIFY
+			, A.TEST_MTH_ECGN
+			, A.TEST_MTH_SYS_TRACE
+			, A.ATMC_SAMPLE_AT
+			, ISNULL(A.TEST_SANCTN_AT, 'N') 	AS TEST_SANCTN_AT
+			, A.ACNT_CD
+			, A.CNRL_ACNTCTGR
+			, A.RELATE_ACNTCTGR_PBLNTF
+			, A.CNRL_CM_IEM
+			, A.ASSE_C_AT
+			, A.ASSE_E_AT
+			, A.ASSE_R_AT
+			, A.ASSE_V_AT
+			, A.ASSE_P_AT
+			, A.ASSE_S_AT
+			, A.ASSE_O_AT
+			, A.ASSE_A_AT
+			, A.ASSE_PF_AT
+			, A.TREXAMIN_PROCSS
+			, A.TREXAMIN_PRUF
+			, A.TREXAMIN_CNCLSN
+			, A.RISK_RESIDUAL_LIKEHOOD
+			, A.RISK_RESIDUAL_IMPACT
+			, A.RISK_RESIDUAL_RATIONG
+			, A.AFTER_RISK_RESIDUAL_LIKEHOOD
+			, A.AFTER_RISK_RESIDUAL_IMPACT
+			, A.AFTER_RISK_RESIDUAL_RATIONG
+			, A.CNRL_IMPRVM_NM
+			, A.CNRL_IMPRVM_DC
+			, A.FNREP_RISKEVL_CSFCTR01
+            , A.FNREP_RISKEVL_CSFCTR02
+            , A.FNREP_RISKEVL_CSFCTR03
+            , A.FNREP_RISKEVL_CSFCTR04
+            , A.FNREP_RISKEVL_CSFCTR05
+            , A.FNREP_RISKEVL_CSFCTR06
+            , A.FNREP_RISKEVL_CSFCTR07
+            , A.FNREP_RISKEVL_CSFCTR08
+            , A.FNREP_RISKEVL_CSFCTR09
+            , A.FNREP_RISKEVL_CSFCTR10
+            , A.FNREP_CNRL_RISK_CNCLSN
+            , A.FNREP_ACNT_RISK_CNCLSN
+            , A.FNREP_PROCS_RISK_CNCLSN
+            , A.FNREP_GNRLZ_EVL_CNCLSN
+			, (SELECT COUNT(REFRN_NO) FROM TB_CW_RCM_CNRL WHERE REFRN_NO = A.CNRL_NO ) AS REFRN_NO_CNT
+		FROM TB_CW_ELC_RCM_CNRL_HIST A
+        LEFT OUTER JOIN TB_CO_CODE AA
+            ON A.CNRL_TY01_CD_ID = AA.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AB
+            ON A.CNRL_TY02_CD_ID = AB.CODE_ID 
+        LEFT OUTER JOIN TB_CO_CODE AC
+            ON A.CNRL_TY03_CD_ID = AC.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AD
+            ON A.TEST_CYCLE_CD_ID = AD.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AE
+            ON A.OFFICE_TY_CD_ID = AE.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AF
+            ON A.CNRL_PURPS_CD_ID = AF.CODE_ID     
+        LEFT OUTER JOIN TB_CO_CODE AG
+            ON A.CNRL_CYCLE_CD_ID = AG.CODE_ID     
+        LEFT OUTER JOIN TB_CO_CODE AH
+            ON A.DELNG_TY_CD_ID = AH.CODE_ID     
+        LEFT OUTER JOIN TB_CO_CODE AI
+            ON A.CNRL_TY_CD_ID = AI.CODE_ID
+		WHERE A.CNRL_ID = #{cnrlId}
+		<if test=' srchStdrBgntmstmp != null and srchStdrBgntmstmp != "" '>
+        	AND A.BGNTMSTMP = #{srchStdrBgntmstmp}
+		</if>
+        <if test=' srchCmprBgntmstmp != null and srchCmprBgntmstmp != "" '>
+        	AND A.BGNTMSTMP = #{srchCmprBgntmstmp}
+		</if>
+		ORDER BY A.ENDTMSTMP DESC
+	</select>
+	
+	<select id="selectCnrlHistView" resultType="EgovMap">
+		SELECT
+			  A.CNRL_ID
+		    , A.BGNTMSTMP
+            , A.ENDTMSTMP
+            , SUBSTRING(A.BGNTMSTMP,1,4) + '-' + SUBSTRING(A.BGNTMSTMP,5,2) + '-' + SUBSTRING(A.BGNTMSTMP,7,2) + ' ' + SUBSTRING(A.BGNTMSTMP,9,2) + ':' + SUBSTRING(A.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(A.BGNTMSTMP,13,2) BGNTMSTMP_DE
+            , SUBSTRING(A.BGNTMSTMP,1,4) + '-' + SUBSTRING(A.BGNTMSTMP,5,2) + '-' + SUBSTRING(A.BGNTMSTMP,7,2) + ' ' + SUBSTRING(A.BGNTMSTMP,9,2) + ':' + SUBSTRING(A.BGNTMSTMP,11,2 ) + ':' + SUBSTRING(A.BGNTMSTMP,13,2) + ' - ' + A.RM AS BGNTMSTMP_RM
+            , (CASE WHEN A.ENDTMSTMP = '99991231235959999999' THEN '-' 
+                   ELSE SUBSTRING(A.ENDTMSTMP,1,4) + '-' + SUBSTRING(A.ENDTMSTMP,5,2) + '-' + SUBSTRING(A.ENDTMSTMP,7,2) + ' ' + SUBSTRING(A.ENDTMSTMP,9,2) + ':' + SUBSTRING(A.ENDTMSTMP,11,2 ) + ':' + SUBSTRING(A.ENDTMSTMP,13,2) END) ENDTMSTMP_DE
+			, A.CNRL_NO
+			, A.CNRL_NM
+			, A.CNRL_CN
+			, ISNULL(A.KEY_CNRL_AT, 'N') 		AS KEY_CNRL_AT
+			, A.REFRN_NO
+			, A.CNRL_RELATE_REF
+			, A.CNRL_EXC_UPPER_DEPT
+			, A.CNRL_EXC_DEPT
+			, A.CNRL_EXCBER
+			, A.CNRL_RSPNSBL_UPPER_DEPT
+			, A.CNRL_RSPNSBL_DEPT
+			, A.CNRL_RSPNBER
+			, A.RELATE_REGLTN_NM
+			, A.CNRL_RELATE_DOC
+			, A.CNRL_RELATE_SYS
+			, A.CNRL_RM
+			, A.CNRL_PURPS
+			, A.CNRL_PURPS_CD_ID
+			, AF.CODE_NM AS CNRL_PURPS_CD_NM
+			, A.CNRL_PURPS_FNNR_RLABLTY
+			, A.CNRL_PURPS_ASSET_PRTC
+			, A.CNRL_PURPS_INSTC_PRVN
+			, A.CNRL_TY_CD_ID
+			, AI.CODE_NM AS CNRL_TY_CD_NM
+			, A.CNRL_TY_CECK01
+			, A.CNRL_TY_CECK02
+			, A.CNRL_TY_CECK03
+			, A.CNRL_TY_CECK04
+			, A.CNRL_TY_CECK05
+			, A.CNRL_TY_CECK06
+			, A.CNRL_TY_CECK07
+			, A.CNRL_TY_CECK08
+			, A.CNRL_TY_CECK09
+			, A.CNRL_TY01_CD_ID
+			, AA.CODE_NM 					AS CNRL_TY01_CD_NM
+			, A.CNRL_TY02_CD_ID
+			, AB.CODE_NM 					AS CNRL_TY02_CD_NM
+			, A.CNRL_TY03_CD_ID
+			, AC.CODE_NM 					AS CNRL_TY03_CD_NM
+			, A.DELNG_TY_CD_ID
+			, AH.CODE_NM					AS DELNG_TY_CD_NM
+			, A.CNRL_CTGRY
+		    , A.CNRL_CYCLE_CD_ID
+			, AG.CODE_NM 					AS CNRL_CYCLE_CD_NM
+			, A.CNRL_CYCLE01
+			, A.CNRL_CYCLE02
+			, A.CNRL_CYCLE03
+			, A.CNRL_CYCLE04
+			, A.CNRL_CYCLE05
+			, A.CNRL_CYCLE06
+			, A.CNRL_CYCLE07
+			, A.CNRL_CYCLE08
+			, A.CNRL_CYCLE09
+			, A.OFFICE_TY_CD_ID
+			, AE.CODE_NM 					AS OFFICE_TY_CD_NM
+			, ISNULL(A.DSGN_EFCT_AT, 'N') 		AS DSGN_EFCT_AT
+			, ISNULL(A.OPER_EFCT_AT, 'N') 		AS OPER_EFCT_AT
+			, A.CNRL_UPRPD_NO
+			, ISNULL(A.MRC_CNRL_AT, 'N') 		AS MRC_CNRL_AT
+			, A.MRC_CTGRY_CD_ID
+			, A.MRC_NO
+			, ISNULL(A.IPE_CNRL_AT, 'N') 		AS IPE_CNRL_AT
+			, A.IPE_CTGRY_CD_ID
+			, A.IPE_NO
+			, A.IPE_NM
+			, A.IPE_TEST_PROCSS
+			, A.COSO_NO
+			, A.TEST_CYCLE_CD_ID
+			, AD.CODE_NM 					AS TEST_CYCLE_CD_NM
+			, A.TEST_CYCLE01
+			, A.TEST_CYCLE02
+			, A.TEST_CYCLE03
+			, A.TEST_CYCLE04
+			, A.TEST_CYCLE05
+			, A.TEST_CYCLE06
+			, A.TEST_CYCLE07
+			, A.TEST_CYCLE08
+			, A.TEST_CYCLE09
+			, A.TEST_RELATE_DOC
+			, A.TEST_TRGET
+			, A.SAMPLE_SIZE
+			, A.TEST_PROCSS
+			, A.EXCP_CNT
+			, A.TEST_MTH
+			, A.TEST_MTH_QESTN
+			, A.TEST_MTH_OBSERV
+			, A.TEST_MTH_VRIFY
+			, A.TEST_MTH_ECGN
+			, A.TEST_MTH_SYS_TRACE
+			, A.ATMC_SAMPLE_AT
+			, ISNULL(A.TEST_SANCTN_AT, 'N') 	AS TEST_SANCTN_AT
+			, A.ACNT_CD
+			, A.CNRL_ACNTCTGR
+			, A.RELATE_ACNTCTGR_PBLNTF
+			, A.CNRL_CM_IEM
+			, A.ASSE_C_AT
+			, A.ASSE_E_AT
+			, A.ASSE_R_AT
+			, A.ASSE_V_AT
+			, A.ASSE_P_AT
+			, A.ASSE_S_AT
+			, A.ASSE_O_AT
+			, A.ASSE_A_AT
+			, A.ASSE_PF_AT
+			, A.TREXAMIN_PROCSS
+			, A.TREXAMIN_PRUF
+			, A.TREXAMIN_CNCLSN
+			, A.RISK_RESIDUAL_LIKEHOOD
+			, A.RISK_RESIDUAL_IMPACT
+			, A.RISK_RESIDUAL_RATIONG
+			, A.AFTER_RISK_RESIDUAL_LIKEHOOD
+			, A.AFTER_RISK_RESIDUAL_IMPACT
+			, A.AFTER_RISK_RESIDUAL_RATIONG
+			, A.CNRL_IMPRVM_NM
+			, A.CNRL_IMPRVM_DC
+			, A.FNREP_RISKEVL_CSFCTR01
+            , A.FNREP_RISKEVL_CSFCTR02
+            , A.FNREP_RISKEVL_CSFCTR03
+            , A.FNREP_RISKEVL_CSFCTR04
+            , A.FNREP_RISKEVL_CSFCTR05
+            , A.FNREP_RISKEVL_CSFCTR06
+            , A.FNREP_RISKEVL_CSFCTR07
+            , A.FNREP_RISKEVL_CSFCTR08
+            , A.FNREP_RISKEVL_CSFCTR09
+            , A.FNREP_RISKEVL_CSFCTR10
+            , A.FNREP_CNRL_RISK_CNCLSN
+            , A.FNREP_ACNT_RISK_CNCLSN
+            , A.FNREP_PROCS_RISK_CNCLSN
+            , A.FNREP_GNRLZ_EVL_CNCLSN
+			, (SELECT COUNT(REFRN_NO) FROM TB_CW_RCM_CNRL WHERE REFRN_NO = A.CNRL_NO ) AS REFRN_NO_CNT
+		FROM TB_CW_ELC_RCM_CNRL_HIST A
+        LEFT OUTER JOIN TB_CO_CODE AA
+            ON A.CNRL_TY01_CD_ID = AA.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AB
+            ON A.CNRL_TY02_CD_ID = AB.CODE_ID 
+        LEFT OUTER JOIN TB_CO_CODE AC
+            ON A.CNRL_TY03_CD_ID = AC.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AD
+            ON A.TEST_CYCLE_CD_ID = AD.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AE
+            ON A.OFFICE_TY_CD_ID = AE.CODE_ID
+        LEFT OUTER JOIN TB_CO_CODE AF
+            ON A.CNRL_PURPS_CD_ID = AF.CODE_ID     
+        LEFT OUTER JOIN TB_CO_CODE AG
+            ON A.CNRL_CYCLE_CD_ID = AG.CODE_ID     
+        LEFT OUTER JOIN TB_CO_CODE AH
+            ON A.DELNG_TY_CD_ID = AH.CODE_ID     
+        LEFT OUTER JOIN TB_CO_CODE AI
+            ON A.CNRL_TY_CD_ID = AI.CODE_ID
+		WHERE A.CNRL_ID = #{cnrlId}
+		<if test=' srchStdrBgntmstmp != null and srchStdrBgntmstmp != "" '>
+        	AND A.BGNTMSTMP = #{srchStdrBgntmstmp}
+		</if>
+        <if test=' srchCmprBgntmstmp != null and srchCmprBgntmstmp != "" '>
+        	AND A.BGNTMSTMP = #{srchCmprBgntmstmp}
+		</if>
+	</select>
+</mapper>
